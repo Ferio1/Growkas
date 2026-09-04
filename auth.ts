@@ -7,6 +7,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true, // Otomatis kenali domain Vercel / proxy host
   // ----------------------------------------------------------------
   // PROVIDERS
   // Daftar provider OAuth yang digunakan.
