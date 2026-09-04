@@ -1,0 +1,1003 @@
+/* =================================================================
+   login.module.css — Growkas Login Page Styling
+   Desain: Editorial Split-Screen, Dark Mode Warm
+   Inspirasi: Awwwards SOTD — bold typography + cinematic motion
+   ================================================================= */
+
+/* ----------------------------------------------------------------
+   PAGE WRAPPER — Full viewport split layout
+   ---------------------------------------------------------------- */
+.page {
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+  background: var(--ink);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ----------------------------------------------------------------
+   ENTRANCE ANIMATION — Fade only, no horizontal slide
+   ---------------------------------------------------------------- */
+.page .left {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.page .right {
+  opacity: 0;
+  transition: opacity 0.6s ease 0.1s;
+}
+
+.mounted .left,
+.mounted .right {
+  opacity: 1;
+}
+
+/* ================================================================
+   PANEL KIRI — Cinematic Visual (60% lebar)
+   ================================================================ */
+.left {
+  flex: 0 0 58%;
+  position: relative;
+  background: var(--ink-soft);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+
+  /* Border kanan tipis */
+  border-right: 1px solid var(--ink-border);
+}
+
+/* ---- Grain texture ---- */
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 160px;
+  mix-blend-mode: overlay;
+}
+
+/* ---- Blob cahaya 1 — oranye-bara di kiri atas ---- */
+.blob1 {
+  position: absolute;
+  top: -120px;
+  left: -80px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(212, 101, 28, 0.22) 0%,
+    rgba(212, 101, 28, 0.06) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+/* ---- Blob cahaya 2 — kemerahan di kanan bawah ---- */
+.blob2 {
+  position: absolute;
+  bottom: -150px;
+  right: -100px;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(180, 60, 30, 0.15) 0%,
+    rgba(180, 60, 30, 0.04) 50%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+/* ---- Blob cahaya 3 — hijau gelap tengah ---- */
+.blob3 {
+  position: absolute;
+  top: 40%;
+  left: 30%;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(70, 90, 60, 0.12) 0%,
+    transparent 65%
+  );
+  pointer-events: none;
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+/* ---- Grid lines ---- */
+.grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+
+/* ---- Garis vertikal kanan ---- */
+.vertLine {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(212, 101, 28, 0.4) 40%,
+    rgba(212, 101, 28, 0.2) 60%,
+    transparent 100%
+  );
+  z-index: 10;
+}
+
+/* ---- Konten dalam panel kiri ---- */
+.leftContent {
+  position: relative;
+  z-index: 5;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* ---- Wordmark besar ---- */
+.wordmarkWrap {
+  margin-top: 8px;
+}
+
+.wordmarkLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--ember);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.wordmark {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 8vw, 7rem);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  color: var(--cream);
+  user-select: none;
+}
+
+.wordmarkLine {
+  display: block;
+}
+
+.wordmarkItalic {
+  /* Huruf miring sebagai aksen editorial */
+  font-style: italic;
+  color: var(--ember);
+
+  /* Efek outline stroke */
+  -webkit-text-stroke: 2px var(--ember);
+  color: transparent;
+}
+
+/* ---- Floating feature cards ---- */
+.featureCards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 280px;
+}
+
+.featureCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.3s var(--ease-out),
+              background 0.3s var(--ease-out),
+              border-color 0.3s var(--ease-out);
+  cursor: default;
+}
+
+.featureCard:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(212, 101, 28, 0.2);
+  transform: translateX(4px);
+}
+
+/* Entrance animation untuk tiap card */
+.card1 {
+  animation: cardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+.card2 {
+  animation: cardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+}
+.card3 {
+  animation: cardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.cardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--ember-soft);
+  border: 1px solid rgba(212, 101, 28, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ember);
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cream-soft);
+  letter-spacing: 0.01em;
+  margin-bottom: 2px;
+}
+
+.cardStat {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Live clock ---- */
+.timeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeDate {
+  font-size: 0.75rem;
+  color: var(--cream-muted);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
+}
+
+.timeClock {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--cream);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+
+  /* Subtle shine animasi */
+  background: linear-gradient(
+    135deg,
+    var(--cream) 0%,
+    rgba(245, 240, 232, 0.6) 50%,
+    var(--cream) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: clockShine 4s linear infinite;
+}
+
+@keyframes clockShine {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ================================================================
+   PANEL KANAN — Form Login (42% lebar)
+   ================================================================ */
+.right {
+  flex: 0 0 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glow oranye halus di kanan atas */
+.right::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(212, 101, 28, 0.07) 0%,
+    transparent 65%
+  );
+  pointer-events: none;
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ---- Form Header: logo + brand ---- */
+.formHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 40px;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--ember), #B84E14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shine effect di logo */
+.logo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 55%);
+}
+
+.formBrand {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: var(--cream);
+}
+
+/* ---- Heading ---- */
+.formHeading {
+  margin-bottom: 28px;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.formTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--cream);
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.formSubtitle {
+  font-size: 0.9rem;
+  color: var(--cream-muted);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* ---- Role Selector ---- */
+.roleSelector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+
+.roleTab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ink-border);
+  background: var(--ink-muted);
+  cursor: pointer;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    transform var(--transition-fast);
+}
+
+.roleTab:hover:not(.roleTabActive) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.roleTab:active { transform: scale(0.98); }
+
+.roleTabActive {
+  background: var(--ember-soft);
+  border-color: rgba(212, 101, 28, 0.35);
+}
+
+.roleTabLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cream);
+  transition: color var(--transition-base);
+}
+
+.roleTabActive .roleTabLabel {
+  color: var(--ember-bright);
+}
+
+.roleTabDesc {
+  font-size: 0.7rem;
+  color: var(--cream-muted);
+  font-weight: 400;
+}
+
+/* ---- Server error ---- */
+.serverError {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(224, 82, 82, 0.08);
+  border: 1px solid rgba(224, 82, 82, 0.2);
+  font-size: 0.825rem;
+  color: #FF8080;
+  line-height: 1.4;
+  margin-bottom: 20px;
+  animation: fadeUp 0.3s var(--ease-out) both;
+}
+
+.serverError svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--error);
+}
+
+/* ---- Form ---- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+
+/* ---- Field group ---- */
+.fieldGroup {
+  margin-bottom: 18px;
+}
+
+.label {
+  display: block;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--cream-soft);
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+/* ---- Input wrapper ---- */
+.inputWrapper {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cream-muted);
+  pointer-events: none;
+  transition: color var(--transition-base);
+  flex-shrink: 0;
+}
+
+/* Icon warna berubah saat input fokus */
+.inputWrapper:focus-within .inputIcon {
+  color: var(--ember);
+}
+
+/* ---- Input ---- */
+.input {
+  width: 100%;
+  padding: 13px 44px 13px 42px;
+  background: var(--ink-muted);
+  border: 1px solid var(--ink-border);
+  border-radius: var(--radius-sm);
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+  -webkit-appearance: none;
+}
+
+.input::placeholder {
+  color: rgba(245, 240, 232, 0.2);
+  font-weight: 400;
+}
+
+/* Focus ring */
+.input:focus {
+  background: rgba(245, 240, 232, 0.05);
+  border-color: rgba(212, 101, 28, 0.5);
+  box-shadow: 0 0 0 3px rgba(212, 101, 28, 0.12);
+}
+
+/* Error state */
+.inputError {
+  border-color: rgba(224, 82, 82, 0.5) !important;
+  background: rgba(224, 82, 82, 0.04) !important;
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(224, 82, 82, 0.1) !important;
+}
+
+/* Autocomplete styling */
+.input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 100px var(--ink-muted) inset !important;
+  -webkit-text-fill-color: var(--cream) !important;
+  caret-color: var(--cream);
+}
+
+/* ---- Toggle show/hide password ---- */
+.togglePw {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px;
+  color: var(--cream-muted);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition-base);
+}
+
+.togglePw:hover { color: var(--cream); }
+
+/* ---- Field error message ---- */
+.fieldError {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: var(--error);
+  margin-top: 6px;
+  animation: fadeUp 0.2s var(--ease-out) both;
+}
+
+/* ---- Form row: ingat saya + lupa password ---- */
+.formRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+/* ---- Custom checkbox ---- */
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--cream-soft);
+  user-select: none;
+  position: relative;
+}
+
+.checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Custom checkmark box */
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--ink-border);
+  background: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base);
+  position: relative;
+}
+
+/* Tampilkan centang saat checked */
+.checkbox:checked + .checkmark {
+  background: var(--ember);
+  border-color: var(--ember);
+}
+
+.checkbox:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1.5px;
+  width: 6px;
+  height: 10px;
+  border: 2px solid white;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* Hover state */
+.checkLabel:hover .checkmark {
+  border-color: rgba(212, 101, 28, 0.4);
+}
+
+/* ---- Lupa password link ---- */
+.forgotLink {
+  font-size: 0.85rem;
+  color: var(--ember);
+  font-weight: 500;
+  padding: 0;
+  position: relative;
+  transition: color var(--transition-base), opacity var(--transition-base);
+}
+
+.forgotLink::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--ember);
+  transition: width 0.3s var(--ease-out);
+}
+
+.forgotLink:hover { opacity: 0.8; }
+.forgotLink:hover::after { width: 100%; }
+
+/* ================================================================
+   TOMBOL MASUK — Premium CTA
+   ================================================================ */
+.btnLogin {
+  width: 100%;
+  padding: 15px 24px;
+  border-radius: var(--radius-sm);
+  background: var(--ember);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background var(--transition-base),
+    transform var(--transition-fast),
+    box-shadow var(--transition-base);
+  box-shadow: 0 4px 20px rgba(212, 101, 28, 0.3),
+              0 1px 3px rgba(0,0,0,0.3);
+  will-change: transform;
+
+  /* Persiapkan untuk magnetic effect */
+  transition: transform 0.15s var(--ease-out),
+              background 0.25s var(--ease-out),
+              box-shadow 0.25s var(--ease-out);
+}
+
+/* Shine sweep saat hover */
+.btnLogin::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+
+.btnLogin:hover::before { left: 150%; }
+
+.btnLogin:hover:not(:disabled) {
+  background: var(--ember-bright);
+  box-shadow: 0 8px 28px rgba(212, 101, 28, 0.45),
+              0 2px 6px rgba(0,0,0,0.3);
+}
+
+.btnLogin:active:not(:disabled) {
+  transform: scale(0.985) !important;
+  box-shadow: 0 3px 12px rgba(212, 101, 28, 0.3);
+}
+
+.btnLogin:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Arrow icon di dalam tombol */
+.btnLogin svg {
+  transition: transform 0.3s var(--ease-out);
+}
+
+.btnLogin:hover:not(:disabled) svg {
+  transform: translateX(4px);
+}
+
+/* ---- Loading spinner ---- */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ================================================================
+   DIVIDER
+   ================================================================ */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: rgba(245, 240, 232, 0.2);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ink-border);
+}
+
+/* ================================================================
+   TOMBOL GOOGLE
+   ================================================================ */
+.btnGoogle {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ink-border);
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition:
+    background 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out),
+    transform 0.15s var(--ease-out),
+    box-shadow 0.25s var(--ease-out);
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+
+  /* Persiapkan magnetic effect */
+  will-change: transform;
+}
+
+.btnGoogle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btnGoogle:active:not(:disabled) {
+  transform: scale(0.985) !important;
+}
+
+.btnGoogle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.googleIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   FOOTER NOTE
+   ================================================================ */
+.footerNote {
+  margin-top: 20px;
+  font-size: 0.72rem;
+  color: rgba(245, 240, 232, 0.25);
+  line-height: 1.6;
+  text-align: center;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.65s both;
+}
+
+.textLink {
+  color: rgba(245, 240, 232, 0.45);
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-base);
+}
+
+.textLink:hover { color: var(--cream-soft); }
+
+/* ================================================================
+   SHARED KEYFRAMES
+   ================================================================ */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================================================
+   RESPONSIVE — Tablet (≤ 900px): satu kolom
+   ================================================================ */
+@media (max-width: 900px) {
+  .page {
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  /* Panel kiri jadi banner atas */
+  .left {
+    flex: 0 0 auto;
+    height: 280px;
+    border-right: none;
+    border-bottom: 1px solid var(--ink-border);
+    padding: 32px;
+  }
+
+  .wordmark {
+    font-size: clamp(3rem, 10vw, 5rem);
+  }
+
+  .featureCards {
+    flex-direction: row;
+    max-width: 100%;
+    gap: 8px;
+  }
+
+  .featureCard {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .cardTitle,
+  .cardStat {
+    font-size: 0.75rem;
+  }
+
+  .timeInfo { display: none; }
+
+  /* Panel kanan jadi konten utama */
+  .right {
+    flex: 1;
+    padding: 36px 24px;
+  }
+
+  .formWrapper {
+    max-width: 460px;
+  }
+}
+
+/* ================================================================
+   RESPONSIVE — Mobile (≤ 540px)
+   ================================================================ */
+@media (max-width: 540px) {
+  .left {
+    height: 220px;
+    padding: 24px;
+  }
+
+  .wordmark {
+    font-size: 3rem;
+  }
+
+  .featureCards {
+    display: none;
+  }
+
+  .right {
+    padding: 28px 20px 40px;
+  }
+
+  .formWrapper {
+    max-width: 100%;
+  }
+
+  .formTitle {
+    font-size: 1.75rem;
+  }
+
+  .formRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* ================================================================
+   AKSESIBILITAS — Reduced motion
+   Selector ini dipindah ke globals.css (tidak boleh ada * di CSS Modules)
+   ================================================================ */
