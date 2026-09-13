@@ -287,24 +287,26 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                   key={product.id}
                   onClick={() => addToCart(product)}
                   style={{
-                    background: "rgba(255,255,255,0.03)",
+                    background: inCart ? "rgba(212,101,28,0.08)" : "rgba(255,255,255,0.03)",
                     border: inCart ? "2px solid #D4651C" : "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "12px",
-                    padding: "14px",
+                    borderRadius: "14px",
+                    padding: "16px",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     position: "relative",
-                    minHeight: "150px",
+                    minHeight: "190px",
+                    boxSizing: "border-box",
+                    boxShadow: inCart ? "0 4px 16px rgba(212,101,28,0.2)" : "none",
                   }}
                 >
                   {inCart && (
                     <span style={{
                       position: "absolute",
-                      top: "8px",
-                      right: "8px",
+                      top: "10px",
+                      right: "10px",
                       background: "#D4651C",
                       color: "#FFF",
                       fontSize: "0.75rem",
@@ -315,6 +317,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
                     }}>
                       {inCart.quantity}
                     </span>
@@ -329,33 +332,56 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "1.2rem",
+                      fontSize: "1.25rem",
                       marginBottom: "10px",
                     }}>
                       {icon}
                     </div>
-                    <h3 style={{ fontSize: "0.88rem", fontWeight: "700", marginBottom: "4px", color: "#F5F0E8", lineHeight: "1.3" }}>
+
+                    <h3 style={{
+                      fontSize: "0.88rem",
+                      fontWeight: "700",
+                      lineHeight: "1.3",
+                      color: "#F5F0E8",
+                      marginBottom: "4px",
+                      height: "2.6em",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}>
                       {product.name}
                     </h3>
-                    <div style={{ fontSize: "0.72rem", color: "rgba(245,240,232,0.4)", marginBottom: "10px" }}>
+
+                    <div style={{ fontSize: "0.74rem", color: "rgba(245,240,232,0.45)", marginBottom: "8px" }}>
                       Stok: {product.stock}
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontWeight: "800", color: "#D4651C", fontSize: "0.88rem" }}>
+                  <div style={{
+                    marginTop: "auto",
+                    paddingTop: "10px",
+                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}>
+                    <span style={{ fontWeight: "800", color: "#D4651C", fontSize: "0.9rem", whiteSpace: "nowrap" }}>
                       Rp {product.price.toLocaleString("id-ID")}
                     </span>
                     <button style={{
-                      padding: "5px 10px",
-                      borderRadius: "6px",
-                      background: "rgba(255,255,255,0.08)",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      background: inCart ? "#D4651C" : "rgba(255,255,255,0.08)",
+                      color: inCart ? "#FFF" : "#F5F0E8",
                       border: "none",
-                      color: "#F5F0E8",
-                      fontSize: "0.75rem",
-                      fontWeight: "600",
+                      fontSize: "0.78rem",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
                     }}>
-                      + Tambah
+                      {inCart ? "+1" : "+ Tambah"}
                     </button>
                   </div>
                 </div>
