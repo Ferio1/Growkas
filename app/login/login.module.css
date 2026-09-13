@@ -997,7 +997,53 @@
   }
 }
 
-/* ================================================================
-   AKSESIBILITAS — Reduced motion
-   Selector ini dipindah ke globals.css (tidak boleh ada * di CSS Modules)
-   ================================================================ */
+/* ---- Success Alert ---- */
+.successAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  font-size: 0.825rem;
+  color: #4ade80;
+  line-height: 1.4;
+  margin-bottom: 20px;
+  animation: fadeUp 0.3s var(--ease-out) both;
+}
+
+.successAlert svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #4ade80;
+}
+
+/* ---- Mode Toggle (Masuk vs Daftar) ---- */
+.modeSwitch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 0.875rem;
+  color: var(--cream-muted);
+}
+
+.modeSwitchBtn {
+  background: none;
+  border: none;
+  color: var(--ember-bright);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--transition-fast);
+}
+
+.modeSwitchBtn:hover {
+  color: var(--cream);
+}
+

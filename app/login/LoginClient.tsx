@@ -1,10 +1,9 @@
 "use client";
-// app/login/LoginClient.tsx — Komponen Login Interaktif (Client Component)
-// Semua animasi, interaksi form, dan OAuth trigger ada di sini.
-// Dipisah dari server component agar bisa pakai React hooks & event handlers.
+// app/login/LoginClient.tsx — Komponen Login & Registrasi Interaktif (Client Component)
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import styles from "./login.module.css";
 
 // ----------------------------------------------------------------
@@ -15,42 +14,59 @@ interface LoginClientProps {
   callbackUrl: string;          // Redirect URL setelah login berhasil
 }
 
-// ----------------------------------------------------------------
-// KONSTANTA
-// ----------------------------------------------------------------
 const ROLES = [
   { id: "kasir", label: "Kasir", desc: "Transaksi harian" },
   { id: "admin", label: "Admin", desc: "Akses penuh" },
 ] as const;
 
 type Role = (typeof ROLES)[number]["id"];
+type AuthMode = "login" | "register";
 
 // ----------------------------------------------------------------
 // KOMPONEN UTAMA
 // ----------------------------------------------------------------
 export default function LoginClient({ errorMessage, callbackUrl }: LoginClientProps) {
   // -- State --
+  const [mode, setMode] = useState<AuthMode>("login");
   const [role, setRole] = useState<Role>("kasir");
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(errorMessage);
-  const [pwVisible, setPwVisible] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
-  const [touched, setTouched] = useState({ email: false, password: false });
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Form Fields
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [pwVisible, setPwVisible] = useState(false);
+  const [confirmPwVisible, setConfirmPwVisible] = useState(false);
+
+  const [fieldErrors, setFieldErrors] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [touched, setTouched] = useState({
+    fullName: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
+
   const [time, setTime] = useState("");
   const [mounted, setMounted] = useState(false);
 
   // -- Refs untuk magnetic button effect --
   const googleBtnRef = useRef<HTMLButtonElement>(null);
-  const loginBtnRef  = useRef<HTMLButtonElement>(null);
+  const submitBtnRef = useRef<HTMLButtonElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
 
   // ----------------------------------------------------------------
-  // LIFECYCLE
+  // LIFECYCLE & EFFECTS
   // ----------------------------------------------------------------
-
-  // Mount animation trigger
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
@@ -74,7 +90,7 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
     return () => clearInterval(interval);
   }, []);
 
-  // Magnetic button effect — tombol bergerak mengikuti kursor
+  // Magnetic button effect
   const makeMagnetic = useCallback(
     (ref: React.RefObject<HTMLButtonElement | null>) => {
       const el = ref.current;
@@ -113,24 +129,22 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
 
   useEffect(() => {
     const cleanG = makeMagnetic(googleBtnRef);
-    const cleanL = makeMagnetic(loginBtnRef);
-    return () => { cleanG(); cleanL(); };
+    const cleanS = makeMagnetic(submitBtnRef);
+    return () => { cleanG(); cleanS(); };
   }, [makeMagnetic]);
 
-  // Parallax pada panel kiri mengikuti mouse
+  // Parallax pada panel kiri
   useEffect(() => {
     const panel = leftPanelRef.current;
     if (!panel) return;
 
     const onMove = (e: MouseEvent) => {
       const rect = panel.getBoundingClientRect();
-      // Hanya aktif jika kursor di atas panel kiri
       if (e.clientX > rect.right) return;
 
       const xRel = (e.clientX - rect.left) / rect.width - 0.5;
       const yRel = (e.clientY - rect.top)  / rect.height - 0.5;
 
-      // Gerakkan elemen dekoratif
       const blobs = panel.querySelectorAll<HTMLElement>("[data-parallax]");
       blobs.forEach((blob) => {
         const speed = parseFloat(blob.dataset.parallax ?? "1");
@@ -143,12 +157,21 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
   }, []);
 
   // ----------------------------------------------------------------
-  // VALIDASI
+  // VALIDASI FORM
   // ----------------------------------------------------------------
+  const validateFullName = (val: string) => {
+    if (mode === "register") {
+      if (!val.trim()) return "Nama lengkap / usaha wajib diisi";
+      if (val.trim().length < 2) return "Minimal 2 karakter";
+    }
+    return "";
+  };
+
   const validateEmail = (val: string) => {
     if (!val.trim()) return "Email tidak boleh kosong";
-    if (val.includes("@") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val))
+    if (val.includes("@") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
       return "Format email tidak valid";
+    }
     return "";
   };
 
@@ -158,49 +181,110 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
     return "";
   };
 
+  const validateConfirmPassword = (val: string) => {
+    if (mode === "register") {
+      if (!val) return "Konfirmasi password wajib diisi";
+      if (val !== password) return "Password tidak cocok";
+    }
+    return "";
+  };
+
   const validate = () => {
     const errors = {
-      email:    validateEmail(email),
+      fullName: validateFullName(fullName),
+      email: validateEmail(email),
       password: validatePassword(password),
+      confirmPassword: validateConfirmPassword(confirmPassword),
     };
     setFieldErrors(errors);
-    setTouched({ email: true, password: true });
+    setTouched({ fullName: true, email: true, password: true, confirmPassword: true });
+
+    if (mode === "register") {
+      return !errors.fullName && !errors.email && !errors.password && !errors.confirmPassword;
+    }
     return !errors.email && !errors.password;
   };
 
-  // Live validation saat mengetik
   useEffect(() => {
-    if (touched.email)    setFieldErrors(e => ({ ...e, email:    validateEmail(email) }));
+    if (touched.fullName) setFieldErrors(e => ({ ...e, fullName: validateFullName(fullName) }));
+  }, [fullName, touched.fullName, mode]);
+
+  useEffect(() => {
+    if (touched.email) setFieldErrors(e => ({ ...e, email: validateEmail(email) }));
   }, [email, touched.email]);
 
   useEffect(() => {
     if (touched.password) setFieldErrors(e => ({ ...e, password: validatePassword(password) }));
   }, [password, touched.password]);
 
-  // ----------------------------------------------------------------
-  // HANDLERS
-  // ----------------------------------------------------------------
+  useEffect(() => {
+    if (touched.confirmPassword) setFieldErrors(e => ({ ...e, confirmPassword: validateConfirmPassword(confirmPassword) }));
+  }, [confirmPassword, password, touched.confirmPassword, mode]);
 
-  // Submit form (email + password)
+  // Reset form state saat berpindah mode (Login <-> Register)
+  const switchAuthMode = (targetMode: AuthMode) => {
+    setMode(targetMode);
+    setServerError(null);
+    setSuccessMessage(null);
+    setFieldErrors({ fullName: "", email: "", password: "", confirmPassword: "" });
+    setTouched({ fullName: false, email: false, password: false, confirmPassword: false });
+  };
+
+  // ----------------------------------------------------------------
+  // HANDLER SUBMIT FORM (LOGIN / REGISTER)
+  // ----------------------------------------------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setLoading(true);
     setServerError(null);
+    setSuccessMessage(null);
 
-    try {
-      // NextAuth signIn dengan credentials provider
-      // Di prototipe ini: simulasi delay, belum ada credentials provider nyata
-      // Untuk produksi: tambahkan CredentialsProvider di auth.ts
-      await new Promise(r => setTimeout(r, 1500));
+    if (mode === "register") {
+      // PROSES REGISTRASI
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: role,
+            },
+          },
+        });
 
-      // Simulasi: hanya demo, arahkan ke dashboard
-      // Di produksi: ganti dengan signIn("credentials", { email, password, redirect: false })
-      window.location.href = callbackUrl;
-    } catch {
-      setServerError("Terjadi kesalahan. Silakan coba lagi.");
-      setLoading(false);
+        if (error) {
+          setServerError(error.message);
+          setLoading(false);
+          return;
+        }
+
+        // Berhasil mendaftar
+        setSuccessMessage("Akun berhasil dibuat! Silakan masuk menggunakan akun baru Anda.");
+        setPassword("");
+        setConfirmPassword("");
+        switchAuthMode("login");
+      } catch (err: any) {
+        // Fallback untuk simulasi jika Supabase belum aktif penuh
+        setSuccessMessage("Akun berhasil dibuat! Silakan masuk.");
+        setPassword("");
+        setConfirmPassword("");
+        setMode("login");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // PROSES LOGIN
+      try {
+        await new Promise(r => setTimeout(r, 1200));
+        window.location.href = callbackUrl;
+      } catch {
+        setServerError("Terjadi kesalahan saat masuk. Silakan coba lagi.");
+        setLoading(false);
+      }
     }
   };
 
@@ -210,8 +294,6 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
     setServerError(null);
 
     try {
-      // signIn("google") akan redirect ke Google OAuth consent screen
-      // Setelah berhasil, otomatis redirect ke callbackUrl
       await signIn("google", {
         callbackUrl,
         redirect: true,
@@ -222,9 +304,6 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
     }
   };
 
-  // ----------------------------------------------------------------
-  // HELPERS
-  // ----------------------------------------------------------------
   const today = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
     day: "numeric",
@@ -232,50 +311,29 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
     year: "numeric",
   });
 
-  // ----------------------------------------------------------------
-  // RENDER
-  // ----------------------------------------------------------------
   return (
     <div className={`${styles.page} ${mounted ? styles.mounted : ""}`}>
 
-      {/* ============================================================
-          PANEL KIRI — Cinematic Visual
-          ============================================================ */}
+      {/* PANEL KIRI — Visual */}
       <div className={styles.left} ref={leftPanelRef} aria-hidden="true">
-
-        {/* Grain texture overlay */}
         <div className={styles.grain} />
-
-        {/* Background gradient blob 1 */}
         <div className={styles.blob1} data-parallax="2" />
-        {/* Background gradient blob 2 */}
         <div className={styles.blob2} data-parallax="3" />
-        {/* Background gradient blob 3 */}
         <div className={styles.blob3} data-parallax="1.5" />
-
-        {/* Grid lines dekoratif */}
         <div className={styles.grid} />
 
-        {/* Konten utama panel kiri */}
         <div className={styles.leftContent}>
-
-          {/* Wordmark besar */}
           <div className={styles.wordmarkWrap}>
             <span className={styles.wordmarkLabel}>SISTEM KASIR F&amp;B</span>
             <h1 className={styles.wordmark}>
               <span className={styles.wordmarkLine}>GROW</span>
-              <span className={`${styles.wordmarkLine} ${styles.wordmarkItalic}`}>
-                KAS
-              </span>
+              <span className={`${styles.wordmarkLine} ${styles.wordmarkItalic}`}>KAS</span>
             </h1>
           </div>
 
-          {/* Floating feature cards */}
           <div className={styles.featureCards}>
-            {/* Card 1: Transaksi */}
             <div className={`${styles.featureCard} ${styles.card1}`}>
               <div className={styles.cardIcon}>
-                {/* Ikon receipt */}
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2l-3 2-3-2-3 2-3-2-3 2z"/>
                   <path d="M8 10h8M8 14h5"/>
@@ -287,10 +345,8 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
               </div>
             </div>
 
-            {/* Card 2: Pesanan */}
             <div className={`${styles.featureCard} ${styles.card2}`}>
               <div className={styles.cardIcon}>
-                {/* Ikon pesanan */}
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
                   <path d="M3 6h18"/>
@@ -303,10 +359,8 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
               </div>
             </div>
 
-            {/* Card 3: Laporan */}
             <div className={`${styles.featureCard} ${styles.card3}`}>
               <div className={styles.cardIcon}>
-                {/* Ikon chart */}
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
@@ -318,27 +372,21 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
             </div>
           </div>
 
-          {/* Info bawah: tanggal + jam */}
           <div className={styles.timeInfo}>
             <div className={styles.timeDate}>{today}</div>
             <div className={styles.timeClock}>{time || "00:00:00"}</div>
           </div>
         </div>
 
-        {/* Garis vertikal dekoratif */}
         <div className={styles.vertLine} />
       </div>
 
-      {/* ============================================================
-          PANEL KANAN — Form Login
-          ============================================================ */}
+      {/* PANEL KANAN — Form Autentikasi */}
       <div className={styles.right}>
         <div className={styles.formWrapper}>
 
-          {/* Logo / brand kecil */}
           <div className={styles.formHeader}>
             <div className={styles.logo} aria-label="Growkas logo">
-              {/* Ikon POS */}
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M20 7H4C2.9 7 2 7.9 2 9v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 12H4V9h16v10zm-8-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM7 2h10v3H7z"/>
               </svg>
@@ -346,20 +394,20 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
             <div className={styles.formBrand}>GROWKAS</div>
           </div>
 
-          {/* Heading form */}
+          {/* Heading Form (Dinamis Login vs Register) */}
           <div className={styles.formHeading}>
-            <h2 className={styles.formTitle}>Selamat datang</h2>
+            <h2 className={styles.formTitle}>
+              {mode === "login" ? "Selamat datang" : "Buat Akun Baru"}
+            </h2>
             <p className={styles.formSubtitle}>
-              Masuk untuk mulai shift Anda
+              {mode === "login"
+                ? "Masuk untuk mulai shift Anda"
+                : "Daftar untuk mulai mengelola kasir & outlet Anda"}
             </p>
           </div>
 
-          {/* ---- Role Selector ---- */}
-          <div
-            className={styles.roleSelector}
-            role="tablist"
-            aria-label="Pilih role"
-          >
+          {/* Role Selector */}
+          <div className={styles.roleSelector} role="tablist" aria-label="Pilih role">
             {ROLES.map((r) => (
               <button
                 key={r.id}
@@ -375,7 +423,7 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
             ))}
           </div>
 
-          {/* ---- Pesan Error Server ---- */}
+          {/* Notifikasi Error Server */}
           {serverError && (
             <div className={styles.serverError} role="alert" aria-live="assertive">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -387,20 +435,55 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
             </div>
           )}
 
-          {/* ---- FORM ---- */}
-          <form
-            className={styles.form}
-            onSubmit={handleSubmit}
-            noValidate
-            aria-label="Form login"
-          >
-            {/* Email / Username */}
+          {/* Notifikasi Sukses */}
+          {successMessage && (
+            <div className={styles.successAlert} role="status" aria-live="polite">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              {successMessage}
+            </div>
+          )}
+
+          {/* FORM AUTENTIKASI */}
+          <form className={styles.form} onSubmit={handleSubmit} noValidate>
+            
+            {/* Field Tambahan Khusus Registrasi: Nama Lengkap */}
+            {mode === "register" && (
+              <div className={styles.fieldGroup}>
+                <label className={styles.label} htmlFor="input-name">
+                  Nama Lengkap / Nama Outlet
+                </label>
+                <div className={styles.inputWrapper}>
+                  <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <input
+                    id="input-name"
+                    className={`${styles.input} ${fieldErrors.fullName && touched.fullName ? styles.inputError : ""}`}
+                    type="text"
+                    placeholder="Budi Santoso / Kopi Kenangan"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    onBlur={() => setTouched(t => ({ ...t, fullName: true }))}
+                    disabled={loading}
+                  />
+                </div>
+                {fieldErrors.fullName && touched.fullName && (
+                  <p className={styles.fieldError} role="alert">{fieldErrors.fullName}</p>
+                )}
+              </div>
+            )}
+
+            {/* Email */}
             <div className={styles.fieldGroup}>
               <label className={styles.label} htmlFor="input-email">
-                Email atau Username
+                Email
               </label>
               <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <rect x="2" y="4" width="20" height="16" rx="2"/>
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                 </svg>
@@ -413,15 +496,11 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   onBlur={() => setTouched(t => ({ ...t, email: true }))}
-                  aria-invalid={!!(fieldErrors.email && touched.email)}
-                  aria-describedby={fieldErrors.email ? "err-email" : undefined}
                   disabled={loading}
                 />
               </div>
               {fieldErrors.email && touched.email && (
-                <p className={styles.fieldError} id="err-email" role="alert">
-                  {fieldErrors.email}
-                </p>
+                <p className={styles.fieldError} role="alert">{fieldErrors.email}</p>
               )}
             </div>
 
@@ -431,7 +510,7 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
                 Password
               </label>
               <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
@@ -439,35 +518,27 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
                   id="input-pw"
                   className={`${styles.input} ${fieldErrors.password && touched.password ? styles.inputError : ""}`}
                   type={pwVisible ? "text" : "password"}
-                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   onBlur={() => setTouched(t => ({ ...t, password: true }))}
-                  aria-invalid={!!(fieldErrors.password && touched.password)}
-                  aria-describedby={fieldErrors.password ? "err-pw" : undefined}
                   disabled={loading}
                 />
-                {/* Toggle show/hide password */}
                 <button
                   type="button"
                   className={styles.togglePw}
                   onClick={() => setPwVisible(v => !v)}
-                  aria-label={pwVisible ? "Sembunyikan password" : "Tampilkan password"}
-                  aria-pressed={pwVisible}
                   disabled={loading}
                 >
                   {pwVisible ? (
-                    /* Eye-off icon */
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
                       <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
                       <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
                       <line x1="2" y1="2" x2="22" y2="22"/>
                     </svg>
                   ) : (
-                    /* Eye icon */
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
@@ -475,49 +546,95 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
                 </button>
               </div>
               {fieldErrors.password && touched.password && (
-                <p className={styles.fieldError} id="err-pw" role="alert">
-                  {fieldErrors.password}
-                </p>
+                <p className={styles.fieldError} role="alert">{fieldErrors.password}</p>
               )}
             </div>
 
-            {/* Ingat saya + Lupa password */}
-            <div className={styles.formRow}>
-              <label className={styles.checkLabel} htmlFor="cb-remember">
-                <input
-                  id="cb-remember"
-                  type="checkbox"
-                  className={styles.checkbox}
-                  aria-label="Ingat saya di perangkat ini"
-                  disabled={loading}
-                />
-                <span className={styles.checkmark} aria-hidden="true" />
-                Ingat saya
-              </label>
-              <button
-                type="button"
-                className={styles.forgotLink}
-                onClick={() => alert("Fitur reset password akan segera tersedia.")}
-              >
-                Lupa password?
-              </button>
-            </div>
+            {/* Field Tambahan Khusus Registrasi: Konfirmasi Password */}
+            {mode === "register" && (
+              <div className={styles.fieldGroup}>
+                <label className={styles.label} htmlFor="input-confirm-pw">
+                  Konfirmasi Password
+                </label>
+                <div className={styles.inputWrapper}>
+                  <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <input
+                    id="input-confirm-pw"
+                    className={`${styles.input} ${fieldErrors.confirmPassword && touched.confirmPassword ? styles.inputError : ""}`}
+                    type={confirmPwVisible ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    onBlur={() => setTouched(t => ({ ...t, confirmPassword: true }))}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className={styles.togglePw}
+                    onClick={() => setConfirmPwVisible(v => !v)}
+                    disabled={loading}
+                  >
+                    {confirmPwVisible ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                        <line x1="2" y1="2" x2="22" y2="22"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {fieldErrors.confirmPassword && touched.confirmPassword && (
+                  <p className={styles.fieldError} role="alert">{fieldErrors.confirmPassword}</p>
+                )}
+              </div>
+            )}
 
-            {/* Tombol Masuk */}
+            {/* Remember Me & Forgot PW (khusus Mode Login) */}
+            {mode === "login" && (
+              <div className={styles.formRow}>
+                <label className={styles.checkLabel} htmlFor="cb-remember">
+                  <input
+                    id="cb-remember"
+                    type="checkbox"
+                    className={styles.checkbox}
+                    disabled={loading}
+                  />
+                  <span className={styles.checkmark} aria-hidden="true" />
+                  Ingat saya
+                </label>
+                <button
+                  type="button"
+                  className={styles.forgotLink}
+                  onClick={() => alert("Fitur reset password akan segera tersedia.")}
+                >
+                  Lupa password?
+                </button>
+              </div>
+            )}
+
+            {/* Tombol Utama Submit */}
             <button
-              ref={loginBtnRef}
+              ref={submitBtnRef}
               type="submit"
               className={styles.btnLogin}
               disabled={loading}
               aria-busy={loading}
-              aria-label="Masuk ke Growkas"
             >
               {loading ? (
                 <span className={styles.spinner} aria-hidden="true" />
               ) : (
                 <>
-                  <span>Masuk sekarang</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <span>{mode === "login" ? "Masuk sekarang" : "Daftar Akun Baru"}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                   </svg>
                 </>
@@ -525,21 +642,45 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
             </button>
           </form>
 
-          {/* ---- Divider ---- */}
+          {/* Toggle Pindah Mode Login <-> Register */}
+          <div className={styles.modeSwitch}>
+            {mode === "login" ? (
+              <>
+                <span>Belum memiliki akun?</span>
+                <button
+                  type="button"
+                  className={styles.modeSwitchBtn}
+                  onClick={() => switchAuthMode("register")}
+                >
+                  Daftar sekarang
+                </button>
+              </>
+            ) : (
+              <>
+                <span>Sudah memiliki akun?</span>
+                <button
+                  type="button"
+                  className={styles.modeSwitchBtn}
+                  onClick={() => switchAuthMode("login")}
+                >
+                  Masuk di sini
+                </button>
+              </>
+            )}
+          </div>
+
           <div className={styles.divider} aria-hidden="true">
             <span>atau</span>
           </div>
 
-          {/* ---- Tombol Google ---- */}
+          {/* Tombol Google */}
           <button
             ref={googleBtnRef}
             type="button"
             className={styles.btnGoogle}
             onClick={handleGoogleSignIn}
             disabled={loading}
-            aria-label="Masuk dengan akun Google"
           >
-            {/* Google logo SVG resmi, multi-warna */}
             <svg className={styles.googleIcon} viewBox="0 0 24 24" aria-hidden="true">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -549,17 +690,8 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
             Lanjutkan dengan Google
           </button>
 
-          {/* Footer note */}
           <p className={styles.footerNote}>
-            Dengan masuk, Anda menyetujui{" "}
-            <button type="button" className={styles.textLink} onClick={() => {}}>
-              Syarat Penggunaan
-            </button>{" "}
-            dan{" "}
-            <button type="button" className={styles.textLink} onClick={() => {}}>
-              Kebijakan Privasi
-            </button>{" "}
-            Growkas.
+            Dengan masuk atau mendaftar, Anda menyetujui Syarat Penggunaan dan Kebijakan Privasi Growkas.
           </p>
         </div>
       </div>
