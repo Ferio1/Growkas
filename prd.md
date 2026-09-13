@@ -36,19 +36,35 @@ Usaha F&B di Indonesia sebagian besar dimulai dari skala kecil — gerobak, kios
 
 ---
 
-## 3. Tujuan Produk
+## 3. Matriks Klasifikasi Fitur (Fitur Inti vs Fitur Bernilai Tambah)
 
-### 3.1 Tujuan Bisnis
+| Fitur | Jenis Fitur | Fungsi Utama | Alasan Dibutuhkan / Dampak Bisnis | Prioritas (MoSCoW) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Manajemen Menu** | Fitur Inti | Mengelola data menu, kategori, dan harga jual per cabang/terpusat. | Dasar sebelum pesanan dan transaksi dapat diproses. | Must Have |
+| **Manajemen Cabang & Pengguna** | Fitur Inti | Mendaftarkan outlet baru & mengatur akun owner, kasir, dan staf. | Membedakan data antar outlet sejak awal sesuai visi multi-cabang. | Must Have |
+| **Manajemen Pesanan** | Fitur Inti | Mencatat item pesanan, jumlah, dan catatan khusus per outlet. | Acuan akurat bagi kasir dan dapur untuk menyusun pesanan. | Must Have |
+| **Transaksi Pembayaran** | Fitur Inti | Memproses pembayaran, kembalian, dan metode pembayaran. | Fungsi utama aplikasi kasir untuk menyelesaikan penjualan. | Must Have |
+| **Riwayat Transaksi** | Fitur Inti | Menyimpan seluruh transaksi selesai per cabang. | Dasar pemeriksaan audit dan penyusunan laporan keuangan. | Must Have |
+| **Laporan Penjualan per Cabang** | Fitur Inti | Menyajikan ringkasan omzet, jumlah transaksi, dan produk terlaris per outlet. | Mengontrol operasional harian di masing-masing cabang. | Must Have |
+| **Konsolidasi Laporan Multi-Cabang** | **Fitur Bernilai Tambah** | Menggabungkan data transaksi dari seluruh cabang ke dalam 1 dashboard terpusat real-time. | Mempercepat keputusan owner tanpa perlu rekap manual per cabang. | **Must Have** |
+| **Perbandingan Kinerja Antar Cabang** | **Fitur Bernilai Tambah** | Membandingkan metrik utama (omzet, transaksi, rata-rata order) antar outlet pada periode yang sama. | Mengubah data mentah menjadi insight perbandingan peringkat & evaluasi cabang. | **Should Have** |
+| **Growth Readiness Score** | **Fitur Bernilai Tambah** | Menganalisis tren omzet, konsistensi, & margin untuk menghasilkan skor kesiapan membuka cabang baru. | Mengubah data historis menjadi panduan ekspansi berbasis data, bukan asumsi. | **Could Have (Out of Scope MVP)** |
+
+---
+
+## 4. Tujuan Produk & Metrik Keberhasilan
+
+### 4.1 Tujuan Bisnis
 - Menyediakan sistem pencatatan transaksi yang akurat dan mengurangi kesalahan pencatatan manual pada usaha F&B skala kecil-menengah.
 - Memberikan visibilitas performa bisnis secara terpusat bagi pemilik usaha yang memiliki lebih dari satu cabang.
 - Mendukung pengambilan keputusan bisnis (operasional maupun ekspansi) berdasarkan data, bukan asumsi.
 
-### 3.2 Tujuan Pengguna
+### 4.2 Tujuan Pengguna
 - **Kasir**: Dapat mencatat pesanan dan memproses pembayaran dengan cepat dan minim kesalahan.
 - **Pemilik Usaha (Owner)**: Dapat memantau kondisi seluruh cabangnya tanpa harus mengecek laporan satu per satu.
 - **Staf Dapur**: Memiliki acuan pesanan yang jelas dari sistem, bukan komunikasi manual.
 
-### 3.3 Metrik Keberhasilan (Success Metrics)
+### 4.3 Metrik Keberhasilan (Success Metrics)
 
 | Metrik | Target Indikatif | Terkait Fitur |
 | :--- | :--- | :--- |
@@ -59,7 +75,7 @@ Usaha F&B di Indonesia sebagian besar dimulai dari skala kecil — gerobak, kios
 
 ---
 
-## 4. Target Pengguna
+## 5. Target Pengguna
 
 | Peran | Deskripsi | Kebutuhan Utama |
 | :--- | :--- | :--- |
@@ -69,7 +85,7 @@ Usaha F&B di Indonesia sebagian besar dimulai dari skala kecil — gerobak, kios
 
 ---
 
-## 5. Deskripsi Produk dan Value Proposition
+## 6. Deskripsi Produk dan Value Proposition
 
 Growkas adalah aplikasi kasir F&B yang dirancang mengikuti pertumbuhan skala usaha — dari satu outlet rumahan hingga berkembang menjadi beberapa cabang. Nama "Growkas" berasal dari gabungan kata *grow* (bertumbuh) dan *kas* (transaksi keuangan), merepresentasikan visi utama produk: aplikasi kasir yang tidak berhenti mencatat transaksi pada satu titik waktu, tetapi ikut bertumbuh bersama skala usaha penggunanya.
 
@@ -77,28 +93,28 @@ Growkas adalah aplikasi kasir F&B yang dirancang mengikuti pertumbuhan skala usa
 
 ---
 
-## 6. Ruang Lingkup (Scope)
+## 7. Ruang Lingkup (Scope)
 
-### 6.1 In Scope
+### 7.1 In Scope
 - Manajemen menu, pesanan, dan transaksi pembayaran per cabang.
 - Manajemen cabang dan pengguna (owner, kasir).
 - Riwayat transaksi dan laporan penjualan per cabang.
 - Konsolidasi laporan multi-cabang pada dashboard pusat.
 - Perbandingan kinerja antar cabang (benchmarking sederhana).
 
-### 6.2 Out of Scope
-- **Growth Readiness Score** — didokumentasikan sebagai rencana pengembangan lanjutan (lihat Bagian 12).
+### 7.2 Out of Scope
+- **Growth Readiness Score** — didokumentasikan sebagai rencana pengembangan lanjutan pasca-skripsi.
 - Integrasi pembayaran digital / payment gateway pihak ketiga.
 - Aplikasi self-order / QR meja untuk pelanggan.
 - Fitur berbasis AI (rekomendasi menu otomatis, pengenalan gambar menu, dan sejenisnya).
 
 ---
 
-## 7. Kebutuhan Fungsional (Functional Requirements)
+## 8. Kebutuhan Fungsional (Functional Requirements)
 
 Setiap kebutuhan fungsional diberi kode unik (FR-XX), tingkat prioritas mengikuti kerangka MoSCoW, deskripsi singkat, user story, dan acceptance criteria sebagai acuan pengujian saat vibe coding dan testing.
 
-### 7.1 Fitur Inti (Core Features)
+### 8.1 Fitur Inti (Core Features)
 
 #### FR-01 — Manajemen Menu `[Must Have]`
 - **Deskripsi**: Mengelola data menu, kategori, dan harga yang dijual, dapat diberlakukan per cabang atau secara terpusat.
@@ -148,7 +164,7 @@ Setiap kebutuhan fungsional diberi kode unik (FR-XX), tingkat prioritas mengikut
 
 ---
 
-### 7.2 Fitur Bernilai Tambah (Value-Added Features)
+### 8.2 Fitur Bernilai Tambah (Value-Added Features)
 
 #### FR-07 — Konsolidasi Laporan Multi-Cabang `[Must Have]`
 - **Deskripsi**: Menggabungkan data transaksi dari seluruh cabang ke dalam satu dashboard terpusat secara real-time.
@@ -176,7 +192,7 @@ Setiap kebutuhan fungsional diberi kode unik (FR-XX), tingkat prioritas mengikut
 
 ---
 
-## 8. Kebutuhan Non-Fungsional (Non-Functional Requirements)
+## 9. Kebutuhan Non-Fungsional (Non-Functional Requirements)
 
 | Kategori | Kebutuhan |
 | :--- | :--- |
@@ -189,15 +205,15 @@ Setiap kebutuhan fungsional diberi kode unik (FR-XX), tingkat prioritas mengikut
 
 ---
 
-## 9. Alur Pengguna Utama (User Flow)
+## 10. Alur Pengguna Utama (User Flow)
 
-### 9.1 Alur Kasir — Memproses Transaksi
+### 10.1 Alur Kasir — Memproses Transaksi
 1. Kasir login dan memilih cabang tempatnya bertugas (otomatis terkunci sesuai akun).
 2. Kasir memilih menu dan jumlah item untuk membentuk pesanan.
 3. Kasir memproses pembayaran; sistem menghitung total dan kembalian.
 4. Transaksi tersimpan ke Riwayat Transaksi dan otomatis memperbarui Laporan Penjualan cabang tersebut.
 
-### 9.2 Alur Owner — Memantau Bisnis Multi-Cabang
+### 10.2 Alur Owner — Memantau Bisnis Multi-Cabang
 1. Owner login ke akun dengan akses seluruh cabang.
 2. Owner membuka Dashboard Konsolidasi Laporan Multi-Cabang untuk melihat omzet gabungan.
 3. Owner membuka menu Perbandingan Kinerja Antar Cabang untuk melihat cabang mana yang memerlukan perhatian.
@@ -205,20 +221,20 @@ Setiap kebutuhan fungsional diberi kode unik (FR-XX), tingkat prioritas mengikut
 
 ---
 
-## 10. Asumsi dan Batasan
+## 11. Asumsi dan Batasan
 
-### 10.1 Asumsi
+### 11.1 Asumsi
 - Data transaksi diinput langsung oleh kasir melalui aplikasi (belum terintegrasi dengan mesin EDC atau payment gateway pihak ketiga).
 - Pengujian prototipe dilakukan dengan skenario simulasi 2-3 cabang, bukan skala produksi penuh.
 - Pengguna memiliki perangkat (tablet/PC/smartphone) dan koneksi internet yang memadai di lokasi outlet.
 
-### 10.2 Batasan
-- Prototipe dikembangkan dalam lingkup dan waktu skripsi (kurang lebih satu semester), sehingga fitur dibatasi sesuai scope pada Bagian 6.
+### 11.2 Batasan
+- Prototipe dikembangkan dalam lingkup dan waktu skripsi (kurang lebih satu semester), sehingga fitur dibatasi sesuai scope pada Bagian 7.
 - Belum mencakup manajemen inventori/bahan baku secara detail — sebatas pencatatan penjualan produk jadi.
 
 ---
 
-## 11. Ketergantungan (Dependencies)
+## 12. Ketergantungan (Dependencies)
 
 - Ketersediaan koneksi internet untuk sinkronisasi data antar cabang ke dashboard konsolidasi.
 - Perangkat kasir (tablet/PC) yang tersedia di setiap outlet yang diuji.
@@ -226,30 +242,28 @@ Setiap kebutuhan fungsional diberi kode unik (FR-XX), tingkat prioritas mengikut
 
 ---
 
-## 12. Rencana Rilis (Release Plan)
+## 13. Rencana Rilis (Release Plan)
 
 | Milestone | Cakupan | Terkait Fitur |
 | :--- | :--- | :--- |
 | **Milestone 1 — MVP Kasir** | Fungsi dasar kasir per cabang berjalan penuh. | FR-01, FR-02, FR-03, FR-04, FR-05, FR-06 |
-| **Milestone 2 — Konsolidasi** | Owner dapat memantau seluruh cabang dari satu dashboard. | FR-07 |
-| **Milestone 3 — Benchmarking** | Owner dapat membandingkan kinerja antar cabang. | FR-08 |
-| **Milestone 4 — Lanjutan (pasca-skripsi)** | Skor kesiapan bertumbuh berbasis data historis. | FR-09 (di luar scope prototipe) |
-
-*Urutan milestone ini sejalan dengan alur PRD → Vibe Coding → Testing → Evaluasi: Milestone 1 dikerjakan dan diuji terlebih dahulu sebagai fondasi sebelum fitur bernilai tambah (Milestone 2 dan 3) ditambahkan di atasnya.*
+| **Milestone 2 — Konsolidasi** | Owner dapat memantau seluruh cabang dari satu dashboard. | FR-07 (Fitur Bernilai Tambah) |
+| **Milestone 3 — Benchmarking** | Owner dapat membandingkan kinerja antar cabang. | FR-08 (Fitur Bernilai Tambah) |
+| **Milestone 4 — Lanjutan (pasca-skripsi)** | Skor kesiapan bertumbuh berbasis data historis. | FR-09 (Fitur Bernilai Tambah / Out of Scope) |
 
 ---
 
-## 13. Risiko dan Mitigasi
+## 14. Risiko dan Mitigasi
 
 | Risiko | Dampak | Mitigasi |
 | :--- | :--- | :--- |
 | **Kompleksitas sinkronisasi data multi-cabang lebih besar dari estimasi waktu skripsi.** | Milestone 2/3 berpotensi molor. | Gunakan basis data terpusat sederhana (bukan arsitektur terdistribusi) untuk skala prototipe; prioritaskan Must Have terlebih dahulu. |
 | **Data uji (jumlah cabang/transaksi) tidak representatif.** | Fitur benchmarking dan konsolidasi sulit diuji secara realistis. | Menyusun data dummy dengan variasi skenario (cabang untung, rugi, stabil) untuk pengujian. |
-| **Waktu pengerjaan skripsi terbatas.** | Fitur di luar scope berisiko ikut dikerjakan (scope creep). | Scope sudah dikunci pada Bagian 6; penambahan fitur baru harus melalui evaluasi ulang prioritas terlebih dahulu. |
+| **Waktu pengerjaan skripsi terbatas.** | Fitur di luar scope berisiko ikut dikerjakan (scope creep). | Scope sudah dikunci pada Bagian 7; penambahan fitur baru harus melalui evaluasi ulang prioritas terlebih dahulu. |
 
 ---
 
-## 14. Glosarium
+## 15. Glosarium
 
 | Istilah | Penjelasan |
 | :--- | :--- |
