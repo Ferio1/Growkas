@@ -1,5 +1,5 @@
 "use client";
-// app/dashboard/components/KasirView.tsx — Tampilan POS khusus Kasir
+// app/dashboard/components/KasirView.tsx — Tampilan POS khusus Kasir (Layout Non-Cutoff & Big Search)
 
 import { useState } from "react";
 import { ProductItem, CategoryItem, CartItem, saveTransaction, TransactionPayload } from "@/app/actions/posActions";
@@ -11,7 +11,7 @@ interface KasirViewProps {
   userSession: any;
 }
 
-export default function KasirView({ initialProducts, initialCategories, userSession }: KasirViewProps) {
+export default function KasirView({ initialProducts, userSession }: KasirViewProps) {
   const [products] = useState<ProductItem[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,7 +25,7 @@ export default function KasirView({ initialProducts, initialCategories, userSess
 
   const [completedTransaction, setCompletedTransaction] = useState<TransactionPayload | null>(null);
 
-  // Helper untuk menentukan kelompok kategori setiap produk secara presisi
+  // Klasifikasi Kategori Produk F&B yang Presisi
   const getProductGroup = (p: ProductItem): "kopi" | "nonkopi" | "makanan" | "snack" => {
     const name = (p.name || "").toLowerCase();
     const catName = (p.category_name || "").toLowerCase();
@@ -170,6 +170,7 @@ export default function KasirView({ initialProducts, initialCategories, userSess
     clearCart();
   };
 
+  // Kategori Bersih Khusus F&B (Tanpa Sembako/Makanan Umum)
   const CATEGORY_TABS = [
     { id: "all", label: "Semua Menu", icon: "🌐" },
     { id: "kopi", label: "Kopi & Espresso", icon: "☕" },
@@ -179,14 +180,23 @@ export default function KasirView({ initialProducts, initialCategories, userSess
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "20px", width: "100%", maxWidth: "100%" }}>
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 340px",
+      gap: "18px",
+      width: "100%",
+      maxWidth: "100%",
+      height: "calc(100vh - 100px)",
+      boxSizing: "border-box",
+      overflow: "hidden",
+    }}>
       
       {/* KATALOG PRODUK (KIRI) */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px", minWidth: 0, height: "100%", overflow: "hidden" }}>
         
-        {/* ROW 1: SEARCH BAR FULL-WIDTH */}
-        <div style={{ position: "relative", width: "100%" }}>
-          <span style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", fontSize: "1rem", opacity: 0.6 }}>🔍</span>
+        {/* BARIS 1: SEARCH BAR PROMINEN & BESAR (FULL-WIDTH) */}
+        <div style={{ position: "relative", width: "100%", flexShrink: 0 }}>
+          <span style={{ position: "absolute", left: "18px", top: "50%", transform: "translateY(-50%)", fontSize: "1.2rem", opacity: 0.7 }}>🔍</span>
           <input
             type="text"
             placeholder="Cari menu kopi, makanan, snack, atau scan barcode..."
@@ -194,14 +204,16 @@ export default function KasirView({ initialProducts, initialCategories, userSess
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: "100%",
-              padding: "12px 16px 12px 46px",
-              borderRadius: "10px",
+              padding: "14px 44px 14px 50px",
+              borderRadius: "12px",
               background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              border: "1px solid rgba(212,101,28,0.4)",
               color: "#F5F0E8",
-              fontSize: "0.92rem",
+              fontSize: "0.95rem",
+              fontWeight: "500",
               outline: "none",
               boxSizing: "border-box",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
             }}
           />
           {searchQuery && (
@@ -209,7 +221,8 @@ export default function KasirView({ initialProducts, initialCategories, userSess
               onClick={() => setSearchQuery("")}
               style={{
                 position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", color: "rgba(245,240,232,0.5)", fontSize: "0.85rem", cursor: "pointer",
+                background: "rgba(255,255,255,0.1)", border: "none", color: "#F5F0E8", fontSize: "0.8rem",
+                padding: "4px 8px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold",
               }}
             >
               ✕ Hapus
@@ -217,8 +230,8 @@ export default function KasirView({ initialProducts, initialCategories, userSess
           )}
         </div>
 
-        {/* ROW 2: KATEGORI TAB PILLS */}
-        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+        {/* BARIS 2: KATEGORI TAB PILLS BERSIH */}
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto", flexShrink: 0, paddingBottom: "2px" }}>
           {CATEGORY_TABS.map((tab) => {
             const isActive = selectedCategory === tab.id;
             return (
@@ -226,11 +239,11 @@ export default function KasirView({ initialProducts, initialCategories, userSess
                 key={tab.id}
                 onClick={() => setSelectedCategory(tab.id)}
                 style={{
-                  padding: "8px 16px",
+                  padding: "9px 16px",
                   borderRadius: "8px",
                   border: "1px solid " + (isActive ? "#D4651C" : "rgba(255,255,255,0.1)"),
-                  background: isActive ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
-                  color: isActive ? "#D4651C" : "#F5F0E8",
+                  background: isActive ? "rgba(212,101,28,0.25)" : "rgba(255,255,255,0.03)",
+                  color: isActive ? "#D4651C" : "rgba(245,240,232,0.8)",
                   fontWeight: isActive ? "700" : "500",
                   fontSize: "0.85rem",
                   cursor: "pointer",
@@ -238,6 +251,7 @@ export default function KasirView({ initialProducts, initialCategories, userSess
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
+                  transition: "all 0.15s ease",
                 }}
               >
                 <span>{tab.icon}</span> {tab.label}
@@ -246,20 +260,21 @@ export default function KasirView({ initialProducts, initialCategories, userSess
           })}
         </div>
 
-        {/* ROW 3: GRID PRODUK */}
+        {/* BARIS 3: GRID PRODUK (AUTO-SCROLL) */}
         <div style={{
+          flex: 1,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
-          gap: "14px",
-          maxHeight: "calc(100vh - 240px)",
+          gridTemplateColumns: "repeat(auto-fill, minmax(165px, 1fr))",
+          gap: "12px",
           overflowY: "auto",
           paddingRight: "4px",
+          alignContent: "start",
         }}>
           {filteredProducts.length === 0 ? (
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 0", color: "rgba(245,240,232,0.4)" }}>
               <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>🔍</div>
               <p style={{ fontSize: "0.9rem", fontWeight: "600" }}>Menu tidak ditemukan</p>
-              <p style={{ fontSize: "0.78rem", opacity: 0.7 }}>Coba kata kunci pencarian atau kategori lain.</p>
+              <p style={{ fontSize: "0.78rem", opacity: 0.7 }}>Coba kata kunci pencarian atau pilih kategori lain di atas.</p>
             </div>
           ) : (
             filteredProducts.map((product) => {
@@ -282,6 +297,7 @@ export default function KasirView({ initialProducts, initialCategories, userSess
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     position: "relative",
+                    minHeight: "150px",
                   }}
                 >
                   {inCart && (
@@ -306,8 +322,8 @@ export default function KasirView({ initialProducts, initialCategories, userSess
 
                   <div>
                     <div style={{
-                      width: "42px",
-                      height: "42px",
+                      width: "40px",
+                      height: "40px",
                       borderRadius: "10px",
                       background: "rgba(212,101,28,0.15)",
                       display: "flex",
@@ -349,21 +365,22 @@ export default function KasirView({ initialProducts, initialCategories, userSess
         </div>
       </div>
 
-      {/* TIKET PESANAN / KERANJANG (KANAN) */}
+      {/* TIKET PESANAN / KERANJANG (KANAN - TIDAK KEPOTONG) */}
       <div style={{
         background: "rgba(255,255,255,0.02)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: "16px",
-        padding: "18px",
+        padding: "16px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        maxHeight: "calc(100vh - 130px)",
+        height: "100%",
         boxSizing: "border-box",
+        overflow: "hidden",
       }}>
         
-        <div style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", paddingBottom: "10px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
             <h2 style={{ fontSize: "1.05rem", fontWeight: "800", margin: 0 }}>Pesanan Aktif</h2>
             {cart.length > 0 && (
               <button onClick={clearCart} style={{ background: "none", border: "none", color: "#f87171", fontSize: "0.78rem", cursor: "pointer", fontWeight: "600" }}>
@@ -373,17 +390,17 @@ export default function KasirView({ initialProducts, initialCategories, userSess
           </div>
 
           {cart.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "50px 0", color: "rgba(245,240,232,0.4)" }}>
+            <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(245,240,232,0.4)" }}>
               <div style={{ fontSize: "2.2rem", marginBottom: "8px" }}>🛒</div>
               <p style={{ fontSize: "0.85rem", fontWeight: "600" }}>Belum ada item dipilih.</p>
               <p style={{ fontSize: "0.72rem", opacity: 0.7 }}>Klik produk di sebelah kiri untuk menambah ke pesanan.</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
               {cart.map((item) => (
-                <div key={item.product.id} style={{ background: "rgba(255,255,255,0.03)", padding: "10px 12px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div key={item.product.id} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "600", fontSize: "0.85rem", marginBottom: "6px" }}>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "180px" }}>{item.product.name}</span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>{item.product.name}</span>
                     <span style={{ color: "#D4651C" }}>Rp {(item.product.price * item.quantity).toLocaleString("id-ID")}</span>
                   </div>
 
@@ -399,7 +416,7 @@ export default function KasirView({ initialProducts, initialCategories, userSess
                         borderBottom: "1px solid rgba(255,255,255,0.1)",
                         color: "rgba(245,240,232,0.6)",
                         fontSize: "0.72rem",
-                        width: "130px",
+                        width: "120px",
                         outline: "none",
                       }}
                     />
@@ -416,12 +433,12 @@ export default function KasirView({ initialProducts, initialCategories, userSess
           )}
         </div>
 
-        <div style={{ paddingTop: "14px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "14px" }}>
+        <div style={{ paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "12px", flexShrink: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "0.82rem", color: "rgba(245,240,232,0.6)" }}>
             <span>Subtotal</span>
             <span>Rp {subtotal.toLocaleString("id-ID")}</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "14px", fontSize: "1.05rem", fontWeight: "800", color: "#F5F0E8" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", fontSize: "1.05rem", fontWeight: "800", color: "#F5F0E8" }}>
             <span>Total Pembayaran</span>
             <span style={{ color: "#D4651C" }}>Rp {totalAmount.toLocaleString("id-ID")}</span>
           </div>

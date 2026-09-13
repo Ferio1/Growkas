@@ -88,11 +88,6 @@ export async function getProductsAndCategories() {
     const { data: productsData } = await supabase.from("products").select("*");
 
     let categories: CategoryItem[] = MOCK_CATEGORIES;
-    if (categoriesData && categoriesData.length > 0) {
-      const existingCatNames = new Set(categoriesData.map((c: any) => c.name.toLowerCase()));
-      const missingCats = MOCK_CATEGORIES.filter((mc) => !existingCatNames.has(mc.name.toLowerCase()));
-      categories = [...categoriesData, ...missingCats];
-    }
 
     let productsFromDb: ProductItem[] = [];
     if (productsData && productsData.length > 0) {

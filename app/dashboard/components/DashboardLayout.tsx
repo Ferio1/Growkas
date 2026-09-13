@@ -39,18 +39,20 @@ export default function DashboardLayout({
   const userEmail = userSession?.user?.email || (activeRole === "kasir" ? "kasir@growkas.id" : "owner@growkas.id");
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#0A0A0A", color: "#F5F0E8", fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ display: "flex", height: "100vh", maxHeight: "100vh", overflow: "hidden", background: "#0A0A0A", color: "#F5F0E8", fontFamily: "system-ui, sans-serif" }}>
       
-      {/* SIDEBAR NAVEGASI KIRI */}
+      {/* SIDEBAR NAVIGASI KIRI */}
       <aside style={{
-        width: "250px",
+        width: "240px",
         background: "rgba(255,255,255,0.02)",
         borderRight: "1px solid rgba(255,255,255,0.08)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "24px 16px",
+        padding: "20px 14px",
         flexShrink: 0,
+        height: "100%",
+        boxSizing: "border-box",
       }}>
         <div>
           {/* Logo & Brand */}
@@ -150,17 +152,18 @@ export default function DashboardLayout({
       </aside>
 
       {/* AREA UTAMA / KONTEN */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         
         {/* Top Header Bar */}
         <header style={{
-          height: "64px",
+          height: "60px",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
-          padding: "0 28px",
+          padding: "0 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           background: "rgba(255,255,255,0.01)",
+          flexShrink: 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ padding: "4px 10px", borderRadius: "100px", background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.72rem", fontWeight: "bold" }}>
@@ -187,7 +190,7 @@ export default function DashboardLayout({
             </select>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{ fontSize: "0.88rem", fontFamily: "monospace", color: "rgba(245,240,232,0.6)" }}>
               {clock || "00:00:00"}
             </div>
@@ -221,7 +224,7 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <main style={{ flex: 1, padding: "28px", overflowY: "auto" }}>
+        <main style={{ flex: 1, padding: "20px", overflowY: "auto", minWidth: 0, boxSizing: "border-box" }}>
           {children}
         </main>
       </div>

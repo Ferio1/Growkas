@@ -163,7 +163,7 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
       </div>
 
       {/* PERBANDINGAN PERFORMA CABANG */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", width: "100%", boxSizing: "border-box" }}>
         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "24px" }}>
           <h2 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "4px" }}>
             Perbandingan Kinerja Antar Cabang (Benchmarking)
