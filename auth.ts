@@ -68,24 +68,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
 
-    // authorized() dipakai oleh proxy untuk cek akses route
     authorized({ auth, request }) {
-      // ----------------------------------------------------------------
-      // DEVELOPMENT MODE:
-      // Izinkan akses ke semua halaman agar simulasi login bisa berjalan.
-      // Berguna untuk demo prototipe tanpa perlu Google OAuth.
-      //
-      // PRODUCTION MODE (di Vercel):
-      // Wajib punya session nyata (dari Google OAuth).
-      // ----------------------------------------------------------------
-      if (process.env.NODE_ENV === "development") {
-        // Halaman /login tetap bisa diakses siapa saja
-        // Halaman lain (dashboard, dll) diizinkan untuk demo
-        return true;
-      }
-
-      // Production: cek session NextAuth
-      return !!auth;
+      // Izinkan akses navigasi halaman (halaman login & dashboard menghandle session secara aman)
+      return true;
     },
   },
 

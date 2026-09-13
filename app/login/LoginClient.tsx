@@ -3,8 +3,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { signIn } from "next-auth/react";
-import { createClient } from "@/lib/supabase/client";
+import { registerWithSupabase, loginWithSupabase } from "@/app/actions/authActions";
 import styles from "./login.module.css";
+
 
 // ----------------------------------------------------------------
 // TYPES
@@ -244,35 +245,20 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
     if (mode === "register") {
       // PROSES REGISTRASI KE SUPABASE
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase.auth.signUp({
+        const res = await registerWithSupabase({
           email,
           password,
-          options: {
-            data: {
-              full_name: fullName,
-              role: role,
-            },
-          },
+          fullName,
+          role,
         });
 
-        if (error) {
-          setServerError(`Gagal daftar di Supabase: ${error.message}`);
+        if (!res.success) {
+          setServerError(`Gagal daftar di Supabase: ${res.error}`);
           setLoading(false);
           return;
         }
 
-        // Jika user berhasil terdaftar di Auth, simpan juga ke tabel public.profiles
-        if (data?.user) {
-          await supabase.from("profiles").upsert({
-            id: data.user.id,
-            email: email,
-            full_name: fullName,
-            role: role,
-          }).catch((e) => console.warn("Failed to insert profiles table:", e));
-        }
-
-        setSuccessMessage("Akun berhasil terdaftar di Supabase! Silakan masuk.");
+        setSuccessMessage(res.message || "Akun berhasil terdaftar di Supabase! Silakan masuk.");
         setPassword("");
         setConfirmPassword("");
         switchAuthMode("login");
@@ -282,12 +268,20 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
         setLoading(false);
       }
     } else {
-      // PROSES LOGIN
+      // PROSES LOGIN KE SUPABASE
       try {
-        await new Promise(r => setTimeout(r, 1200));
-        window.location.href = callbackUrl;
-      } catch {
-        setServerError("Terjadi kesalahan saat masuk. Silakan coba lagi.");
+        const res = await loginWithSupabase({ email, password });
+
+        if (!res.success) {
+          setServerError(`Gagal masuk: ${res.error}`);
+          setLoading(false);
+          return;
+        }
+
+        // Login berhasil -> Redirect ke relative path /dashboard (sesuai domain saat ini)
+        window.location.href = "/dashboard";
+      } catch (err: any) {
+        setServerError(err.message || "Terjadi kesalahan saat masuk.");
         setLoading(false);
       }
     }
