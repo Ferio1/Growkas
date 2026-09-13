@@ -87,21 +87,48 @@ export async function getProductsAndCategories() {
     const { data: categoriesData } = await supabase.from("categories").select("*");
     const { data: productsData } = await supabase.from("products").select("*");
 
-    let categories: CategoryItem[] = (categoriesData && categoriesData.length > 0)
-      ? categoriesData 
-      : MOCK_CATEGORIES;
+    let categories: CategoryItem[] = MOCK_CATEGORIES;
+    if (categoriesData && categoriesData.length > 0) {
+      const existingCatNames = new Set(categoriesData.map((c: any) => c.name.toLowerCase()));
+      const missingCats = MOCK_CATEGORIES.filter((mc) => !existingCatNames.has(mc.name.toLowerCase()));
+      categories = [...categoriesData, ...missingCats];
+    }
 
-    let products: ProductItem[] = (productsData && productsData.length > 0)
-      ? productsData.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          category_id: p.category_id,
-          price: Number(p.price) || 0,
-          stock: p.stock || 0,
-          barcode: p.barcode,
-          image_url: p.image_url,
-        }))
-      : MOCK_PRODUCTS;
+    let productsFromDb: ProductItem[] = [];
+    if (productsData && productsData.length > 0) {
+      productsFromDb = productsData.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category_id: p.category_id,
+        price: Number(p.price) || 0,
+        stock: p.stock || 0,
+        barcode: p.barcode,
+        image_url: p.image_url,
+      }));
+    }
+
+    // Merge mock products with DB products so Saray Coffee & Space menu items always appear
+    const dbNames = new Set(productsFromDb.map((p) => p.name.toLowerCase()));
+    const missingMockProducts = MOCK_PRODUCTS.filter(
+      (mp) => !dbNames.has(mp.name.toLowerCase())
+    );
+
+    const products = [...missingMockProducts, ...productsFromDb];
+
+    // Persist missing Saray products into Supabase DB
+    if (missingMockProducts.length > 0) {
+      const itemsToInsert = missingMockProducts.map((mp) => ({
+        name: mp.name,
+        price: mp.price,
+        stock: mp.stock,
+        barcode: mp.barcode,
+      }));
+      try {
+        await supabase.from("products").insert(itemsToInsert);
+      } catch (e) {
+        console.warn("Supabase insert error ignored:", e);
+      }
+    }
 
     return { success: true, categories, products };
   } catch (err: any) {

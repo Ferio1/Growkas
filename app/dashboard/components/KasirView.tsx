@@ -27,8 +27,14 @@ export default function KasirView({ initialProducts, initialCategories, userSess
   const [completedTransaction, setCompletedTransaction] = useState<TransactionPayload | null>(null);
 
   const filteredProducts = products.filter((p) => {
-    const matchCategory = selectedCategory === "all" || p.category_id === selectedCategory;
-    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.barcode && p.barcode.includes(searchQuery));
+    const selectedCatObj = categories.find((c) => c.id === selectedCategory);
+    const matchCategory =
+      selectedCategory === "all" ||
+      p.category_id === selectedCategory ||
+      (selectedCatObj && p.category_name && p.category_name.toLowerCase() === selectedCatObj.name.toLowerCase());
+    const matchSearch =
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.barcode && p.barcode.includes(searchQuery));
     return matchCategory && matchSearch;
   });
 
