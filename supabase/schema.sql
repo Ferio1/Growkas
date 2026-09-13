@@ -4,12 +4,22 @@
 -- https://supabase.com/dashboard/project/pijpptetccvgmwyjvsse/sql
 -- ============================================================
 
+-- 0. PROFIL PENGGUNA (PROFILES)
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    full_name TEXT,
+    role TEXT DEFAULT 'kasir',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- 1. KATEGORI PRODUK
 CREATE TABLE IF NOT EXISTS public.categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
 
 -- 2. PRODUK
 CREATE TABLE IF NOT EXISTS public.products (
@@ -51,13 +61,17 @@ CREATE TABLE IF NOT EXISTS public.transaction_items (
 );
 
 -- Enable Row Level Security (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transaction_items ENABLE ROW LEVEL SECURITY;
 
 -- Kebijakan Akses Publik (Bisa disesuaikan nanti dengan auth)
+CREATE POLICY "Allow public read profiles" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Allow public insert profiles" ON public.profiles FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public read categories" ON public.categories FOR SELECT USING (true);
+
 CREATE POLICY "Allow public read products" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Allow public read transactions" ON public.transactions FOR SELECT USING (true);
 CREATE POLICY "Allow public insert transactions" ON public.transactions FOR INSERT WITH CHECK (true);

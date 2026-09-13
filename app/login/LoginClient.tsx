@@ -242,7 +242,7 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
     setSuccessMessage(null);
 
     if (mode === "register") {
-      // PROSES REGISTRASI
+      // PROSES REGISTRASI KE SUPABASE
       try {
         const supabase = createClient();
         const { data, error } = await supabase.auth.signUp({
@@ -257,22 +257,27 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
         });
 
         if (error) {
-          setServerError(error.message);
+          setServerError(`Gagal daftar di Supabase: ${error.message}`);
           setLoading(false);
           return;
         }
 
-        // Berhasil mendaftar
-        setSuccessMessage("Akun berhasil dibuat! Silakan masuk menggunakan akun baru Anda.");
+        // Jika user berhasil terdaftar di Auth, simpan juga ke tabel public.profiles
+        if (data?.user) {
+          await supabase.from("profiles").upsert({
+            id: data.user.id,
+            email: email,
+            full_name: fullName,
+            role: role,
+          }).catch((e) => console.warn("Failed to insert profiles table:", e));
+        }
+
+        setSuccessMessage("Akun berhasil terdaftar di Supabase! Silakan masuk.");
         setPassword("");
         setConfirmPassword("");
         switchAuthMode("login");
       } catch (err: any) {
-        // Fallback untuk simulasi jika Supabase belum aktif penuh
-        setSuccessMessage("Akun berhasil dibuat! Silakan masuk.");
-        setPassword("");
-        setConfirmPassword("");
-        setMode("login");
+        setServerError(err.message || "Gagal terhubung ke Supabase. Periksa URL dan Anon Key.");
       } finally {
         setLoading(false);
       }
