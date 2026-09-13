@@ -218,10 +218,10 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              { name: "Kopi Kenangan Mantan", category: "Minuman", sold: 84, revenue: 1512000 },
-              { name: "Roti Tawar Bandung", category: "Makanan", sold: 62, revenue: 930000 },
-              { name: "Es Teh Manis Jumbo", category: "Minuman", sold: 58, revenue: 406000 },
-              { name: "Croissant Keju Lumut", category: "Makanan", sold: 41, revenue: 902000 },
+              { name: "Saray Signature Palm Sugar", category: "Kopi & Espresso", sold: 128, revenue: 2816000 },
+              { name: "Rice Bowl Ayam Sambal Matah", category: "Makanan Utama", sold: 94, revenue: 2632000 },
+              { name: "Signature Matcha Latte", category: "Non-Coffee & Mocktail", sold: 76, revenue: 1900000 },
+              { name: "Croissant Almond Saray", category: "Pastry & Snack", sold: 62, revenue: 1674000 },
             ].map((p, idx) => (
               <div key={p.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div>

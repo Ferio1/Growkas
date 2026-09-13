@@ -42,21 +42,42 @@ export interface TransactionPayload {
 }
 
 const MOCK_CATEGORIES: CategoryItem[] = [
-  { id: "cat-1", name: "Makanan" },
-  { id: "cat-2", name: "Minuman" },
-  { id: "cat-3", name: "Sembako" },
+  { id: "cat-1", name: "Kopi & Espresso" },
+  { id: "cat-2", name: "Non-Coffee & Mocktail" },
+  { id: "cat-3", name: "Makanan Utama" },
+  { id: "cat-4", name: "Pastry & Snack" },
 ];
 
 const MOCK_PRODUCTS: ProductItem[] = [
-  { id: "p-1", name: "Saray Signature Aren", category_id: "cat-2", category_name: "Minuman", price: 22000, stock: 50, barcode: "8991001001" },
-  { id: "p-2", name: "Kaliurang Manual Drip", category_id: "cat-2", category_name: "Minuman", price: 25000, stock: 40, barcode: "8991001002" },
-  { id: "p-3", name: "Charcoal Latte Besi", category_id: "cat-2", category_name: "Minuman", price: 24000, stock: 35, barcode: "8991001003" },
-  { id: "p-4", name: "Croissant Almond Saray", category_id: "cat-1", category_name: "Makanan", price: 26000, stock: 20, barcode: "8991001004" },
-  { id: "p-5", name: "Rice Bowl Ayam Sambal Matah", category_id: "cat-1", category_name: "Makanan", price: 28000, stock: 30, barcode: "8991001005" },
-  { id: "p-6", name: "Matcha Cheese Foam", category_id: "cat-2", category_name: "Minuman", price: 23000, stock: 45, barcode: "8991001006" },
-  { id: "p-7", name: "Kopi Kenangan Mantan", category_id: "cat-2", category_name: "Minuman", price: 18000, stock: 45, barcode: "8991001007" },
-  { id: "p-8", name: "Roti Tawar Bandung", category_id: "cat-1", category_name: "Makanan", price: 15000, stock: 28, barcode: "8991001008" },
-  { id: "p-9", name: "Es Teh Manis Jumbo", category_id: "cat-2", category_name: "Minuman", price: 7000, stock: 120, barcode: "8991001009" },
+  // KOPI & ESPRESSO
+  { id: "p-1", name: "Saray Signature Palm Sugar", category_id: "cat-1", category_name: "Kopi & Espresso", price: 22000, stock: 60, barcode: "8991001001" },
+  { id: "p-2", name: "Americano / Long Black", category_id: "cat-1", category_name: "Kopi & Espresso", price: 20000, stock: 50, barcode: "8991001002" },
+  { id: "p-3", name: "Caffe Latte", category_id: "cat-1", category_name: "Kopi & Espresso", price: 24000, stock: 45, barcode: "8991001003" },
+  { id: "p-4", name: "Spanish Latte", category_id: "cat-1", category_name: "Kopi & Espresso", price: 25000, stock: 40, barcode: "8991001004" },
+  { id: "p-5", name: "Salted Caramel Macchiato", category_id: "cat-1", category_name: "Kopi & Espresso", price: 27000, stock: 35, barcode: "8991001005" },
+  { id: "p-6", name: "Manual Brew V60 (Arabica Kaliurang)", category_id: "cat-1", category_name: "Kopi & Espresso", price: 26000, stock: 30, barcode: "8991001006" },
+
+  // NON-COFFEE & MOCKTAIL
+  { id: "p-7", name: "Signature Matcha Latte", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 25000, stock: 50, barcode: "8991001007" },
+  { id: "p-8", name: "Artisanal Chocolate Ice/Hot", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 24000, stock: 45, barcode: "8991001008" },
+  { id: "p-9", name: "Berry Blossom Mocktail", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 26000, stock: 40, barcode: "8991001009" },
+  { id: "p-10", name: "Mango Passion Mocktail", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 25000, stock: 35, barcode: "8991001010" },
+  { id: "p-11", name: "Lychee Tea Refreshment", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 20000, stock: 70, barcode: "8991001011" },
+
+  // MAKANAN UTAMA
+  { id: "p-12", name: "Rice Bowl Ayam Sambal Matah", category_id: "cat-3", category_name: "Makanan Utama", price: 28000, stock: 35, barcode: "8991001012" },
+  { id: "p-13", name: "Rice Bowl Beef Slice Teriyaki", category_id: "cat-3", category_name: "Makanan Utama", price: 33000, stock: 30, barcode: "8991001013" },
+  { id: "p-14", name: "Rice Bowl Chicken Katsu Curry", category_id: "cat-3", category_name: "Makanan Utama", price: 30000, stock: 25, barcode: "8991001014" },
+  { id: "p-15", name: "Nasi Goreng Saray Special", category_id: "cat-3", category_name: "Makanan Utama", price: 27000, stock: 40, barcode: "8991001015" },
+  { id: "p-16", name: "Spaghetti Carbonara Creamy", category_id: "cat-3", category_name: "Makanan Utama", price: 32000, stock: 25, barcode: "8991001016" },
+
+  // PASTRY & SNACK
+  { id: "p-17", name: "Croissant Almond Saray", category_id: "cat-4", category_name: "Pastry & Snack", price: 27000, stock: 20, barcode: "8991001017" },
+  { id: "p-18", name: "Pain Au Chocolat", category_id: "cat-4", category_name: "Pastry & Snack", price: 25000, stock: 22, barcode: "8991001018" },
+  { id: "p-19", name: "French Fries Shoestring", category_id: "cat-4", category_name: "Pastry & Snack", price: 20000, stock: 50, barcode: "8991001019" },
+  { id: "p-20", name: "Tahu Cabe Garam Saray", category_id: "cat-4", category_name: "Pastry & Snack", price: 20000, stock: 45, barcode: "8991001020" },
+  { id: "p-21", name: "Mix Platter (Fries, Sausage, Nugget)", category_id: "cat-4", category_name: "Pastry & Snack", price: 30000, stock: 30, barcode: "8991001021" },
+  { id: "p-22", name: "Cireng Bumbu Rujak", category_id: "cat-4", category_name: "Pastry & Snack", price: 18000, stock: 40, barcode: "8991001022" },
 ];
 
 export async function getProductsAndCategories() {
