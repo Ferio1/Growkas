@@ -166,9 +166,25 @@ export default function DashboardLayout({
             <span style={{ padding: "4px 10px", borderRadius: "100px", background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.72rem", fontWeight: "bold" }}>
               ● Shift Aktif
             </span>
-            <span style={{ fontSize: "0.88rem", fontWeight: "700", color: "#F5F0E8" }}>
-              Outlet Jakarta Pusat
-            </span>
+            <select
+              defaultValue="Saray Coffee & Space (Yogyakarta)"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                color: "#F5F0E8",
+                padding: "6px 12px",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                fontWeight: "700",
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              <option value="Saray Coffee & Space (Yogyakarta)" style={{ background: "#161616" }}>📍 Saray Coffee &amp; Space (Yogyakarta)</option>
+              <option value="Outlet Jakarta Pusat" style={{ background: "#161616" }}>📍 Outlet Jakarta Pusat</option>
+              <option value="Outlet Bandung" style={{ background: "#161616" }}>📍 Outlet Bandung</option>
+              <option value="Outlet Surabaya" style={{ background: "#161616" }}>📍 Outlet Surabaya</option>
+            </select>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>

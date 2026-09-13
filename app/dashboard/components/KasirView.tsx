@@ -88,7 +88,7 @@ export default function KasirView({ initialProducts, initialCategories, userSess
 
     const invoiceNum = "INV-" + Math.floor(100000 + Math.random() * 900000);
     const cashierName = userSession?.user?.name || "Kasir Shift 1";
-    const branchName = "Outlet Jakarta Pusat";
+    const branchName = "Saray Coffee & Space (Yogyakarta)";
 
     const payload: TransactionPayload = {
       invoice_number: invoiceNum,

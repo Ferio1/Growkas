@@ -48,12 +48,15 @@ const MOCK_CATEGORIES: CategoryItem[] = [
 ];
 
 const MOCK_PRODUCTS: ProductItem[] = [
-  { id: "p-1", name: "Kopi Kenangan Mantan", category_id: "cat-2", category_name: "Minuman", price: 18000, stock: 45, barcode: "8991001001" },
-  { id: "p-2", name: "Roti Tawar Bandung", category_id: "cat-1", category_name: "Makanan", price: 15000, stock: 28, barcode: "8991001002" },
-  { id: "p-3", name: "Minyak Goreng 1L", category_id: "cat-3", category_name: "Sembako", price: 14500, stock: 95, barcode: "8991001003" },
-  { id: "p-4", name: "Es Teh Manis Jumbo", category_id: "cat-2", category_name: "Minuman", price: 7000, stock: 120, barcode: "8991001004" },
-  { id: "p-5", name: "Nasi Goreng Spesial", category_id: "cat-1", category_name: "Makanan", price: 25000, stock: 35, barcode: "8991001005" },
-  { id: "p-6", name: "Croissant Keju Lumut", category_id: "cat-1", category_name: "Makanan", price: 22000, stock: 18, barcode: "8991001006" },
+  { id: "p-1", name: "Saray Signature Aren", category_id: "cat-2", category_name: "Minuman", price: 22000, stock: 50, barcode: "8991001001" },
+  { id: "p-2", name: "Kaliurang Manual Drip", category_id: "cat-2", category_name: "Minuman", price: 25000, stock: 40, barcode: "8991001002" },
+  { id: "p-3", name: "Charcoal Latte Besi", category_id: "cat-2", category_name: "Minuman", price: 24000, stock: 35, barcode: "8991001003" },
+  { id: "p-4", name: "Croissant Almond Saray", category_id: "cat-1", category_name: "Makanan", price: 26000, stock: 20, barcode: "8991001004" },
+  { id: "p-5", name: "Rice Bowl Ayam Sambal Matah", category_id: "cat-1", category_name: "Makanan", price: 28000, stock: 30, barcode: "8991001005" },
+  { id: "p-6", name: "Matcha Cheese Foam", category_id: "cat-2", category_name: "Minuman", price: 23000, stock: 45, barcode: "8991001006" },
+  { id: "p-7", name: "Kopi Kenangan Mantan", category_id: "cat-2", category_name: "Minuman", price: 18000, stock: 45, barcode: "8991001007" },
+  { id: "p-8", name: "Roti Tawar Bandung", category_id: "cat-1", category_name: "Makanan", price: 15000, stock: 28, barcode: "8991001008" },
+  { id: "p-9", name: "Es Teh Manis Jumbo", category_id: "cat-2", category_name: "Minuman", price: 7000, stock: 120, barcode: "8991001009" },
 ];
 
 export async function getProductsAndCategories() {
@@ -158,31 +161,33 @@ export async function getDashboardAnalytics() {
       totalRevenue = transactions.reduce((acc: number, t: any) => acc + Number(t.total_amount || 0), 0);
       totalCount = transactions.length;
     } else {
-      totalRevenue = 4250000;
-      totalCount = 124;
+      totalRevenue = 5930000;
+      totalCount = 176;
     }
 
     return {
       totalRevenue,
       totalCount,
       avgOrderValue: totalCount > 0 ? Math.round(totalRevenue / totalCount) : 0,
-      activeBranches: 3,
+      activeBranches: 4,
       branchPerformance: [
-        { name: "Cabang Jakarta Pusat", revenue: Math.round(totalRevenue * 0.45), count: Math.round(totalCount * 0.45), growth: "+14%" },
-        { name: "Cabang Bandung", revenue: Math.round(totalRevenue * 0.32), count: Math.round(totalCount * 0.32), growth: "+8%" },
-        { name: "Cabang Surabaya", revenue: Math.round(totalRevenue * 0.23), count: Math.round(totalCount * 0.23), growth: "+5%" },
+        { name: "Saray Coffee & Space (Yogyakarta)", revenue: Math.round(totalRevenue * 0.35), count: Math.round(totalCount * 0.35), growth: "+18%" },
+        { name: "Cabang Jakarta Pusat", revenue: Math.round(totalRevenue * 0.30), count: Math.round(totalCount * 0.30), growth: "+14%" },
+        { name: "Cabang Bandung", revenue: Math.round(totalRevenue * 0.20), count: Math.round(totalCount * 0.20), growth: "+8%" },
+        { name: "Cabang Surabaya", revenue: Math.round(totalRevenue * 0.15), count: Math.round(totalCount * 0.15), growth: "+5%" },
       ],
     };
   } catch (err) {
     return {
-      totalRevenue: 4250000,
-      totalCount: 124,
-      avgOrderValue: 34274,
-      activeBranches: 3,
+      totalRevenue: 5930000,
+      totalCount: 176,
+      avgOrderValue: 33693,
+      activeBranches: 4,
       branchPerformance: [
-        { name: "Cabang Jakarta Pusat", revenue: 1912500, count: 56, growth: "+14%" },
-        { name: "Cabang Bandung", revenue: 1360000, count: 40, growth: "+8%" },
-        { name: "Cabang Surabaya", revenue: 977500, count: 28, growth: "+5%" },
+        { name: "Saray Coffee & Space (Yogyakarta)", revenue: 2075500, count: 62, growth: "+18%" },
+        { name: "Cabang Jakarta Pusat", revenue: 1779000, count: 53, growth: "+14%" },
+        { name: "Cabang Bandung", revenue: 1186000, count: 35, growth: "+8%" },
+        { name: "Cabang Surabaya", revenue: 889500, count: 26, growth: "+5%" },
       ],
     };
   }

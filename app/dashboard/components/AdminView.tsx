@@ -89,8 +89,8 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
       </div>
 
       {/* Filter Branch Tabs */}
-      <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px" }}>
-        {["all", "Jakarta Pusat", "Bandung", "Surabaya"].map((branch) => (
+      <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px", overflowX: "auto" }}>
+        {["all", "Saray Coffee & Space (Yogyakarta)", "Jakarta Pusat", "Bandung", "Surabaya"].map((branch) => (
           <button
             key={branch}
             onClick={() => setSelectedBranch(branch)}
@@ -103,9 +103,10 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
               fontWeight: "700",
               fontSize: "0.85rem",
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
-            {branch === "all" ? "🌐 Semua Outlet (Konsolidasi)" : `🏪 Cabang ${branch}`}
+            {branch === "all" ? "🌐 Semua Outlet (Konsolidasi)" : `🏪 ${branch}`}
           </button>
         ))}
       </div>
