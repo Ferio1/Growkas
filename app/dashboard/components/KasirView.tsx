@@ -561,15 +561,22 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                 />
 
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
-                  {[totalAmount, 20000, 50000, 100000].map((amt, i) => (
+                  {[totalAmount, ...[10000, 20000, 50000, 100000].filter((amt) => amt > totalAmount)].map((amt, i) => (
                     <button
                       key={i}
                       onClick={() => setPaidAmountInput(amt.toString())}
                       style={{
-                        padding: "6px 12px", borderRadius: "6px", background: "rgba(255,255,255,0.08)", border: "none", color: "#F5F0E8", fontSize: "0.78rem", cursor: "pointer",
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        background: amt === Number(paidAmountInput) ? "rgba(212,101,28,0.25)" : "rgba(255,255,255,0.08)",
+                        border: "1px solid " + (amt === Number(paidAmountInput) ? "#D4651C" : "transparent"),
+                        color: "#F5F0E8",
+                        fontSize: "0.78rem",
+                        fontWeight: "700",
+                        cursor: "pointer",
                       }}
                     >
-                      {amt === totalAmount ? "Uang Pas" : `Rp ${(amt / 1000).toLocaleString()}k`}
+                      {amt === totalAmount ? "Uang Pas" : `Rp ${(amt / 1000).toLocaleString("id-ID")}k`}
                     </button>
                   ))}
                 </div>
