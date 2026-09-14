@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export interface ProductItem {
   id: string;
@@ -135,6 +136,17 @@ export async function saveTransaction(payload: TransactionPayload) {
   try {
     const supabase = await createClient();
 
+    // 1. Potong stok pada MOCK_PRODUCTS (in-memory)
+    for (const item of payload.items) {
+      const p = MOCK_PRODUCTS.find(
+        (mp) => mp.id === item.product_id || mp.name.toLowerCase() === item.product_name.toLowerCase()
+      );
+      if (p) {
+        p.stock = Math.max(0, p.stock - item.quantity);
+      }
+    }
+
+    // 2. Simpan data transaksi
     const { data: trx, error: trxErr } = await supabase
       .from("transactions")
       .insert({
@@ -166,8 +178,35 @@ export async function saveTransaction(payload: TransactionPayload) {
       await supabase.from("transaction_items").insert(itemsToInsert);
     }
 
+    // 3. Potong stok pada tabel `products` di database Supabase
+    for (const item of payload.items) {
+      try {
+        const { data: dbProduct } = await supabase
+          .from("products")
+          .select("id, stock")
+          .or(`id.eq.${item.product_id},name.eq.${item.product_name}`)
+          .single();
+
+        if (dbProduct) {
+          const newStock = Math.max(0, Number(dbProduct.stock || 0) - item.quantity);
+          await supabase
+            .from("products")
+            .update({ stock: newStock })
+            .eq("id", dbProduct.id);
+        }
+      } catch (e) {
+        console.warn("Notice updating product stock in DB:", e);
+      }
+    }
+
+    // 4. Revalidasi halaman agar data ter-update seketika
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/supabase-demo");
+
     return { success: true, transactionId: trx?.id || "local-trx-" + Date.now() };
   } catch (err: any) {
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/supabase-demo");
     return { success: true, transactionId: "local-trx-" + Date.now() };
   }
 }

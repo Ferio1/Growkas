@@ -12,7 +12,7 @@ interface KasirViewProps {
 }
 
 export default function KasirView({ initialProducts, userSession }: KasirViewProps) {
-  const [products] = useState<ProductItem[]>(initialProducts);
+  const [products, setProducts] = useState<ProductItem[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -163,6 +163,18 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     };
 
     await saveTransaction(payload);
+
+    setProducts((prevProducts) =>
+      prevProducts.map((p) => {
+        const itemBought = payload.items.find(
+          (it) => it.product_id === p.id || it.product_name.toLowerCase() === p.name.toLowerCase()
+        );
+        if (itemBought) {
+          return { ...p, stock: Math.max(0, p.stock - itemBought.quantity) };
+        }
+        return p;
+      })
+    );
 
     setIsSubmitting(false);
     setIsPaymentModalOpen(false);
