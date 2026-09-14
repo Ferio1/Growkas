@@ -1,5 +1,5 @@
 // app/dashboard/supabase-demo/page.tsx — Test Koneksi Supabase
-import { createClient } from "@/lib/supabase/server";
+import { getProductsAndCategories } from "@/app/actions/posActions";
 import Link from "next/link";
 
 export const metadata = {
@@ -7,17 +7,12 @@ export const metadata = {
 };
 
 export default async function SupabaseDemoPage() {
-  let products = [];
+  let products: any[] = [];
   let errorMsg = null;
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.from("products").select("*").limit(10);
-    if (error) {
-      errorMsg = error.message;
-    } else {
-      products = data || [];
-    }
+    const res = await getProductsAndCategories();
+    products = res.products || [];
   } catch (err: any) {
     errorMsg = err.message || "Gagal menghubungi Supabase";
   }
