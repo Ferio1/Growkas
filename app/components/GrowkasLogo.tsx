@@ -1,5 +1,5 @@
 "use client";
-// app/components/GrowkasLogo.tsx — Logo Vektor Resmi Growkas (Line Art G & K Cash Ribbon)
+// app/components/GrowkasLogo.tsx — Logo Vektor Resmi Growkas (Logo 1: Circular 'g' + Upward Arrow)
 
 interface GrowkasLogoProps {
   size?: number;
@@ -26,7 +26,7 @@ export default function GrowkasLogo({
         userSelect: "none",
       }}
     >
-      {/* LOGO MARK VECTOR SVG — KONSEP 3: LINE ART G & K CASH RIBBON */}
+      {/* LOGO MARK VECTOR SVG — LOGO 1: CIRCULAR 'g' + UPWARD ARROW */}
       <svg
         width={size}
         height={size}
@@ -36,66 +36,40 @@ export default function GrowkasLogo({
         style={{ flexShrink: 0 }}
       >
         <defs>
-          <linearGradient id="growkasGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#E66E22" />
-            <stop offset="100%" stopColor="#B84A0C" />
+          <linearGradient id="logo1OrangeGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#F07A2B" />
+            <stop offset="100%" stopColor="#C44F0D" />
           </linearGradient>
-          <linearGradient id="growkasGlow" x1="24" y1="0" x2="24" y2="48" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#000000" stopOpacity="0.30" />
+          <linearGradient id="logo1Glow" x1="24" y1="0" x2="24" y2="48" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0.25" />
           </linearGradient>
         </defs>
 
-        {/* Squircle Background Badge */}
-        <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#growkasGrad)" />
-        <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#growkasGlow)" />
-        <rect x="2" y="2" width="44" height="44" rx="12" stroke="#FF9D5C" strokeWidth="1.5" strokeOpacity="0.4" />
+        {/* Circular Badge Background */}
+        <rect x="2" y="2" width="44" height="44" rx="14" fill="url(#logo1OrangeGrad)" />
+        <rect x="2" y="2" width="44" height="44" rx="14" fill="url(#logo1Glow)" />
+        <rect x="2" y="2" width="44" height="44" rx="14" stroke="#FFA366" strokeWidth="1.5" strokeOpacity="0.4" />
 
-        {/* Outer Line Ribbon 'G' */}
+        {/* Circular 'g' Body (Loop & Tail) */}
         <path
-          d="M 31 15.5 C 28 12.5 23.5 11.5 19 13 C 13.5 14.8 9.5 20 9.5 25.8 C 9.5 32.5 14.5 37 21 37 C 27.5 37 32 33 33 27.5 H 23"
+          d="M 30 19 C 27.5 15.5 22.8 14.5 18.5 16 C 13 18 9.5 23.5 10 29 C 10.5 35 C 16 39 23 38 27.5 34 C 31 31 32 26 31.5 22.5 H 20"
           stroke="#FFFFFF"
-          strokeWidth="3.2"
+          strokeWidth="3.6"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        {/* Inner Monogram Ribbon 'K' + Upward Arrow (Growth) */}
-        {/* Stem of K */}
-        <path
-          d="M 21 19.5 V 30.5"
-          stroke="#FFFFFF"
-          strokeWidth="2.8"
-          strokeLinecap="round"
-        />
+        {/* Inner 'g' Bar / Eye accent */}
+        <circle cx="21" cy="24" r="3" fill="#FFFFFF" fillOpacity="0.9" />
 
-        {/* Upper Leg & Growth Arrow Head of K */}
+        {/* Upward Growth Arrow (↗) launching from top-right of 'g' */}
         <path
-          d="M 21 24.5 L 32.5 13.5 M 32.5 13.5 H 25.5 M 32.5 13.5 V 20.5"
+          d="M 25 21 L 36.5 9.5 M 36.5 9.5 H 28.5 M 36.5 9.5 V 17.5"
           stroke="#FFFFFF"
-          strokeWidth="2.8"
+          strokeWidth="3.6"
           strokeLinecap="round"
           strokeLinejoin="round"
-        />
-
-        {/* Lower Leg of K */}
-        <path
-          d="M 21.5 24.5 L 30.5 31.5"
-          stroke="#FFFFFF"
-          strokeWidth="2.8"
-          strokeLinecap="round"
-        />
-
-        {/* Cash Receipt Line Accents (Bottom Dotted Fold) */}
-        <line
-          x1="12"
-          y1="40.5"
-          x2="36"
-          y2="40.5"
-          stroke="#FFD8BE"
-          strokeWidth="1.5"
-          strokeDasharray="2.5 2"
-          strokeOpacity="0.75"
         />
       </svg>
 
@@ -106,29 +80,30 @@ export default function GrowkasLogo({
             style={{
               fontSize: size > 30 ? "1.15rem" : "0.95rem",
               fontWeight: "900",
-              letterSpacing: "0.06em",
+              letterSpacing: "0.05em",
               color: textColor,
               lineHeight: 1.1,
               fontFamily: "system-ui, -apple-system, sans-serif",
             }}
           >
-            GROW<span style={{ color: "#D4651C" }}>KAS</span>
+            Grow<span style={{ color: "#D4651C" }}>kas</span>
           </div>
           <div
             style={{
               fontSize: size > 30 ? "0.68rem" : "0.6rem",
               fontWeight: "800",
-              letterSpacing: "0.12em",
+              letterSpacing: "0.1em",
               color: subtextColor,
               textTransform: "uppercase",
               marginTop: "2px",
             }}
           >
-            Sistem Kasir F&amp;B
+            Kasir Multi-Cabang
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
