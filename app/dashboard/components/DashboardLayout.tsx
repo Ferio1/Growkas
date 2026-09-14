@@ -2,6 +2,7 @@
 // app/dashboard/components/DashboardLayout.tsx — Layout Utama Dashboard Growkas
 
 import { useState, useEffect } from "react";
+import GrowkasLogo from "@/app/components/GrowkasLogo";
 import Link from "next/link";
 
 interface DashboardLayoutProps {
@@ -56,19 +57,8 @@ export default function DashboardLayout({
       }}>
         <div>
           {/* Logo & Brand */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "32px", paddingLeft: "8px" }}>
-            <div style={{
-              width: "34px", height: "34px", borderRadius: "8px", background: "linear-gradient(135deg, #D4651C, #B84E14)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: "#FFF",
-            }}>
-              G
-            </div>
-            <div>
-              <div style={{ fontSize: "1rem", fontWeight: "900", letterSpacing: "0.08em" }}>GROWKAS</div>
-              <div style={{ fontSize: "0.68rem", color: "#D4651C", fontWeight: "700", textTransform: "uppercase" }}>
-                Sistem Kasir F&amp;B
-              </div>
-            </div>
+          <div style={{ marginBottom: "28px", paddingLeft: "4px" }}>
+            <GrowkasLogo size={36} />
           </div>
 
           {/* Menu Items */}

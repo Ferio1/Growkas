@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { registerWithSupabase, loginWithSupabase } from "@/app/actions/authActions";
+import GrowkasLogo from "@/app/components/GrowkasLogo";
 import styles from "./login.module.css";
 
 
@@ -384,13 +385,8 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
       <div className={styles.right}>
         <div className={styles.formWrapper}>
 
-          <div className={styles.formHeader}>
-            <div className={styles.logo} aria-label="Growkas logo">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M20 7H4C2.9 7 2 7.9 2 9v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 12H4V9h16v10zm-8-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM7 2h10v3H7z"/>
-              </svg>
-            </div>
-            <div className={styles.formBrand}>GROWKAS</div>
+          <div className={styles.formHeader} style={{ marginBottom: "24px" }}>
+            <GrowkasLogo size={40} />
           </div>
 
           {/* Heading Form (Dinamis Login vs Register) */}
