@@ -487,7 +487,7 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
                   className={`${styles.input} ${fieldErrors.email && touched.email ? styles.inputError : ""}`}
                   type="email"
                   autoComplete="username email"
-                  placeholder={role === "kasir" ? "kasir@warungku.id" : "admin@warungku.id"}
+                  placeholder={role === "kasir" ? "kasir@growkas.com" : "admin@growkas.com"}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   onBlur={() => setTouched(t => ({ ...t, email: true }))}
