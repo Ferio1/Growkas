@@ -279,7 +279,12 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
           return;
         }
 
-        // Login berhasil -> Redirect ke relative path /dashboard (sesuai domain saat ini)
+        // Login berhasil -> Simpan data user ke localStorage & redirect ke /dashboard
+        if (res.user) {
+          try {
+            localStorage.setItem("growkas_user", JSON.stringify(res.user));
+          } catch {}
+        }
         window.location.href = "/dashboard";
       } catch (err: any) {
         setServerError(err.message || "Terjadi kesalahan saat masuk.");

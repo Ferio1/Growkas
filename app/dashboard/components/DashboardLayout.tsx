@@ -19,6 +19,37 @@ export default function DashboardLayout({
   userSession,
 }: DashboardLayoutProps) {
   const [clock, setClock] = useState("");
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+
+  useEffect(() => {
+    // 1. Coba baca dari prop userSession
+    if (userSession?.user) {
+      const name = userSession.user.user_metadata?.full_name
+        || userSession.user.name
+        || userSession.user.email?.split("@")[0];
+      const email = userSession.user.email;
+      if (email) {
+        setCurrentUser({ name: name || email, email });
+        return;
+      }
+    }
+
+    // 2. Coba baca dari localStorage (hasil login Supabase client)
+    try {
+      const stored = localStorage.getItem("growkas_user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const name = parsed.user_metadata?.full_name
+          || parsed.full_name
+          || parsed.email?.split("@")[0];
+        const email = parsed.email;
+        if (email) {
+          setCurrentUser({ name: name || email, email });
+          return;
+        }
+      }
+    } catch {}
+  }, [userSession]);
 
   useEffect(() => {
     const tick = () => {
@@ -36,8 +67,12 @@ export default function DashboardLayout({
     return () => clearInterval(interval);
   }, []);
 
-  const userName = userSession?.user?.name || (activeRole === "kasir" ? "Kasir Prabu" : "Owner Prabu");
-  const userEmail = userSession?.user?.email || (activeRole === "kasir" ? "kasir@growkas.id" : "owner@growkas.id");
+  const userName = currentUser?.name
+    || userSession?.user?.name
+    || (activeRole === "kasir" ? "Kasir Saray Yogyakarta" : "Admin Manager Saray");
+  const userEmail = currentUser?.email
+    || userSession?.user?.email
+    || (activeRole === "kasir" ? "kasir@growkas.com" : "admin@growkas.com");
 
   return (
     <div style={{ display: "flex", height: "100vh", maxHeight: "100vh", overflow: "hidden", background: "#0A0A0A", color: "#F5F0E8", fontFamily: "system-ui, sans-serif" }}>
@@ -128,6 +163,9 @@ export default function DashboardLayout({
 
           <button
             onClick={() => {
+              try {
+                localStorage.removeItem("growkas_user");
+              } catch {}
               window.location.href = "/login";
             }}
             style={{
