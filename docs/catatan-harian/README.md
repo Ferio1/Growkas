@@ -4,17 +4,18 @@ Dokumen ini berisi rekapitulasi harian pengerjaan, perbaikan UI/UX, redesain log
 
 ---
 
-## 🗂️ Daftar Rekapitulasi Catatan Harian
+## 🗂️ Daftar Rekapitulasi Catatan Harian Multi-Format
 
-| Tanggal | Topik Utama Pengerjaan | Status | Berkas Laporan |
+| Tanggal | Topik Utama Pengerjaan | Status | Format Laporan Tersedia |
 | :--- | :--- | :--- | :--- |
 | **14 September 2026** | Redesain Logo Resmi Growkas (Konsep 3 & Logo 1) + Reset & Pembuatan Akun Resmi Supabase (`kasir@growkas.com` & `admin@growkas.com`) | ✅ Selesai | [`2026-09-14.md`](./2026-09-14.md) |
-| **17 September 2026** | **Major Milestone v2.0**: All-in-One SaaS White-Label Branch Onboarding (`BranchManagerModal.tsx`), Generator Stiker QR Code Meja (`QRCodeGenerator.tsx`), Customer Self-Service Ordering (`/order`), F&B Customizer, & Pembaruan Hermes AI Mindset | ✅ Selesai | [`2026-09-17.md`](./2026-09-17.md) |
+| **17 September 2026** | **Major Milestone v2.0**: All-in-One SaaS White-Label Branch Onboarding (`BranchManagerModal.tsx`), Generator Stiker QR Code Meja (`QRCodeGenerator.tsx`), Customer Self-Service Ordering (`/order`), Real AI Vision OCR Menu Scanner (`AiMenuScannerModal.tsx`), & Pembaruan Hermes AI Mindset | ✅ Selesai | 📝 [`2026-09-17.md`](./2026-09-17.md)<br>🌐 [`2026-09-17.html`](./2026-09-17.html)<br>📊 [`2026-09-17.json`](./2026-09-17.json)<br>📄 [`2026-09-17.txt`](./2026-09-17.txt) |
 
 ---
 
-### 📌 Standar Format Catatan Harian:
-Setiap catatan harian mencatat:
-- **Tujuan Pengerjaan**: Latar belakang revisi / permintaan pengguna.
-- **Rincian Perubahan Kode & Fitur**: File mana saja yang diubah dan penjelasannya.
-- **Hasil Verifikasi**: Hasil build `npm run build` dan status deploy git/Vercel.
+### 📌 Standar Format Dokumen Rekapitulasi:
+Setiap catatan harian tersedia dalam 4 format resmi:
+- **`Markdown (.md)`**: Format standar repositori GitHub.
+- **`HTML Interactive (.html)`**: Tampilan interaktif berspesifikasi Glassmorphism, siap cetak / simpan sebagai **PDF**.
+- **`JSON API (.json)`**: Format data terstruktur untuk integrasi sistem.
+- **`Plain Text (.txt)`**: Format ringkas ramah dibaca di berbagai perangkat.
