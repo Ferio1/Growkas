@@ -2,7 +2,7 @@
 // app/dashboard/components/KitchenDisplayModal.tsx — Kitchen Display System (KDS) & Pesanan Meja Masuk Real-Time
 
 import { useState, useEffect } from "react";
-import { TableOrder, getTableOrders, updateTableOrderStatus } from "@/app/actions/orderActions";
+import { TableOrder, getTableOrders, updateTableOrderStatus, deleteTableOrder, clearAllTableOrders } from "@/app/actions/orderActions";
 import KitchenTicketModal from "./KitchenTicketModal";
 
 interface KitchenDisplayModalProps {
@@ -76,6 +76,26 @@ export default function KitchenDisplayModal({ onClose, onOrderCountChanged }: Ki
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
       );
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("Hapus pesanan ini dari antrean dapur?")) return;
+    const res = await deleteTableOrder(orderId);
+    if (res.success) {
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      if (onOrderCountChanged) {
+        onOrderCountChanged(orders.filter((o) => o.id !== orderId && (o.status === "pending" || o.status === "processing")).length);
+      }
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm("Kosongkan seluruh antrean pesanan dapur?")) return;
+    const res = await clearAllTableOrders();
+    if (res.success) {
+      setOrders([]);
+      if (onOrderCountChanged) onOrderCountChanged(0);
     }
   };
 
@@ -165,6 +185,23 @@ export default function KitchenDisplayModal({ onClose, onOrderCountChanged }: Ki
             >
               <span>🔔</span> Tes Bunyi Bel
             </button>
+            {orders.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  background: "rgba(239, 68, 68, 0.15)",
+                  color: "#EF4444",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  fontSize: "0.8rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                🧹 Kosongkan Antrean
+              </button>
+            )}
             <button
               onClick={onClose}
               style={{ background: "transparent", border: "none", color: "#888", fontSize: "1.3rem", cursor: "pointer" }}
@@ -279,17 +316,34 @@ export default function KitchenDisplayModal({ onClose, onOrderCountChanged }: Ki
                           </div>
                         </div>
 
-                        <div style={{ textAlign: "right" }}>
-                          <span style={{
-                            fontSize: "0.75rem",
-                            fontWeight: "bold",
-                            color: isPending ? "#EF4444" : isProcessing ? "#F59E0B" : "#10B981",
-                            background: "rgba(255,255,255,0.05)",
-                            padding: "3px 8px",
-                            borderRadius: "6px",
-                          }}>
-                            ⏱️ {getElapsedTime(ord.created_at)}
-                          </span>
+                        <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span style={{
+                              fontSize: "0.75rem",
+                              fontWeight: "bold",
+                              color: isPending ? "#EF4444" : isProcessing ? "#F59E0B" : "#10B981",
+                              background: "rgba(255,255,255,0.05)",
+                              padding: "3px 8px",
+                              borderRadius: "6px",
+                            }}>
+                              ⏱️ {getElapsedTime(ord.created_at)}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteOrder(ord.id)}
+                              title="Hapus / Batalkan Pesanan"
+                              style={{
+                                background: "rgba(255,255,255,0.06)",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                color: "#888",
+                                fontSize: "0.75rem",
+                                borderRadius: "4px",
+                                padding: "2px 6px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
                           <div style={{ fontSize: "0.7rem", color: "#AAA", marginTop: "4px" }}>
                             {ord.payment_method.toUpperCase()} • {ord.payment_status === "paid" ? "✅ LUNAS" : "⚠️ BAYAR KASIR"}
                           </div>

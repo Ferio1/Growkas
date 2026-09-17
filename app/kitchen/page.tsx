@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import GrowkasLogo from "@/app/components/GrowkasLogo";
 import Link from "next/link";
-import { TableOrder, getTableOrders, updateTableOrderStatus } from "@/app/actions/orderActions";
+import { TableOrder, getTableOrders, updateTableOrderStatus, deleteTableOrder, clearAllTableOrders } from "@/app/actions/orderActions";
 import KitchenTicketModal from "@/app/dashboard/components/KitchenTicketModal";
 import { playKitchenChime } from "@/app/dashboard/components/KitchenDisplayModal";
 
@@ -38,6 +38,22 @@ export default function KitchenPage() {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
       );
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("Hapus pesanan ini dari antrean dapur?")) return;
+    const res = await deleteTableOrder(orderId);
+    if (res.success) {
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm("Kosongkan seluruh antrean pesanan dapur?")) return;
+    const res = await clearAllTableOrders();
+    if (res.success) {
+      setOrders([]);
     }
   };
 
@@ -107,6 +123,23 @@ export default function KitchenPage() {
           >
             🔔 Tes Bel
           </button>
+          {orders.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              style={{
+                padding: "8px 14px",
+                borderRadius: "8px",
+                background: "rgba(239, 68, 68, 0.15)",
+                color: "#EF4444",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                fontSize: "0.82rem",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              🧹 Kosongkan Antrean
+            </button>
+          )}
           <Link
             href="/dashboard"
             style={{
@@ -219,16 +252,33 @@ export default function KitchenPage() {
                         </div>
                       </div>
 
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{
-                          fontSize: "0.85rem",
-                          fontWeight: "900",
-                          color: borderColor,
-                          background: "rgba(255,255,255,0.05)",
-                          padding: "4px 10px",
-                          borderRadius: "6px",
-                        }}>
-                          ⏱️ {getElapsedTime(ord.created_at)}
+                      <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <div style={{
+                            fontSize: "0.85rem",
+                            fontWeight: "900",
+                            color: borderColor,
+                            background: "rgba(255,255,255,0.05)",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                          }}>
+                            ⏱️ {getElapsedTime(ord.created_at)}
+                          </div>
+                          <button
+                            onClick={() => handleDeleteOrder(ord.id)}
+                            title="Hapus / Batalkan Pesanan"
+                            style={{
+                              background: "rgba(255,255,255,0.06)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              color: "#888",
+                              fontSize: "0.8rem",
+                              borderRadius: "4px",
+                              padding: "4px 8px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✕
+                          </button>
                         </div>
                         <div style={{ fontSize: "0.72rem", color: "#AAA", marginTop: "4px" }}>
                           {ord.payment_status === "paid" ? "✅ LUNAS QRIS" : "⚠️ TUNAI KASIR"}

@@ -26,58 +26,8 @@ export interface TableOrder {
   source?: "customer_qr" | "kasir_pos";
 }
 
-// In-Memory Live Table Orders Store
-let LIVE_TABLE_ORDERS: TableOrder[] = [
-  {
-    id: "ord-101",
-    invoice_number: "ORD-942810",
-    table_number: "Meja 04",
-    branch_name: "Saray Coffee & Space (Yogyakarta)",
-    payment_method: "qris",
-    payment_status: "paid",
-    status: "pending", // Pesanan Masuk (Baru)
-    total_amount: 51000,
-    created_at: new Date(Date.now() - 4 * 60 * 1000).toISOString(), // 4 menit lalu
-    source: "customer_qr",
-    items: [
-      {
-        product_name: "Saray Signature Palm Sugar",
-        quantity: 1,
-        price: 26000,
-        subtotal: 26000,
-        modifiers_summary: "Less Ice • Normal Sugar • Extra Shot (+Rp 4.000)",
-      },
-      {
-        product_name: "Signature Matcha Latte",
-        quantity: 1,
-        price: 25000,
-        subtotal: 25000,
-        modifiers_summary: "Normal Ice • Less Sugar",
-      },
-    ],
-  },
-  {
-    id: "ord-102",
-    invoice_number: "ORD-651923",
-    table_number: "Meja 02",
-    branch_name: "Saray Coffee & Space (Yogyakarta)",
-    payment_method: "cash",
-    payment_status: "unpaid",
-    status: "processing", // Sedang Dimasak
-    total_amount: 56000,
-    created_at: new Date(Date.now() - 9 * 60 * 1000).toISOString(), // 9 menit lalu
-    source: "customer_qr",
-    items: [
-      {
-        product_name: "Rice Bowl Ayam Sambal Matah",
-        quantity: 2,
-        price: 28000,
-        subtotal: 56000,
-        modifiers_summary: "Pedas Sedang • Sambal Pisah",
-      },
-    ],
-  },
-];
+// In-Memory Live Table Orders Store (Bersih Tanpa Pesanan Dummy Fiktif)
+let LIVE_TABLE_ORDERS: TableOrder[] = [];
 
 // 1. Ambil Seluruh Pesanan Meja (KDS & Kasir View)
 export async function getTableOrders(): Promise<{ success: boolean; orders: TableOrder[] }> {
@@ -158,4 +108,16 @@ export async function updateTableOrderStatus(
   }
 
   return { success: true, order: ord };
+}
+
+// 4. Hapus Pesanan Spesifik dari Antrean KDS
+export async function deleteTableOrder(orderId: string): Promise<{ success: boolean }> {
+  LIVE_TABLE_ORDERS = LIVE_TABLE_ORDERS.filter((o) => o.id !== orderId);
+  return { success: true };
+}
+
+// 5. Bersihkan Seluruh Antrean KDS (Reset Antrean)
+export async function clearAllTableOrders(): Promise<{ success: boolean }> {
+  LIVE_TABLE_ORDERS = [];
+  return { success: true };
 }
