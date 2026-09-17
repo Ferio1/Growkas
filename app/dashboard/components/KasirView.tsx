@@ -47,6 +47,9 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
 
+  // Mobile POS Cart Sheet State
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+
   useEffect(() => {
     async function initShiftAndOrders() {
       const shiftRes = await getActiveShift();
@@ -455,16 +458,219 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     { id: "retail", label: "Retail / Lainnya", icon: "🛒" },
   ];
 
+  const renderCartContent = (isMobileSheet: boolean) => (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between", overflow: "hidden" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+        {/* Header Tiket */}
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0
+        }}>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: "800", margin: 0 }}>
+            Pesanan Aktif {isMobileSheet && cart.length > 0 && `(${cart.reduce((s, c) => s + c.quantity, 0)})`}
+          </h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {cart.length > 0 && (
+              <button onClick={clearCart} style={{ background: "none", border: "none", color: "#f87171", fontSize: "0.78rem", cursor: "pointer", fontWeight: "600" }}>
+                Hapus Semua
+              </button>
+            )}
+            {isMobileSheet && (
+              <button
+                onClick={() => setIsMobileCartOpen(false)}
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  border: "none",
+                  color: "#F5F0E8",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1rem",
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* QUICK DINE IN / TAKEAWAY & TABLE SELECTOR */}
+        <div style={{
+          display: "flex",
+          gap: "6px",
+          marginBottom: "8px",
+          background: "rgba(255,255,255,0.03)",
+          padding: "4px",
+          borderRadius: "8px",
+          border: "1px solid rgba(255,255,255,0.06)",
+          flexShrink: 0,
+        }}>
+          <button
+            type="button"
+            onClick={() => setOrderType("Dine In")}
+            style={{
+              flex: 1,
+              padding: "6px 8px",
+              borderRadius: "6px",
+              border: "none",
+              background: orderType === "Dine In" ? "#D4651C" : "transparent",
+              color: orderType === "Dine In" ? "#FFF" : "rgba(245,240,232,0.6)",
+              fontSize: "0.75rem",
+              fontWeight: "700",
+              cursor: "pointer",
+            }}
+          >
+            🪑 Dine In
+          </button>
+          <button
+            type="button"
+            onClick={() => setOrderType("Takeaway")}
+            style={{
+              flex: 1,
+              padding: "6px 8px",
+              borderRadius: "6px",
+              border: "none",
+              background: orderType === "Takeaway" ? "#D4651C" : "transparent",
+              color: orderType === "Takeaway" ? "#FFF" : "rgba(245,240,232,0.6)",
+              fontSize: "0.75rem",
+              fontWeight: "700",
+              cursor: "pointer",
+            }}
+          >
+            🛍️ Takeaway
+          </button>
+        </div>
+
+        {orderType === "Dine In" && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px", flexShrink: 0 }}>
+            <span style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.6)", fontWeight: "600" }}>No. Meja:</span>
+            <select
+              value={tableNumber}
+              onChange={(e) => setTableNumber(e.target.value)}
+              style={{
+                flex: 1,
+                padding: "5px 8px",
+                borderRadius: "6px",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "#F5F0E8",
+                fontSize: "0.78rem",
+                fontWeight: "bold",
+                outline: "none",
+              }}
+            >
+              {["Meja 01", "Meja 02", "Meja 03", "Meja 04", "Meja 05", "Meja 06", "Meja 07", "Meja 08", "Meja 09", "Meja 10", "Bar Counter"].map((tbl) => (
+                <option key={tbl} value={tbl} style={{ background: "#181818", color: "#FFF" }}>
+                  {tbl}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {cart.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(245,240,232,0.4)" }}>
+            <div style={{ fontSize: "2.2rem", marginBottom: "8px" }}>🛒</div>
+            <p style={{ fontSize: "0.85rem", fontWeight: "600" }}>Belum ada item dipilih.</p>
+            <p style={{ fontSize: "0.72rem", opacity: 0.7 }}>Klik produk untuk menambah ke pesanan.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
+            {cart.map((item, idx) => {
+              const itemPrice = getItemPrice(item);
+              const modSummary = formatModifiersSummary(item);
+
+              return (
+                <div key={idx} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "600", fontSize: "0.85rem", marginBottom: "4px" }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>{item.product.name}</span>
+                    <span style={{ color: "#D4651C" }}>Rp {(itemPrice * item.quantity).toLocaleString("id-ID")}</span>
+                  </div>
+
+                  {modSummary && (
+                    <div style={{ fontSize: "0.72rem", color: "#D4651C", opacity: 0.9, marginBottom: "6px", fontStyle: "italic", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      ⚡ {modSummary}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <button
+                      onClick={() => openCustomizer(item.product, idx)}
+                      style={{
+                        background: "rgba(212,101,28,0.15)",
+                        border: "1px solid rgba(212,101,28,0.3)",
+                        color: "#D4651C",
+                        fontSize: "0.7rem",
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ⚙️ Custom / Note
+                    </button>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,0,0,0.3)", padding: "2px 6px", borderRadius: "6px" }}>
+                      <button onClick={() => updateQuantity(idx, -1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>-</button>
+                      <span style={{ fontSize: "0.8rem", fontWeight: "bold", width: "18px", textAlign: "center" }}>{item.quantity}</span>
+                      <button onClick={() => updateQuantity(idx, 1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>+</button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div style={{ paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "12px", flexShrink: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "0.82rem", color: "rgba(245,240,232,0.6)" }}>
+          <span>Subtotal</span>
+          <span>Rp {subtotal.toLocaleString("id-ID")}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", fontSize: "1.05rem", fontWeight: "800", color: "#F5F0E8" }}>
+          <span>Total Pembayaran</span>
+          <span style={{ color: "#D4651C" }}>Rp {totalAmount.toLocaleString("id-ID")}</span>
+        </div>
+
+        <button
+          onClick={() => {
+            if (isMobileSheet) setIsMobileCartOpen(false);
+            handleOpenPayment();
+          }}
+          disabled={cart.length === 0}
+          style={{
+            width: "100%",
+            padding: "12px",
+            borderRadius: "10px",
+            background: cart.length > 0 ? "#D4651C" : "rgba(255,255,255,0.05)",
+            color: cart.length > 0 ? "#FFF" : "rgba(245,240,232,0.3)",
+            border: "none",
+            fontWeight: "800",
+            fontSize: "0.9rem",
+            cursor: cart.length > 0 ? "pointer" : "not-allowed",
+          }}
+        >
+          Bayar Sekarang →
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{
+    <div className="growkas-pos-grid" style={{
       display: "grid",
-      gridTemplateColumns: "1fr 340px",
       gap: "18px",
       width: "100%",
       maxWidth: "100%",
-      height: "calc(100vh - 100px)",
+      height: "calc(100vh - 84px)",
       boxSizing: "border-box",
       overflow: "hidden",
+      position: "relative",
     }}>
       
       {/* KATALOG PRODUK (KIRI) */}
@@ -626,10 +832,11 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         <div style={{
           flex: 1,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(165px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(145px, 1fr))",
           gap: "12px",
           overflowY: "auto",
           paddingRight: "4px",
+          paddingBottom: "80px",
           alignContent: "start",
         }}>
           {filteredProducts.length === 0 ? (
@@ -753,189 +960,118 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         </div>
       </div>
 
-      {/* TIKET PESANAN / KERANJANG (KANAN - TIDAK KEPOTONG) */}
-      <div style={{
+      {/* TIKET PESANAN / KERANJANG (KANAN - DESKTOP ONLY >= 1024px) */}
+      <div className="growkas-pos-desktop-cart" style={{
         background: "rgba(255,255,255,0.02)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: "16px",
         padding: "16px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
         height: "100%",
         boxSizing: "border-box",
         overflow: "hidden",
       }}>
-        
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
-            <h2 style={{ fontSize: "1.05rem", fontWeight: "800", margin: 0 }}>Pesanan Aktif</h2>
-            {cart.length > 0 && (
-              <button onClick={clearCart} style={{ background: "none", border: "none", color: "#f87171", fontSize: "0.78rem", cursor: "pointer", fontWeight: "600" }}>
-                Hapus Semua
-              </button>
-            )}
-          </div>
+        {renderCartContent(false)}
+      </div>
 
-          {/* QUICK DINE IN / TAKEAWAY & TABLE SELECTOR */}
-          <div style={{
-            display: "flex",
-            gap: "6px",
-            marginBottom: "8px",
-            background: "rgba(255,255,255,0.03)",
-            padding: "4px",
-            borderRadius: "8px",
-            border: "1px solid rgba(255,255,255,0.06)",
-            flexShrink: 0,
-          }}>
-            <button
-              type="button"
-              onClick={() => setOrderType("Dine In")}
-              style={{
-                flex: 1,
-                padding: "6px 8px",
-                borderRadius: "6px",
-                border: "none",
-                background: orderType === "Dine In" ? "#D4651C" : "transparent",
-                color: orderType === "Dine In" ? "#FFF" : "rgba(245,240,232,0.6)",
-                fontSize: "0.75rem",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
-            >
-              🪑 Dine In
-            </button>
-            <button
-              type="button"
-              onClick={() => setOrderType("Takeaway")}
-              style={{
-                flex: 1,
-                padding: "6px 8px",
-                borderRadius: "6px",
-                border: "none",
-                background: orderType === "Takeaway" ? "#D4651C" : "transparent",
-                color: orderType === "Takeaway" ? "#FFF" : "rgba(245,240,232,0.6)",
-                fontSize: "0.75rem",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
-            >
-              🛍️ Takeaway
-            </button>
-          </div>
-
-          {orderType === "Dine In" && (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px", flexShrink: 0 }}>
-              <span style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.6)", fontWeight: "600" }}>No. Meja:</span>
-              <select
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: "5px 8px",
-                  borderRadius: "6px",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "#F5F0E8",
-                  fontSize: "0.78rem",
-                  fontWeight: "bold",
-                  outline: "none",
-                }}
-              >
-                {["Meja 01", "Meja 02", "Meja 03", "Meja 04", "Meja 05", "Meja 06", "Meja 07", "Meja 08", "Meja 09", "Meja 10", "Bar Counter"].map((tbl) => (
-                  <option key={tbl} value={tbl} style={{ background: "#181818", color: "#FFF" }}>
-                    {tbl}
-                  </option>
-                ))}
-              </select>
+      {/* FLOATING STICKY BOTTOM CART BAR KHUSUS MOBILE & TABLET (< 1024px) */}
+      {cart.length > 0 && (
+        <div
+          className="growkas-pos-mobile-cart-bar safe-area-bottom animate-slide-up"
+          onClick={() => setIsMobileCartOpen(true)}
+          style={{
+            position: "fixed",
+            bottom: "16px",
+            left: "14px",
+            right: "14px",
+            zIndex: 80,
+            background: "linear-gradient(135deg, #D4651C 0%, #B85214 100%)",
+            borderRadius: "14px",
+            padding: "12px 16px",
+            color: "#FFF",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 8px 30px rgba(212,101,28,0.5)",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{
+              background: "rgba(0,0,0,0.25)",
+              borderRadius: "8px",
+              padding: "6px 10px",
+              fontWeight: "900",
+              fontSize: "0.85rem",
+            }}>
+              🛒 {cart.reduce((s, c) => s + c.quantity, 0)} Item
             </div>
-          )}
-
-          {cart.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(245,240,232,0.4)" }}>
-              <div style={{ fontSize: "2.2rem", marginBottom: "8px" }}>🛒</div>
-              <p style={{ fontSize: "0.85rem", fontWeight: "600" }}>Belum ada item dipilih.</p>
-              <p style={{ fontSize: "0.72rem", opacity: 0.7 }}>Klik produk di sebelah kiri untuk menambah ke pesanan.</p>
+            <div>
+              <div style={{ fontSize: "0.72rem", opacity: 0.85, fontWeight: "600" }}>
+                {orderType === "Dine In" ? `🪑 ${tableNumber}` : "🛍️ Takeaway"}
+              </div>
+              <div style={{ fontSize: "1.05rem", fontWeight: "900" }}>
+                Rp {totalAmount.toLocaleString("id-ID")}
+              </div>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
-              {cart.map((item, idx) => {
-                const itemPrice = getItemPrice(item);
-                const modSummary = formatModifiersSummary(item);
-
-                return (
-                  <div key={idx} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "600", fontSize: "0.85rem", marginBottom: "4px" }}>
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>{item.product.name}</span>
-                      <span style={{ color: "#D4651C" }}>Rp {(itemPrice * item.quantity).toLocaleString("id-ID")}</span>
-                    </div>
-
-                    {modSummary && (
-                      <div style={{ fontSize: "0.72rem", color: "#D4651C", opacity: 0.9, marginBottom: "6px", fontStyle: "italic", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        ⚡ {modSummary}
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <button
-                        onClick={() => openCustomizer(item.product, idx)}
-                        style={{
-                          background: "rgba(212,101,28,0.15)",
-                          border: "1px solid rgba(212,101,28,0.3)",
-                          color: "#D4651C",
-                          fontSize: "0.7rem",
-                          padding: "3px 8px",
-                          borderRadius: "4px",
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                        }}
-                      >
-                        ⚙️ Custom / Note
-                      </button>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,0,0,0.3)", padding: "2px 6px", borderRadius: "6px" }}>
-                        <button onClick={() => updateQuantity(idx, -1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>-</button>
-                        <span style={{ fontSize: "0.8rem", fontWeight: "bold", width: "18px", textAlign: "center" }}>{item.quantity}</span>
-                        <button onClick={() => updateQuantity(idx, 1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>+</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div style={{ paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "12px", flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "0.82rem", color: "rgba(245,240,232,0.6)" }}>
-            <span>Subtotal</span>
-            <span>Rp {subtotal.toLocaleString("id-ID")}</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", fontSize: "1.05rem", fontWeight: "800", color: "#F5F0E8" }}>
-            <span>Total Pembayaran</span>
-            <span style={{ color: "#D4651C" }}>Rp {totalAmount.toLocaleString("id-ID")}</span>
           </div>
 
           <button
-            onClick={handleOpenPayment}
-            disabled={cart.length === 0}
             style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "10px",
-              background: cart.length > 0 ? "#D4651C" : "rgba(255,255,255,0.05)",
-              color: cart.length > 0 ? "#FFF" : "rgba(245,240,232,0.3)",
+              background: "#FFF",
+              color: "#D4651C",
               border: "none",
-              fontWeight: "800",
-              fontSize: "0.9rem",
-              cursor: cart.length > 0 ? "pointer" : "not-allowed",
+              padding: "8px 14px",
+              borderRadius: "8px",
+              fontWeight: "900",
+              fontSize: "0.82rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
             }}
           >
-            Bayar Sekarang →
+            Lihat Pesanan ➔
           </button>
         </div>
+      )}
 
-      </div>
+      {/* OFF-CANVAS SLIDE-UP BOTTOM SHEET CART MODAL KHUSUS MOBILE & TABLET (< 1024px) */}
+      {isMobileCartOpen && (
+        <div
+          onClick={() => setIsMobileCartOpen(false)}
+          className="animate-fade-in"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 950,
+            background: "rgba(0,0,0,0.75)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="animate-slide-up safe-area-bottom"
+            style={{
+              background: "#141414",
+              borderTop: "1px solid rgba(255,255,255,0.15)",
+              borderTopLeftRadius: "20px",
+              borderTopRightRadius: "20px",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              padding: "16px 16px 20px",
+              boxSizing: "border-box",
+              boxShadow: "0 -10px 40px rgba(0,0,0,0.8)",
+            }}
+          >
+            <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto 12px" }} />
+            {renderCartContent(true)}
+          </div>
+        </div>
+      )}
 
       {/* MODAL PEMBAYARAN */}
       {isPaymentModalOpen && (

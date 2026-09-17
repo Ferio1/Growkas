@@ -233,10 +233,22 @@ function OrderPageContent() {
   const isSnack = activeProductType === "snack";
 
   return (
-    <div style={{ background: "#0A0A0A", color: "#F5F0E8", minHeight: "100vh", fontFamily: "system-ui, sans-serif", paddingBottom: "100px" }}>
-      
-      {/* HEADER BAR (MOBILE OPTIMIZED) */}
-      <header style={{
+    <div style={{ background: "#050505", minHeight: "100vh", display: "flex", justifyContent: "center" }}>
+      <div style={{
+        width: "100%",
+        maxWidth: "480px",
+        minHeight: "100vh",
+        background: "#0A0A0A",
+        color: "#F5F0E8",
+        fontFamily: "system-ui, sans-serif",
+        paddingBottom: "110px",
+        position: "relative",
+        boxShadow: "0 0 50px rgba(0,0,0,0.8)",
+        borderLeft: "1px solid rgba(255,255,255,0.06)",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        {/* HEADER BAR (MOBILE OPTIMIZED) */}
+        <header style={{
         position: "sticky", top: 0, zIndex: 100, background: "rgba(10,10,10,0.92)", backdropFilter: "blur(8px)",
         borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
@@ -338,11 +350,29 @@ function OrderPageContent() {
 
       {/* STICKY BOTTOM CART BAR */}
       {cart.length > 0 && !isOrderComplete && (
-        <div style={{
-          position: "fixed", bottom: "16px", left: "16px", right: "16px", zIndex: 200,
-          background: "#D4651C", borderRadius: "14px", padding: "14px 18px", color: "#FFF",
-          display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 10px 30px rgba(212,101,28,0.5)", cursor: "pointer",
-        }} onClick={() => setIsCheckoutOpen(true)}>
+        <div
+          className="safe-area-bottom animate-slide-up"
+          style={{
+            position: "fixed",
+            bottom: "16px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "calc(100% - 32px)",
+            maxWidth: "448px",
+            zIndex: 200,
+            background: "linear-gradient(135deg, #D4651C 0%, #B85214 100%)",
+            borderRadius: "14px",
+            padding: "14px 18px",
+            color: "#FFF",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 10px 30px rgba(212,101,28,0.5)",
+            cursor: "pointer",
+            boxSizing: "border-box",
+          }}
+          onClick={() => setIsCheckoutOpen(true)}
+        >
           <div>
             <div style={{ fontSize: "0.75rem", opacity: 0.9, fontWeight: "bold" }}>{cart.length} Pesanan (Meja {tableNum})</div>
             <div style={{ fontSize: "1.1rem", fontWeight: "900" }}>Rp {subtotal.toLocaleString("id-ID")}</div>
@@ -535,6 +565,7 @@ function OrderPageContent() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

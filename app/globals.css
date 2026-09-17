@@ -127,3 +127,98 @@ input, textarea, select {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ================================================================
+   3-TIER ADAPTIVE RESPONSIVE UTILITIES (Mobile, Tablet, Desktop)
+   ================================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* iOS Safe Area Support */
+.safe-area-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* Responsive visibility rules */
+@media (max-width: 1023px) {
+  .growkas-sidebar-desktop {
+    display: none !important;
+  }
+  .growkas-mobile-toggle {
+    display: flex !important;
+  }
+  .growkas-pos-desktop-cart {
+    display: none !important;
+  }
+  .growkas-pos-mobile-cart-bar {
+    display: flex !important;
+  }
+  .growkas-pos-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .growkas-clock-badge {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .growkas-sidebar-desktop {
+    display: flex !important;
+  }
+  .growkas-mobile-toggle {
+    display: none !important;
+  }
+  .growkas-pos-desktop-cart {
+    display: flex !important;
+  }
+  .growkas-pos-mobile-cart-bar {
+    display: none !important;
+  }
+  .growkas-pos-grid {
+    grid-template-columns: 1fr 340px !important;
+  }
+  .growkas-clock-badge {
+    display: block !important;
+  }
+}
+
+/* Touch-friendly scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 101, 28, 0.5);
+}
+

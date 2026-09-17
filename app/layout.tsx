@@ -21,6 +21,12 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "GROWKAS POS",
+  },
   openGraph: {
     title: "GROWKAS — Sistem Kasir F&B",
     description: "Sistem kasir digital untuk kafe dan restoran.",
@@ -32,6 +38,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#0A0A0A",
 };
 
@@ -53,6 +60,7 @@ export default function RootLayout({
           href="https://fonts.bunny.net/css?family=cabinet-grotesk:400,500,700,800,900|instrument-serif:400i"
           rel="stylesheet"
         />
+        <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
       <body>{children}</body>
     </html>
