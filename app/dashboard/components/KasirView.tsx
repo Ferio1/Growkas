@@ -7,7 +7,7 @@ import ReceiptModal from "./ReceiptModal";
 import KitchenDisplayModal, { playKitchenChime } from "./KitchenDisplayModal";
 import ShiftManagerModal from "./ShiftManagerModal";
 import { getActiveShift, recordSaleToActiveShift, CashierShift } from "@/app/actions/shiftActions";
-import { getTableOrders } from "@/app/actions/orderActions";
+import { getTableOrders, createTableOrder } from "@/app/actions/orderActions";
 import { deductRawIngredientsForItems } from "@/app/actions/ingredientActions";
 import { getProductType, formatItemModifiersSummary } from "@/app/utils/productUtils";
 import Link from "next/link";
@@ -36,6 +36,13 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   const [isKitchenModalOpen, setIsKitchenModalOpen] = useState(false);
   const [pendingTableOrdersCount, setPendingTableOrdersCount] = useState(0);
 
+  // Real-time Toast Notification State
+  const [toastNotification, setToastNotification] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+  } | null>(null);
+
   // Shift Kasir State
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
@@ -53,14 +60,24 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     }
     initShiftAndOrders();
 
-    // Polling setiap 5 detik untuk order masuk dari HP pelanggan
+    // Polling setiap 5 detik untuk order masuk dari HP pelanggan & sinkronisasi KDS
     const interval = setInterval(async () => {
       const ordRes = await getTableOrders();
       if (ordRes.orders) {
-        const count = ordRes.orders.filter((o) => o.status === "pending" || o.status === "processing").length;
+        const activeOrders = ordRes.orders.filter((o) => o.status === "pending" || o.status === "processing");
+        const count = activeOrders.length;
         setPendingTableOrdersCount((prev) => {
           if (count > prev && prev !== 0) {
             playKitchenChime();
+            const latest = activeOrders[0];
+            setToastNotification({
+              show: true,
+              title: "🔔 Pesanan Baru Masuk Antrean Dapur!",
+              message: latest
+                ? `${latest.table_number} (${latest.source === "kasir_pos" ? "Kasir POS" : "QR Pelanggan"}) • Total: Rp ${latest.total_amount.toLocaleString("id-ID")}`
+                : "Ada pesanan baru masuk ke antrean KDS.",
+            });
+            setTimeout(() => setToastNotification(null), 5000);
           }
           return count;
         });
@@ -357,6 +374,49 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     };
 
     await saveTransaction(payload);
+
+    // Dapatkan target nomor meja dan tipe pesanan untuk antrean Dapur (KDS)
+    const firstTable = cart.find((c) => c.modifiers?.tableNumber)?.modifiers?.tableNumber;
+    const firstOrderType = cart.find((c) => c.modifiers?.orderType)?.modifiers?.orderType || orderType;
+    const targetTableNumber = firstOrderType === "Takeaway" 
+      ? "Takeaway (Kasir)" 
+      : (firstTable || tableNumber || "Meja 01");
+
+    // Otomatis teruskan pesanan kasir ke antrean Kitchen Display System (KDS)
+    await createTableOrder(
+      {
+        invoice_number: invoiceNum,
+        table_number: targetTableNumber,
+        branch_name: branchName,
+        payment_method: paymentMethod,
+        payment_status: "paid",
+        status: "pending",
+        total_amount: totalAmount,
+        source: "kasir_pos",
+        items: payload.items.map((it) => ({
+          product_name: it.product_name,
+          quantity: it.quantity,
+          price: it.price,
+          subtotal: it.subtotal,
+          modifiers_summary: it.modifiers_summary,
+        })),
+      },
+      { skipShiftAndStockDeduction: true }
+    );
+
+    // Mainkan lonceng Web Audio API
+    playKitchenChime();
+
+    // Naikkan badge counter KDS seketika
+    setPendingTableOrdersCount((prev) => prev + 1);
+
+    // Tampilkan Toast Notifikasi
+    setToastNotification({
+      show: true,
+      title: "🔔 Pesanan Masuk Antrean Dapur (KDS)!",
+      message: `${targetTableNumber} • ${invoiceNum} • Total: Rp ${totalAmount.toLocaleString("id-ID")}`,
+    });
+    setTimeout(() => setToastNotification(null), 5000);
 
     // Otomatis potong stok bahan baku mentah
     await deductRawIngredientsForItems(payload.items);
@@ -708,7 +768,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
       }}>
         
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
             <h2 style={{ fontSize: "1.05rem", fontWeight: "800", margin: 0 }}>Pesanan Aktif</h2>
             {cart.length > 0 && (
               <button onClick={clearCart} style={{ background: "none", border: "none", color: "#f87171", fontSize: "0.78rem", cursor: "pointer", fontWeight: "600" }}>
@@ -716,6 +776,80 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
               </button>
             )}
           </div>
+
+          {/* QUICK DINE IN / TAKEAWAY & TABLE SELECTOR */}
+          <div style={{
+            display: "flex",
+            gap: "6px",
+            marginBottom: "8px",
+            background: "rgba(255,255,255,0.03)",
+            padding: "4px",
+            borderRadius: "8px",
+            border: "1px solid rgba(255,255,255,0.06)",
+            flexShrink: 0,
+          }}>
+            <button
+              type="button"
+              onClick={() => setOrderType("Dine In")}
+              style={{
+                flex: 1,
+                padding: "6px 8px",
+                borderRadius: "6px",
+                border: "none",
+                background: orderType === "Dine In" ? "#D4651C" : "transparent",
+                color: orderType === "Dine In" ? "#FFF" : "rgba(245,240,232,0.6)",
+                fontSize: "0.75rem",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              🪑 Dine In
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrderType("Takeaway")}
+              style={{
+                flex: 1,
+                padding: "6px 8px",
+                borderRadius: "6px",
+                border: "none",
+                background: orderType === "Takeaway" ? "#D4651C" : "transparent",
+                color: orderType === "Takeaway" ? "#FFF" : "rgba(245,240,232,0.6)",
+                fontSize: "0.75rem",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              🛍️ Takeaway
+            </button>
+          </div>
+
+          {orderType === "Dine In" && (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px", flexShrink: 0 }}>
+              <span style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.6)", fontWeight: "600" }}>No. Meja:</span>
+              <select
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: "5px 8px",
+                  borderRadius: "6px",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "#F5F0E8",
+                  fontSize: "0.78rem",
+                  fontWeight: "bold",
+                  outline: "none",
+                }}
+              >
+                {["Meja 01", "Meja 02", "Meja 03", "Meja 04", "Meja 05", "Meja 06", "Meja 07", "Meja 08", "Meja 09", "Meja 10", "Bar Counter"].map((tbl) => (
+                  <option key={tbl} value={tbl} style={{ background: "#181818", color: "#FFF" }}>
+                    {tbl}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {cart.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(245,240,232,0.4)" }}>
@@ -1175,6 +1309,41 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           onShiftUpdated={setActiveShift}
           onClose={() => setIsShiftModalOpen(false)}
         />
+      )}
+
+      {/* TOAST NOTIFIKASI REAL-TIME */}
+      {toastNotification && toastNotification.show && (
+        <div
+          onClick={() => setToastNotification(null)}
+          style={{
+            position: "fixed",
+            top: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 99999,
+            background: "linear-gradient(135deg, #1C1917 0%, #292524 100%)",
+            border: "1.5px solid #D4651C",
+            boxShadow: "0 10px 30px rgba(212, 101, 28, 0.4)",
+            borderRadius: "14px",
+            padding: "12px 22px",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            cursor: "pointer",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <span style={{ fontSize: "1.6rem" }}>🔔</span>
+          <div>
+            <div style={{ fontWeight: "800", fontSize: "0.92rem", color: "#F5F0E8" }}>
+              {toastNotification.title}
+            </div>
+            <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.85)" }}>
+              {toastNotification.message}
+            </div>
+          </div>
+          <span style={{ marginLeft: "10px", color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>✕</span>
+        </div>
       )}
 
     </div>

@@ -202,6 +202,18 @@ export default function KitchenPage() {
                         }}>
                           {ord.table_number.toUpperCase()}
                         </span>
+                        <span style={{
+                          fontSize: "0.72rem",
+                          fontWeight: "bold",
+                          marginLeft: "8px",
+                          padding: "3px 8px",
+                          borderRadius: "4px",
+                          background: ord.source === "kasir_pos" ? "rgba(56,189,248,0.2)" : "rgba(34,197,94,0.2)",
+                          color: ord.source === "kasir_pos" ? "#38bdf8" : "#4ade80",
+                          border: "1px solid " + (ord.source === "kasir_pos" ? "rgba(56,189,248,0.4)" : "rgba(34,197,94,0.4)"),
+                        }}>
+                          {ord.source === "kasir_pos" ? "🏢 KASIR POS" : "📱 QR MEJA"}
+                        </span>
                         <div style={{ fontSize: "0.75rem", color: "#888", marginTop: "6px" }}>
                           #{ord.invoice_number}
                         </div>

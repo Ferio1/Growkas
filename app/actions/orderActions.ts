@@ -17,12 +17,13 @@ export interface TableOrder {
   invoice_number: string;
   table_number: string;
   branch_name: string;
-  payment_method: "qris" | "cash";
+  payment_method: "qris" | "cash" | "debit";
   payment_status: "paid" | "unpaid";
   status: "pending" | "processing" | "ready" | "completed" | "cancelled";
   total_amount: number;
   created_at: string;
   items: TableOrderItem[];
+  source?: "customer_qr" | "kasir_pos";
 }
 
 // In-Memory Live Table Orders Store
@@ -37,6 +38,7 @@ let LIVE_TABLE_ORDERS: TableOrder[] = [
     status: "pending", // Pesanan Masuk (Baru)
     total_amount: 51000,
     created_at: new Date(Date.now() - 4 * 60 * 1000).toISOString(), // 4 menit lalu
+    source: "customer_qr",
     items: [
       {
         product_name: "Saray Signature Palm Sugar",
@@ -64,6 +66,7 @@ let LIVE_TABLE_ORDERS: TableOrder[] = [
     status: "processing", // Sedang Dimasak
     total_amount: 56000,
     created_at: new Date(Date.now() - 9 * 60 * 1000).toISOString(), // 9 menit lalu
+    source: "customer_qr",
     items: [
       {
         product_name: "Rice Bowl Ayam Sambal Matah",
@@ -93,8 +96,11 @@ export async function getTableOrders(): Promise<{ success: boolean; orders: Tabl
   }
 }
 
-// 2. Buat Pesanan Baru dari Customer Mobile (/order)
-export async function createTableOrder(orderData: Omit<TableOrder, "id" | "created_at">): Promise<{ success: boolean; order: TableOrder }> {
+// 2. Buat Pesanan Baru dari Customer Mobile (/order) atau Kasir POS
+export async function createTableOrder(
+  orderData: Omit<TableOrder, "id" | "created_at">,
+  options?: { skipShiftAndStockDeduction?: boolean }
+): Promise<{ success: boolean; order: TableOrder }> {
   const newOrder: TableOrder = {
     ...orderData,
     id: "ord-" + Date.now(),
@@ -103,12 +109,15 @@ export async function createTableOrder(orderData: Omit<TableOrder, "id" | "creat
 
   LIVE_TABLE_ORDERS.unshift(newOrder);
 
-  // Potong stok bahan baku mentah otomatis
-  await deductRawIngredientsForItems(newOrder.items);
+  // Jika bukan dari Kasir POS (yang sudah memotong stok & mencatat shift mandiri), proses otomatis
+  if (!options?.skipShiftAndStockDeduction) {
+    // Potong stok bahan baku mentah otomatis
+    await deductRawIngredientsForItems(newOrder.items);
 
-  // Jika pembayaran QRIS lunas, otomatis masukkan ke pembukuan shift kasir
-  if (newOrder.payment_status === "paid") {
-    await recordSaleToActiveShift(newOrder.payment_method, newOrder.total_amount);
+    // Jika pembayaran QRIS lunas, otomatis masukkan ke pembukuan shift kasir
+    if (newOrder.payment_status === "paid") {
+      await recordSaleToActiveShift(newOrder.payment_method, newOrder.total_amount);
+    }
   }
 
   // Simpan ke Supabase jika tersedia
@@ -120,7 +129,7 @@ export async function createTableOrder(orderData: Omit<TableOrder, "id" | "creat
       payment_method: newOrder.payment_method,
       paid_amount: newOrder.total_amount,
       change_amount: 0,
-      cashier_name: `Self-Order ${newOrder.table_number}`,
+      cashier_name: newOrder.source === "kasir_pos" ? "Kasir POS (Counter)" : `Self-Order ${newOrder.table_number}`,
       status: newOrder.status,
     });
   } catch (e) {
