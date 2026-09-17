@@ -1,6 +1,6 @@
-# 📅 Catatan Harian & Rekapitulasi Laporan Pengembangan Growkas
+# 📅 Catatan Harian & Rekapitulasi Laporan Pengembang METOPEN — Growkas
 
-Dokumen ini berisi rekapitulasi harian pengerjaan, perbaikan UI/UX, redesain logo, reset basis data, dan pengembangan fitur spesial aplikasi **Growkas** (Sistem Kasir F&B & Konsolidasi Multi-Cabang).
+Dokumen ini berisi rekapitulasi harian pengerjaan, perbaikan UI/UX, redesain logo, reset basis data, dan pengembangan fitur spesial aplikasi **Growkas** (Sistem Kasir F&B, All-in-One SaaS White-Label, & QR Code Table Ordering).
 
 ---
 
@@ -9,7 +9,7 @@ Dokumen ini berisi rekapitulasi harian pengerjaan, perbaikan UI/UX, redesain log
 | Tanggal | Topik Utama Pengerjaan | Status | Berkas Laporan |
 | :--- | :--- | :--- | :--- |
 | **14 September 2026** | Redesain Logo Resmi Growkas (Konsep 3 & Logo 1) + Reset & Pembuatan Akun Resmi Supabase (`kasir@growkas.com` & `admin@growkas.com`) | ✅ Selesai | [`2026-09-14.md`](./2026-09-14.md) |
-| **17 September 2026** | Implementasi Fitur Spesial F&B Customizer (Opsi Es, Gula, Add-On, Dine-In/Takeaway, No. Meja) & Sinkronisasi Struk Belanja | ✅ Selesai | [`2026-09-17.md`](./2026-09-17.md) |
+| **17 September 2026** | **Major Milestone v2.0**: All-in-One SaaS White-Label Branch Onboarding (`BranchManagerModal.tsx`), Generator Stiker QR Code Meja (`QRCodeGenerator.tsx`), Customer Self-Service Ordering (`/order`), F&B Customizer, & Pembaruan Hermes AI Mindset | ✅ Selesai | [`2026-09-17.md`](./2026-09-17.md) |
 
 ---
 
