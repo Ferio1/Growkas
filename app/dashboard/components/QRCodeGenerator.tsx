@@ -1,5 +1,5 @@
 "use client";
-// app/dashboard/components/QRCodeGenerator.tsx — Generator & Cetak Stiker QR Code Meja Mandiri Admin (Standard Scan Ready)
+// app/dashboard/components/QRCodeGenerator.tsx — Generator & Cetak Stiker QR Code Meja Mandiri Admin (Satuan & Massal)
 
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -13,6 +13,7 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
   const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || "br-1");
   const [tableCount, setTableCount] = useState<number>(10);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [singlePrintTable, setSinglePrintTable] = useState<number | null>(null);
 
   const activeBranch = branches.find((b) => b.id === selectedBranchId) || branches[0] || {
     name: "Saray Coffee & Space",
@@ -20,12 +21,24 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
   };
 
   const handlePrintAll = () => {
-    window.print();
+    setSinglePrintTable(null);
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
+
+  const handlePrintSingle = (num: number) => {
+    setSinglePrintTable(num);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setSinglePrintTable(null);
+      }, 1000);
+    }, 150);
   };
 
   const getTableUrl = (num: number) => {
     const tableStr = num < 10 ? `0${num}` : `${num}`;
-    // Dynamic origin or fallback to Vercel production URL
     const baseUrl = typeof window !== "undefined" && window.location.origin
       ? window.location.origin
       : "https://growkas.vercel.app";
@@ -60,25 +73,27 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
             </h2>
           </div>
 
-          <button
-            onClick={handlePrintAll}
-            style={{
-              padding: "12px 22px",
-              borderRadius: "10px",
-              background: "#D4651C",
-              color: "#FFF",
-              border: "none",
-              fontWeight: "900",
-              fontSize: "0.9rem",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              boxShadow: "0 4px 16px rgba(212,101,28,0.5)",
-            }}
-          >
-            <span>🖨️</span> Cetak Semua Stiker QR Meja
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={handlePrintAll}
+              style={{
+                padding: "12px 22px",
+                borderRadius: "10px",
+                background: "#D4651C",
+                color: "#FFF",
+                border: "none",
+                fontWeight: "900",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 4px 16px rgba(212,101,28,0.5)",
+              }}
+            >
+              <span>🖨️</span> Cetak Semua Stiker ({tableCount} Meja)
+            </button>
+          </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
@@ -126,9 +141,13 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
             const num = idx + 1;
             const tableStr = num < 10 ? `Meja 0${num}` : `Meja ${num}`;
             const orderUrl = getTableUrl(num);
+            const isHiddenInSinglePrint = singlePrintTable !== null && singlePrintTable !== num;
 
             return (
-              <div key={num} className="qr-sticker-card">
+              <div
+                key={num}
+                className={`qr-sticker-card ${isHiddenInSinglePrint ? "hide-in-single-print" : ""}`}
+              >
                 {/* Brand Header */}
                 <div style={{ marginBottom: "8px" }}>
                   <GrowkasLogo size={26} showText={true} textColor="#111" subtextColor="#D4651C" />
@@ -177,24 +196,41 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
                   📱 Scan QR Code untuk Pesan &amp; Bayar
                 </div>
 
-                {/* Quick Copy Link Button (Hanya di layar monitor) */}
-                <button
-                  className="no-print"
-                  onClick={() => handleCopyLink(num)}
-                  style={{
-                    marginTop: "8px",
-                    fontSize: "0.68rem",
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    background: copiedIndex === num ? "#4ade80" : "rgba(0,0,0,0.06)",
-                    color: copiedIndex === num ? "#000" : "#555",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {copiedIndex === num ? "✓ Link Tersalin!" : "📋 Salin Link HP"}
-                </button>
+                {/* Action Buttons (Hanya di layar monitor) */}
+                <div className="no-print" style={{ display: "flex", gap: "6px", marginTop: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+                  <button
+                    onClick={() => handlePrintSingle(num)}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "5px 10px",
+                      borderRadius: "6px",
+                      background: "#D4651C",
+                      color: "#FFF",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    🖨️ Cetak Meja Ini
+                  </button>
+
+                  <button
+                    onClick={() => handleCopyLink(num)}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "5px 10px",
+                      borderRadius: "6px",
+                      background: copiedIndex === num ? "#4ade80" : "rgba(0,0,0,0.06)",
+                      color: copiedIndex === num ? "#000" : "#555",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {copiedIndex === num ? "✓ Tersalin!" : "📋 Salin Link"}
+                  </button>
+                </div>
+
               </div>
             );
           })}
@@ -238,6 +274,10 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
           input,
           [class*="sidebar"],
           [class*="Header"] {
+            display: none !important;
+          }
+
+          .hide-in-single-print {
             display: none !important;
           }
 
