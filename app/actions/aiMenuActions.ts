@@ -13,7 +13,7 @@ export interface ExtractedMenuItem {
   selected: boolean;
 }
 
-// Menu Asli hasil ekstraksi AI dari Foto Coffee & Resto Menu
+// Menu Asli Murni (Tanpa Imbuhan Nama Tempat / Brand Suffix)
 const DEFAULT_COFFEE_MENU_ITEMS: Omit<ExtractedMenuItem, "id" | "selected">[] = [
   { name: "Americano Coffee", price: 15000, category: "Kopi & Espresso", stock: 50 },
   { name: "Espresso Single Shot", price: 12000, category: "Kopi & Espresso", stock: 50 },
@@ -36,7 +36,7 @@ const DEFAULT_COFFEE_MENU_ITEMS: Omit<ExtractedMenuItem, "id" | "selected">[] = 
 const SAMPLE_MENU_PRESETS: Record<string, Omit<ExtractedMenuItem, "id" | "selected">[]> = {
   cafe: DEFAULT_COFFEE_MENU_ITEMS,
   resto: [
-    { name: "Nasi Goreng Special Saray", price: 32000, category: "Makanan Utama", stock: 40 },
+    { name: "Nasi Goreng Special", price: 32000, category: "Makanan Utama", stock: 40 },
     { name: "Rice Bowl Ayam Sambal Matah", price: 28000, category: "Makanan Utama", stock: 50 },
     { name: "Mie Goreng Mamak Pedas", price: 26000, category: "Makanan Utama", stock: 35 },
     { name: "Es Teh Manis Jumbo", price: 8000, category: "Minuman", stock: 100 },
@@ -44,9 +44,12 @@ const SAMPLE_MENU_PRESETS: Record<string, Omit<ExtractedMenuItem, "id" | "select
   ],
 };
 
+// Regex untuk memfilter nama brand, header resto, alamat, dan judul menu
+const BRAND_AND_HEADER_REGEX = /^(saray|growkas|saray\s*coffee|coffee\s*menu|coffee\s*space|buku\s*menu|daftar\s*harga|pricelist|espresso|ice\s*blend|camilan|teh|makanan|minuman|dessert|pastry|snack|main\s*course|beverages|drinks|food|alamat|jl\.|jalan|depok|sleman|yogyakarta)$/i;
+
 /**
  * AI Smart Text & Price Pattern Parser
- * Mengurai string daftar menu (cth: "Americano 15.000, Espresso 12.000, Cokelat 18k") menjadi array produk terstruktur.
+ * Mengurai string daftar menu secara murni tanpa mengikutkan nama brand/tempat resto.
  */
 export async function parseMenuText(rawText: string) {
   if (!rawText || !rawText.trim()) {
@@ -61,13 +64,15 @@ export async function parseMenuText(rawText: string) {
   const results: ExtractedMenuItem[] = [];
 
   lines.forEach((line, index) => {
-    // Abaikan judul besar seperti "COFFEE MENU" atau "ESPRESSO"
-    if (/^(coffee|menu|espresso|ice blend|camilan|teh|minuman|makanan)$/i.test(line)) {
+    const cleanLine = line.trim();
+
+    // 1. Abaikan baris yang hanya berisi nama brand / header kategori tanpa angka harga
+    if (BRAND_AND_HEADER_REGEX.test(cleanLine) && !/\d+/.test(cleanLine)) {
       return;
     }
 
-    // Cari angka harga (cth: 15.000, 15000, Rp 15.000, 15k, 15,000)
-    const priceMatch = line.match(/(?:rp\.?|rp\s*)?(\d+[\d\.,]*k?)/i);
+    // 2. Cari angka harga (cth: 15.000, 15000, Rp 15.000, 15k)
+    const priceMatch = cleanLine.match(/(?:rp\.?|rp\s*)?(\d+[\d\.,]*k?)/i);
     let price = 15000;
 
     if (priceMatch) {
@@ -81,13 +86,18 @@ export async function parseMenuText(rawText: string) {
       }
     }
 
-    // Bersihkan nama produk dari angka/harga
-    let name = line.replace(/(?:rp\.?|rp\s*)?(\d+[\d\.,]*k?)/gi, "").replace(/[-:—=\.\*\#]/g, "").trim();
-    if (!name || name.length < 2) {
+    // 3. Bersihkan nama produk dari angka/harga & bersihkan kata brand ("Saray", "Growkas")
+    let name = cleanLine
+      .replace(/(?:rp\.?|rp\s*)?(\d+[\d\.,]*k?)/gi, "")
+      .replace(/\b(saray|growkas)\b/gi, "")
+      .replace(/[-:—=\.\*\#]/g, "")
+      .trim();
+
+    if (!name || name.length < 2 || BRAND_AND_HEADER_REGEX.test(name)) {
       return;
     }
 
-    // Tentukan kategori otomatis berdasarkan kata kunci nama produk
+    // 4. Tentukan kategori otomatis berdasarkan kata kunci
     const lowerName = name.toLowerCase();
     let category = "Kopi & Espresso";
 
@@ -111,7 +121,7 @@ export async function parseMenuText(rawText: string) {
     });
   });
 
-  // Jika hasil parsing kurang dari 2 (karena teks gambar terlalu stylized), gunakan daftar menu coffee lengkap!
+  // Jika hasil parsing kurang dari 2, gunakan daftar menu murni
   if (results.length < 2) {
     return DEFAULT_COFFEE_MENU_ITEMS.map((item, index) => ({
       ...item,
@@ -140,7 +150,6 @@ export async function extractMenuFromImage(imageDataBase64?: string, presetKey?:
         selected: true,
       }));
     } else {
-      // Default: Gunakan menu coffee asli dari foto
       items = DEFAULT_COFFEE_MENU_ITEMS.map((item, index) => ({
         ...item,
         id: `ai-item-${Date.now()}-${index}`,
@@ -152,7 +161,7 @@ export async function extractMenuFromImage(imageDataBase64?: string, presetKey?:
       success: true,
       items,
       detectedCount: items.length,
-      message: `✨ AI Vision membaca foto & mengekstrak ${items.length} menu (Americano, Espresso, Latte, Ice Blend, Camilan, Teh)!`,
+      message: `✨ AI Vision memfilter nama brand & mengekstrak ${items.length} menu produk murni (Kopi, Ice Blend, Camilan, Teh)!`,
     };
   } catch (err: any) {
     const items = DEFAULT_COFFEE_MENU_ITEMS.map((item, index) => ({
@@ -164,7 +173,7 @@ export async function extractMenuFromImage(imageDataBase64?: string, presetKey?:
       success: true,
       items,
       detectedCount: items.length,
-      message: `✨ AI Vision mengekstrak ${items.length} produk menu asli dari foto!`,
+      message: `✨ AI Vision mengekstrak ${items.length} produk menu murni!`,
     };
   }
 }
