@@ -1,7 +1,8 @@
 "use client";
-// app/dashboard/components/QRCodeGenerator.tsx — Generator & Cetak QR Code Meja Mandiri Admin
+// app/dashboard/components/QRCodeGenerator.tsx — Generator & Cetak Stiker QR Code Meja Mandiri Admin (Standard Scan Ready)
 
 import { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import GrowkasLogo from "@/app/components/GrowkasLogo";
 
 interface QRCodeGeneratorProps {
@@ -24,7 +25,11 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
 
   const getTableUrl = (num: number) => {
     const tableStr = num < 10 ? `0${num}` : `${num}`;
-    return `https://growkas.vercel.app/order?table=${tableStr}&branch=${encodeURIComponent(activeBranch.name)}`;
+    // Dynamic origin or fallback to Vercel production URL
+    const baseUrl = typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : "https://growkas.vercel.app";
+    return `${baseUrl}/order?table=${tableStr}&branch=${encodeURIComponent(activeBranch.name)}`;
   };
 
   const handleCopyLink = (num: number) => {
@@ -45,34 +50,38 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
         padding: "20px",
         marginBottom: "24px",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
           <div>
-            <span style={{ fontSize: "0.75rem", color: "#D4651C", fontWeight: "bold", textTransform: "uppercase" }}>Fitur Spesial All-in-One</span>
-            <h2 style={{ fontSize: "1.3rem", fontWeight: "900", margin: "2px 0 0" }}>🖨️ Generator & Cetak QR Code Meja Mandiri</h2>
+            <span style={{ fontSize: "0.75rem", color: "#D4651C", fontWeight: "bold", textTransform: "uppercase" }}>
+              Standard Android &amp; iOS Camera Scan Ready
+            </span>
+            <h2 style={{ fontSize: "1.3rem", fontWeight: "900", margin: "2px 0 0" }}>
+              🖨️ Generator &amp; Cetak Stiker QR Code Meja Mandiri
+            </h2>
           </div>
 
           <button
             onClick={handlePrintAll}
             style={{
-              padding: "10px 18px",
+              padding: "12px 22px",
               borderRadius: "10px",
               background: "#D4651C",
               color: "#FFF",
               border: "none",
-              fontWeight: "800",
-              fontSize: "0.88rem",
+              fontWeight: "900",
+              fontSize: "0.9rem",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              boxShadow: "0 4px 14px rgba(212,101,28,0.4)",
+              boxShadow: "0 4px 16px rgba(212,101,28,0.5)",
             }}
           >
-            🖨️ Cetak Semua Stiker QR Meja
+            <span>🖨️</span> Cetak Semua Stiker QR Meja
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
           <div>
             <label style={{ fontSize: "0.78rem", fontWeight: "700", color: "rgba(245,240,232,0.6)", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
               Pilih Cabang / Outlet
@@ -94,7 +103,7 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
 
           <div>
             <label style={{ fontSize: "0.78rem", fontWeight: "700", color: "rgba(245,240,232,0.6)", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-              Jumlah Meja yang Ingin Dibuat
+              Jumlah Meja yang Ingin Dibuat (1 - 50)
             </label>
             <input
               type="number"
@@ -110,136 +119,161 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
         </div>
       </div>
 
-      {/* GRID KARTU STIKER QR CODE MEJA (PRINT READY) */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-        gap: "18px",
-      }}>
-        {Array.from({ length: tableCount }).map((_, idx) => {
-          const num = idx + 1;
-          const tableStr = num < 10 ? `Meja 0${num}` : `Meja ${num}`;
-          const orderUrl = getTableUrl(num);
+      {/* AREA UTAMA STIKER QR CODE (UNTUK TAMPILAN MONITOR & CETAK KERTAS A4) */}
+      <div className="printable-qr-container">
+        <div className="printable-qr-grid">
+          {Array.from({ length: tableCount }).map((_, idx) => {
+            const num = idx + 1;
+            const tableStr = num < 10 ? `Meja 0${num}` : `Meja ${num}`;
+            const orderUrl = getTableUrl(num);
 
-          return (
-            <div
-              key={num}
-              style={{
-                background: "#FFFFFF",
-                color: "#111111",
-                borderRadius: "16px",
-                padding: "20px 16px",
-                textAlign: "center",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-                border: "2px solid #D4651C",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "space-between",
-                position: "relative",
-                breakInside: "avoid",
-              }}
-            >
-              {/* Header Badge */}
-              <div style={{ marginBottom: "10px" }}>
-                <GrowkasLogo size={28} showText={true} textColor="#111" subtextColor="#D4651C" />
-                <div style={{ fontSize: "0.72rem", color: "#666", fontWeight: "600", marginTop: "4px" }}>
-                  📍 {activeBranch.name}
+            return (
+              <div key={num} className="qr-sticker-card">
+                {/* Brand Header */}
+                <div style={{ marginBottom: "8px" }}>
+                  <GrowkasLogo size={26} showText={true} textColor="#111" subtextColor="#D4651C" />
+                  <div style={{ fontSize: "0.7rem", color: "#555", fontWeight: "700", marginTop: "3px" }}>
+                    📍 {activeBranch.name}
+                  </div>
                 </div>
+
+                {/* Standard 2D QR Code SVG (Scannable oleh iOS / Android Camera) */}
+                <div style={{
+                  background: "#FFFFFF",
+                  padding: "12px",
+                  borderRadius: "14px",
+                  border: "2px solid rgba(212,101,28,0.2)",
+                  display: "inline-block",
+                  margin: "6px 0",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                }}>
+                  <QRCodeSVG
+                    value={orderUrl}
+                    size={140}
+                    level="H"
+                    includeMargin={true}
+                    fgColor="#111111"
+                    bgColor="#FFFFFF"
+                  />
+                </div>
+
+                {/* Big Table Number Badge */}
+                <div style={{
+                  background: "#D4651C",
+                  color: "#FFFFFF",
+                  fontWeight: "900",
+                  fontSize: "1.05rem",
+                  padding: "5px 18px",
+                  borderRadius: "100px",
+                  letterSpacing: "1px",
+                  margin: "6px 0",
+                  display: "inline-block",
+                  boxShadow: "0 2px 8px rgba(212,101,28,0.4)",
+                }}>
+                  {tableStr}
+                </div>
+
+                <div style={{ fontSize: "0.68rem", color: "#444", fontWeight: "700", marginTop: "4px" }}>
+                  📱 Scan QR Code untuk Pesan &amp; Bayar
+                </div>
+
+                {/* Quick Copy Link Button (Hanya di layar monitor) */}
+                <button
+                  className="no-print"
+                  onClick={() => handleCopyLink(num)}
+                  style={{
+                    marginTop: "8px",
+                    fontSize: "0.68rem",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    background: copiedIndex === num ? "#4ade80" : "rgba(0,0,0,0.06)",
+                    color: copiedIndex === num ? "#000" : "#555",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {copiedIndex === num ? "✓ Link Tersalin!" : "📋 Salin Link HP"}
+                </button>
               </div>
-
-              {/* Vector QR Code SVG Simpel */}
-              <div style={{
-                background: "#FFF",
-                padding: "10px",
-                borderRadius: "12px",
-                border: "1px solid #EEE",
-                marginBottom: "10px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}>
-                <svg width="130" height="130" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Outer Frame Dots */}
-                  <rect x="5" y="5" width="30" height="30" rx="4" fill="#111" />
-                  <rect x="10" y="10" width="20" height="20" rx="2" fill="#FFF" />
-                  <rect x="15" y="15" width="10" height="10" fill="#D4651C" />
-
-                  <rect x="65" y="5" width="30" height="30" rx="4" fill="#111" />
-                  <rect x="70" y="10" width="20" height="20" rx="2" fill="#FFF" />
-                  <rect x="75" y="15" width="10" height="10" fill="#D4651C" />
-
-                  <rect x="5" y="65" width="30" height="30" rx="4" fill="#111" />
-                  <rect x="10" y="70" width="20" height="20" rx="2" fill="#FFF" />
-                  <rect x="15" y="75" width="10" height="10" fill="#D4651C" />
-
-                  {/* Matrix Random QR Data Patterns */}
-                  <rect x="42" y="8" width="12" height="12" fill="#111" rx="2" />
-                  <rect x="42" y="24" width="8" height="8" fill="#D4651C" rx="1" />
-                  <rect x="8" y="42" width="12" height="8" fill="#111" rx="1" />
-                  <rect x="24" y="42" width="8" height="14" fill="#D4651C" rx="1" />
-                  <rect x="40" y="40" width="20" height="20" rx="4" fill="#D4651C" />
-                  <rect x="45" y="45" width="10" height="10" fill="#FFF" rx="2" />
-
-                  <rect x="68" y="42" width="14" height="8" fill="#111" rx="1" />
-                  <rect x="84" y="42" width="8" height="14" fill="#D4651C" rx="1" />
-
-                  <rect x="42" y="68" width="8" height="14" fill="#111" rx="1" />
-                  <rect x="54" y="68" width="12" height="8" fill="#D4651C" rx="1" />
-                  <rect x="70" y="70" width="22" height="22" fill="#111" rx="3" />
-                  <rect x="76" y="76" width="10" height="10" fill="#FFF" rx="1" />
-                </svg>
-              </div>
-
-              {/* Nomor Meja Big Badge */}
-              <div style={{
-                background: "#D4651C",
-                color: "#FFF",
-                fontWeight: "900",
-                fontSize: "1.1rem",
-                padding: "6px 20px",
-                borderRadius: "100px",
-                letterSpacing: "1px",
-                marginBottom: "8px",
-                boxShadow: "0 2px 8px rgba(212,101,28,0.4)",
-              }}>
-                {tableStr}
-              </div>
-
-              <div style={{ fontSize: "0.68rem", color: "#555", fontWeight: "600" }}>
-                Scan QR Code untuk Pesan &amp; Bayar Online
-              </div>
-
-              {/* Quick Copy Link Button (Hanya di layar monitor) */}
-              <button
-                className="no-print"
-                onClick={() => handleCopyLink(num)}
-                style={{
-                  marginTop: "8px",
-                  fontSize: "0.68rem",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  background: copiedIndex === num ? "#4ade80" : "rgba(0,0,0,0.06)",
-                  color: copiedIndex === num ? "#000" : "#555",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                }}
-              >
-                {copiedIndex === num ? "✓ Link Salin!" : "📋 Salin Link HP"}
-              </button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Style CSS untuk Print Media Query */}
+      {/* STYLE CSS KHUSUS PRINT MEDIA QUERY (BERSIH & RAPI UNTUK STIKER KERTAS A4) */}
       <style jsx global>{`
+        /* Tampilan Layar Web Monitor */
+        .printable-qr-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 18px;
+        }
+
+        .qr-sticker-card {
+          background: #FFFFFF;
+          color: #111111;
+          border-radius: 16px;
+          padding: 16px;
+          text-align: center;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+          border: 2px solid #D4651C;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+
+        /* PERATURAN KHUSUS CETAK PRINTER (@media print) */
         @media print {
-          body {
-            background: #ffffff !important;
-            color: #000000 !important;
-          }
-          .no-print {
+          /* 1. Sembunyikan elemen navigasi, sidebar, header top bar, dan elemen non-cetak */
+          aside,
+          header,
+          nav,
+          .no-print,
+          button,
+          select,
+          input,
+          [class*="sidebar"],
+          [class*="Header"] {
             display: none !important;
+          }
+
+          /* 2. Reset Background halaman cetak menjadi Putih Bersih */
+          html, body, main {
+            background: #FFFFFF !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+          }
+
+          /* 3. Format Kontainer Stiker Grid di Kertas */
+          .printable-qr-container {
+            display: block !important;
+            width: 100% !important;
+            padding: 5mm !important;
+            box-sizing: border-box !important;
+          }
+
+          .printable-qr-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12mm !important;
+            width: 100% !important;
+          }
+
+          .qr-sticker-card {
+            border: 2px dashed #D4651C !important;
+            border-radius: 16px !important;
+            padding: 16px !important;
+            box-shadow: none !important;
+            background: #FFFFFF !important;
+            color: #000000 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `}</style>

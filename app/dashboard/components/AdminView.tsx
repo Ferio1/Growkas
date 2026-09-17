@@ -2,10 +2,10 @@
 // app/dashboard/components/AdminView.tsx — Dashboard Konsolidasi Multi-Cabang & SaaS Management khusus Admin/Owner
 
 import { useState, useEffect } from "react";
-import { addProduct } from "@/app/actions/posActions";
 import { getBranches, BranchItem } from "@/app/actions/branchActions";
 import BranchManagerModal from "./BranchManagerModal";
 import QRCodeGenerator from "./QRCodeGenerator";
+import AiMenuScannerModal from "./AiMenuScannerModal";
 
 interface AdminViewProps {
   initialAnalytics: {
@@ -31,13 +31,6 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
     { id: "br-1", name: "Saray Coffee & Space", city: "Yogyakarta", target_revenue: 10000000 },
   ]);
 
-  // Product form state
-  const [newProductName, setNewProductName] = useState("");
-  const [newProductPrice, setNewProductPrice] = useState("");
-  const [newProductStock, setNewProductStock] = useState("");
-  const [isSavingProduct, setIsSavingProduct] = useState(false);
-  const [addProductSuccessMsg, setAddProductSuccessMsg] = useState("");
-
   useEffect(() => {
     async function loadBranches() {
       const res = await getBranches();
@@ -50,35 +43,6 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
 
   const handleBranchAdded = (newBranch: BranchItem) => {
     setBranches((prev) => [...prev, newBranch]);
-  };
-
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProductName || !newProductPrice) return;
-
-    setIsSavingProduct(true);
-    setAddProductSuccessMsg("");
-
-    const res = await addProduct({
-      name: newProductName,
-      price: Number(newProductPrice),
-      stock: Number(newProductStock) || 0,
-    });
-
-    setIsSavingProduct(false);
-
-    if (res.success) {
-      setAddProductSuccessMsg("Produk berhasil ditambahkan ke database Supabase!");
-      setNewProductName("");
-      setNewProductPrice("");
-      setNewProductStock("");
-      setTimeout(() => {
-        setIsAddProductModalOpen(false);
-        setAddProductSuccessMsg("");
-      }, 1500);
-    } else {
-      alert("Gagal menambah produk: " + res.error);
-    }
   };
 
   return (
@@ -132,9 +96,10 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
               display: "flex",
               alignItems: "center",
               gap: "6px",
+              boxShadow: "0 4px 14px rgba(212,101,28,0.4)",
             }}
           >
-            <span>+</span> Tambah Produk Baru
+            <span>✨</span> + Scan &amp; Tambah Produk (AI)
           </button>
         </div>
       </div>
@@ -367,85 +332,14 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
         />
       )}
 
-      {/* MODAL TAMBAH PRODUK BARU */}
+      {/* MODAL AI SCAN & TAMBAH PRODUK BARU */}
       {isAddProductModalOpen && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
-        }}>
-          <div style={{
-            background: "#161616", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", width: "100%", maxWidth: "420px", padding: "24px", color: "#F5F0E8",
-          }}>
-            <h2 style={{ fontSize: "1.2rem", fontWeight: "800", marginBottom: "16px" }}>Tambah Produk Baru</h2>
-
-            {addProductSuccessMsg && (
-              <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.85rem", marginBottom: "16px" }}>
-                ✓ {addProductSuccessMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleAddProduct} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div>
-                <label style={{ fontSize: "0.78rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "6px", color: "rgba(245,240,232,0.6)" }}>
-                  Nama Produk / Menu
-                </label>
-                <input
-                  type="text"
-                  placeholder="Cth: Kopi Susu Aren"
-                  value={newProductName}
-                  onChange={(e) => setNewProductName(e.target.value)}
-                  required
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", outline: "none" }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: "0.78rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "6px", color: "rgba(245,240,232,0.6)" }}>
-                  Harga Jual (Rp)
-                </label>
-                <input
-                  type="number"
-                  placeholder="18000"
-                  value={newProductPrice}
-                  onChange={(e) => setNewProductPrice(e.target.value)}
-                  required
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", outline: "none" }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: "0.78rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "6px", color: "rgba(245,240,232,0.6)" }}>
-                  Stok Awal
-                </label>
-                <input
-                  type="number"
-                  placeholder="50"
-                  value={newProductStock}
-                  onChange={(e) => setNewProductStock(e.target.value)}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", outline: "none" }}
-                />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "10px" }}>
-                <button
-                  type="button"
-                  onClick={() => setIsAddProductModalOpen(false)}
-                  disabled={isSavingProduct}
-                  style={{ padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", color: "#F5F0E8", border: "none", fontWeight: "600", cursor: "pointer" }}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingProduct}
-                  style={{ padding: "10px", borderRadius: "8px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "800", cursor: "pointer" }}
-                >
-                  {isSavingProduct ? "Simpan..." : "Simpan Produk"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AiMenuScannerModal
+          onClose={() => setIsAddProductModalOpen(false)}
+          onProductsImported={() => {
+            // Optional callback
+          }}
+        />
       )}
 
     </div>
