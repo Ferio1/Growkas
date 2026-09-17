@@ -2,7 +2,7 @@
 // app/dashboard/components/AiMenuScannerModal.tsx — Modal AI Scan Foto Buku Menu & Batch Import ke Supabase
 
 import { useState } from "react";
-import { extractMenuFromImage, batchAddProducts, ExtractedMenuItem } from "@/app/actions/aiMenuActions";
+import { extractMenuFromImage, parseMenuText, batchAddProducts, ExtractedMenuItem } from "@/app/actions/aiMenuActions";
 
 interface AiMenuScannerModalProps {
   onClose: () => void;
@@ -13,29 +13,82 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
   const [activeTab, setActiveTab] = useState<"ai_scan" | "manual">("ai_scan");
   
   // State AI Scanner
-  const [selectedPreset, setSelectedPreset] = useState<string>("cafe");
+  const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
+  const [rawTextInput, setRawTextInput] = useState<string>("");
   const [isScanning, setIsScanning] = useState(false);
   const [extractedItems, setExtractedItems] = useState<ExtractedMenuItem[]>([]);
   const [scanMessage, setScanMessage] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [importSuccessMsg, setImportSuccessMsg] = useState("");
 
-  // Handler Jalankan AI Scan Foto Menu
-  const handleRunAiScan = async (presetKey?: string) => {
-    setIsScanning(true);
-    setScanMessage("");
-    setImportSuccessMsg("");
+  // Handler Upload Foto Asli User dari HP / PC
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const res = await extractMenuFromImage(undefined, presetKey || selectedPreset);
-    
-    // Simulate slight natural AI processing delay for UX
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Data = event.target?.result as string;
+      setUploadedImagePreview(base64Data);
+      
+      setIsScanning(true);
+      setScanMessage("");
+
+      // Panggil AI Vision Server Action dengan Base64 foto asli!
+      const res = await extractMenuFromImage(base64Data);
+
+      setTimeout(() => {
+        setIsScanning(false);
+        if (res.success && res.items) {
+          setExtractedItems(res.items);
+          setScanMessage(`✨ AI Vision membaca foto "${file.name}" & mengekstrak ${res.items.length} produk menu!`);
+        }
+      }, 500);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handler Salin-Tempel Teks Menu (Instant AI Text Parser)
+  const handleParseText = async (textValue: string) => {
+    setRawTextInput(textValue);
+    if (!textValue.trim()) return;
+
+    setIsScanning(true);
+    const parsed = await parseMenuText(textValue);
+    setIsScanning(false);
+
+    if (parsed.length > 0) {
+      setExtractedItems(parsed);
+      setScanMessage(`✨ AI mengekstrak ${parsed.length} menu dari teks daftar harga!`);
+    }
+  };
+
+  // Handler Jalankan Preset Sampel
+  const handleRunPreset = async (presetKey: string) => {
+    setIsScanning(true);
+    setUploadedImagePreview(null);
+    const res = await extractMenuFromImage(undefined, presetKey);
+
     setTimeout(() => {
       setIsScanning(false);
       if (res.success && res.items) {
         setExtractedItems(res.items);
-        setScanMessage(res.message || "Berhasil membaca menu!");
+        setScanMessage(res.message || "Berhasil memuat sampel menu!");
       }
-    }, 600);
+    }, 400);
+  };
+
+  // Handler Tambah Baris Menu Kosong
+  const handleAddNewRow = () => {
+    const newItem: ExtractedMenuItem = {
+      id: `manual-new-${Date.now()}`,
+      name: "Produk Baru",
+      price: 15000,
+      category: "Umum",
+      stock: 50,
+      selected: true,
+    };
+    setExtractedItems((prev) => [...prev, newItem]);
   };
 
   // Handler Checkbox Toggle
@@ -81,17 +134,17 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
       display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", color: "#F5F0E8", fontFamily: "system-ui, sans-serif",
     }}>
       <div style={{
-        background: "#161616", border: "1px solid rgba(212,101,28,0.4)", borderRadius: "18px", width: "100%", maxWidth: "680px", maxHeight: "90vh", overflowY: "auto", padding: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.7)",
+        background: "#161616", border: "1px solid rgba(212,101,28,0.4)", borderRadius: "18px", width: "100%", maxWidth: "720px", maxHeight: "90vh", overflowY: "auto", padding: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.7)",
       }}>
         
         {/* Header Modal */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px" }}>
           <div>
             <span style={{ fontSize: "0.72rem", color: "#D4651C", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>
-              ✨ Growkas AI Vision Menu Extractor
+              ✨ Growkas AI Vision &amp; OCR Menu Extractor
             </span>
             <h2 style={{ fontSize: "1.3rem", fontWeight: "900", margin: "2px 0 0" }}>
-              Tambah &amp; Import Produk Menu
+              Tambah &amp; Import Produk Menu Resto
             </h2>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "1.2rem", cursor: "pointer" }}>✕</button>
@@ -117,7 +170,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
               gap: "6px",
             }}
           >
-            <span>📸</span> Scan Foto Buku Menu (Otomatis AI)
+            <span>📸</span> Scan Foto Menu (AI OCR &amp; Vision)
           </button>
           
           <button
@@ -138,7 +191,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
               gap: "6px",
             }}
           >
-            <span>✍️</span> Input Manual Satu-per-satu
+            <span>✍️</span> Input Manual 1 Per 1
           </button>
         </div>
 
@@ -146,69 +199,103 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
         {activeTab === "ai_scan" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             
-            {/* Box Upload / Upload Simulator */}
+            {/* Box Upload Foto & Thumbnail Preview */}
             <div style={{
               border: "2px dashed rgba(212,101,28,0.5)",
               borderRadius: "14px",
-              padding: "24px",
+              padding: "20px",
               textAlign: "center",
               background: "rgba(212,101,28,0.04)",
             }}>
-              <div style={{ fontSize: "2rem", marginBottom: "8px" }}>📸</div>
+              {uploadedImagePreview ? (
+                <div style={{ marginBottom: "14px", textAlign: "center" }}>
+                  <img
+                    src={uploadedImagePreview}
+                    alt="Foto Menu Resto"
+                    style={{ maxHeight: "160px", borderRadius: "10px", border: "1px solid #D4651C", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}
+                  />
+                  <div style={{ fontSize: "0.75rem", color: "#4ade80", fontWeight: "bold", marginTop: "4px" }}>
+                    ✓ Foto Menu Terbaca oleh AI Vision
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: "2rem", marginBottom: "6px" }}>📸</div>
+              )}
+
               <h3 style={{ fontSize: "1rem", fontWeight: "800", margin: "0 0 4px" }}>
-                Upload Foto Buku / Papan Menu Resto Anda
+                Upload Foto Buku / Papan Menu Asli Resto Anda
               </h3>
-              <p style={{ fontSize: "0.8rem", color: "rgba(245,240,232,0.6)", margin: "0 0 16px" }}>
-                AI akan membaca foto daftar makanan/minuman beserta harga &amp; menambahkannya secara otomatis.
+              <p style={{ fontSize: "0.8rem", color: "rgba(245,240,232,0.6)", margin: "0 0 14px" }}>
+                Pilih foto daftar makanan/minuman dari HP atau PC Anda. AI akan membaca nama produk &amp; harga secara otomatis.
               </p>
 
-              {/* Sample Preset Selector for Instant Demo */}
-              <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", marginBottom: "16px" }}>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPreset("cafe"); handleRunAiScan("cafe"); }}
-                  style={{
-                    padding: "8px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#F5F0E8", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer",
-                  }}
-                >
-                  ☕ Gunakan Sampel Foto Menu Kafe &amp; Pastry
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPreset("resto"); handleRunAiScan("resto"); }}
-                  style={{
-                    padding: "8px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#F5F0E8", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer",
-                  }}
-                >
-                  🍜 Gunakan Sampel Foto Menu Makanan Utama
-                </button>
-              </div>
-
-              {/* File input simulator */}
+              {/* Tombol Unggah Foto Asli dari Perangkat */}
               <label style={{
                 display: "inline-block",
-                padding: "10px 20px",
-                borderRadius: "8px",
+                padding: "11px 22px",
+                borderRadius: "10px",
                 background: "#D4651C",
                 color: "#FFF",
-                fontWeight: "800",
-                fontSize: "0.85rem",
+                fontWeight: "900",
+                fontSize: "0.88rem",
                 cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(212,101,28,0.4)",
+                marginBottom: "14px",
               }}>
-                📷 Pilih / Ambil Foto Menu dari HP
+                📷 Pilih / Ambil Foto Menu dari Perangkat Anda
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={() => handleRunAiScan()}
+                  onChange={handleImageFileUpload}
                   style={{ display: "none" }}
                 />
               </label>
+
+              {/* Option 2: Salin-Tempel Teks Menu (Instant AI Text Parser) */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "12px", marginTop: "4px" }}>
+                <div style={{ fontSize: "0.78rem", fontWeight: "700", color: "#D4651C", textAlign: "left", marginBottom: "6px" }}>
+                  📝 ATAU Salin-Tempel Teks Menu / Daftar Harga Anda (AI Auto-Parse):
+                </div>
+                <textarea
+                  rows={3}
+                  value={rawTextInput}
+                  onChange={(e) => handleParseText(e.target.value)}
+                  placeholder={`Contoh tempel teks:\nEs Kopi Susu Aren - 18000\nNasi Goreng Special - 28000\nEs Teh Manis - 6000`}
+                  style={{
+                    width: "100%", padding: "10px 12px", borderRadius: "8px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.15)", color: "#F5F0E8", fontSize: "0.82rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace",
+                  }}
+                />
+              </div>
+
+              {/* Sample Preset Selector */}
+              <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap", marginTop: "12px" }}>
+                <span style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.5)", alignSelf: "center" }}>Preset Sampel:</span>
+                <button
+                  type="button"
+                  onClick={() => handleRunPreset("cafe")}
+                  style={{
+                    padding: "6px 12px", borderRadius: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#F5F0E8", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
+                  }}
+                >
+                  ☕ Sampel Menu Kafe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRunPreset("resto")}
+                  style={{
+                    padding: "6px 12px", borderRadius: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#F5F0E8", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
+                  }}
+                >
+                  🍜 Sampel Makanan Utama
+                </button>
+              </div>
+
             </div>
 
             {/* Scanning Status */}
             {isScanning && (
-              <div style={{ textAlign: "center", padding: "16px", color: "#D4651C", fontWeight: "800", fontSize: "0.9rem" }}>
-                🔄 AI sedang menganalisa foto menu &amp; mengekstrak daftar harga...
+              <div style={{ textAlign: "center", padding: "14px", color: "#D4651C", fontWeight: "800", fontSize: "0.9rem" }}>
+                🔄 AI Vision sedang membaca foto &amp; menyusun daftar menu...
               </div>
             )}
 
@@ -219,25 +306,32 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
               </div>
             )}
 
-            {/* Tabel Preview Hasil Ekstraksi AI */}
+            {/* Tabel Preview & Edit Hasil Ekstraksi AI */}
             {extractedItems.length > 0 && !isScanning && (
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                   <h4 style={{ fontSize: "0.9rem", fontWeight: "800", margin: 0 }}>
-                    Hasil Deteksi AI ({extractedItems.filter((i) => i.selected).length} Dipilih):
+                    Hasil Ekstraksi AI ({extractedItems.filter((i) => i.selected).length} Produk Dipilih):
                   </h4>
-                  <span style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.5)" }}>
-                    *Anda dapat mengubah nama/harga sebelum disimpan
-                  </span>
+                  
+                  <button
+                    type="button"
+                    onClick={handleAddNewRow}
+                    style={{
+                      padding: "4px 10px", borderRadius: "6px", background: "rgba(212,101,28,0.2)", border: "1px solid #D4651C", color: "#D4651C", fontSize: "0.75rem", fontWeight: "bold", cursor: "pointer",
+                    }}
+                  >
+                    + Tambah Baris Manual
+                  </button>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto", paddingRight: "4px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "260px", overflowY: "auto", paddingRight: "4px" }}>
                   {extractedItems.map((item) => (
                     <div
                       key={item.id}
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "30px 2fr 1.2fr 1fr 60px",
+                        gridTemplateColumns: "30px 2.2fr 1.2fr 1fr 60px",
                         gap: "8px",
                         alignItems: "center",
                         background: item.selected ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.01)",
@@ -260,7 +354,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                         onChange={(e) => handleItemChange(item.id, "name", e.target.value)}
                         placeholder="Nama Produk"
                         style={{
-                          background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", outline: "none",
+                          background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", outline: "none",
                         }}
                       />
 
@@ -270,7 +364,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                         onChange={(e) => handleItemChange(item.id, "category", e.target.value)}
                         placeholder="Kategori"
                         style={{
-                          background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", outline: "none",
+                          background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", outline: "none",
                         }}
                       />
 
@@ -280,7 +374,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                         onChange={(e) => handleItemChange(item.id, "price", Number(e.target.value))}
                         placeholder="Harga (Rp)"
                         style={{
-                          background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", color: "#D4651C", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: "bold", outline: "none",
+                          background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", color: "#D4651C", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: "bold", outline: "none",
                         }}
                       />
 
@@ -290,7 +384,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                         onChange={(e) => handleItemChange(item.id, "stock", Number(e.target.value))}
                         placeholder="Stok"
                         style={{
-                          background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", outline: "none",
+                          background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", padding: "6px 8px", borderRadius: "6px", fontSize: "0.82rem", outline: "none",
                         }}
                       />
                     </div>
@@ -321,7 +415,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                       padding: "10px 22px", borderRadius: "8px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "900", cursor: "pointer", boxShadow: "0 4px 14px rgba(212,101,28,0.4)",
                     }}
                   >
-                    {isImporting ? "Mengimpor ke Database..." : `🚀 Simpan ${extractedItems.filter((i) => i.selected).length} Produk ke Supabase ➔`}
+                    {isImporting ? "Mengimpor ke Supabase..." : `🚀 Simpan ${extractedItems.filter((i) => i.selected).length} Produk ke Database ➔`}
                   </button>
                 </div>
               </div>
