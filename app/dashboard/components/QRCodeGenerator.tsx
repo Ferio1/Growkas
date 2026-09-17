@@ -1,5 +1,5 @@
 "use client";
-// app/dashboard/components/QRCodeGenerator.tsx — Generator & Cetak Stiker QR Code Meja Mandiri Admin (Satuan & Massal)
+// app/dashboard/components/QRCodeGenerator.tsx — Generator & Cetak Stiker QR Code Meja Mandiri Admin (Satuan per Meja)
 
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -18,13 +18,6 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
   const activeBranch = branches.find((b) => b.id === selectedBranchId) || branches[0] || {
     name: "Saray Coffee & Space",
     city: "Yogyakarta",
-  };
-
-  const handlePrintAll = () => {
-    setSinglePrintTable(null);
-    setTimeout(() => {
-      window.print();
-    }, 100);
   };
 
   const handlePrintSingle = (num: number) => {
@@ -72,27 +65,9 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
               🖨️ Generator &amp; Cetak Stiker QR Code Meja Mandiri
             </h2>
           </div>
-
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              onClick={handlePrintAll}
-              style={{
-                padding: "12px 22px",
-                borderRadius: "10px",
-                background: "#D4651C",
-                color: "#FFF",
-                border: "none",
-                fontWeight: "900",
-                fontSize: "0.9rem",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                boxShadow: "0 4px 16px rgba(212,101,28,0.5)",
-              }}
-            >
-              <span>🖨️</span> Cetak Semua Stiker ({tableCount} Meja)
-            </button>
+          
+          <div style={{ fontSize: "0.82rem", color: "rgba(245,240,232,0.5)", fontWeight: "600" }}>
+            *Klik <strong style={{ color: "#D4651C" }}>"🖨️ Cetak Meja Ini"</strong> pada stiker yang ingin dicetak
           </div>
         </div>
 
@@ -202,7 +177,7 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
                     onClick={() => handlePrintSingle(num)}
                     style={{
                       fontSize: "0.7rem",
-                      padding: "5px 10px",
+                      padding: "6px 12px",
                       borderRadius: "6px",
                       background: "#D4651C",
                       color: "#FFF",
@@ -218,7 +193,7 @@ export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
                     onClick={() => handleCopyLink(num)}
                     style={{
                       fontSize: "0.7rem",
-                      padding: "5px 10px",
+                      padding: "6px 12px",
                       borderRadius: "6px",
                       background: copiedIndex === num ? "#4ade80" : "rgba(0,0,0,0.06)",
                       color: copiedIndex === num ? "#000" : "#555",
