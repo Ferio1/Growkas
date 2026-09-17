@@ -163,6 +163,37 @@ input, textarea, select {
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
+/* Base product grid */
+.growkas-product-grid {
+  display: grid;
+  overflow-y: auto;
+  align-content: start;
+}
+
+/* Mobile Phone (< 640px): 2 Kolom pas di layar HP */
+@media (max-width: 639px) {
+  .growkas-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    padding-bottom: 84px !important;
+  }
+  .growkas-outlet-select {
+    max-width: 150px !important;
+  }
+}
+
+/* Tablet (640px - 1023px): 3 Kolom */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .growkas-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+    gap: 12px !important;
+    padding-bottom: 84px !important;
+  }
+  .growkas-outlet-select {
+    max-width: 220px !important;
+  }
+}
+
 /* Responsive visibility rules */
 @media (max-width: 1023px) {
   .growkas-sidebar-desktop {
@@ -185,6 +216,7 @@ input, textarea, select {
   }
 }
 
+/* Desktop & Laptop (>= 1024px): 3-4 Kolom Lega, Proporsional, & Mewah */
 @media (min-width: 1024px) {
   .growkas-sidebar-desktop {
     display: flex !important;
@@ -203,6 +235,14 @@ input, textarea, select {
   }
   .growkas-clock-badge {
     display: block !important;
+  }
+  .growkas-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)) !important;
+    gap: 14px !important;
+    padding-bottom: 14px !important;
+  }
+  .growkas-outlet-select {
+    max-width: none !important;
   }
 }
 

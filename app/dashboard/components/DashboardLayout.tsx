@@ -393,73 +393,73 @@ export default function DashboardLayout({
             </button>
 
             <span style={{
-              padding: "4px 8px", borderRadius: "100px", background: "rgba(74,222,128,0.15)",
-              border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.7rem", fontWeight: "bold",
+              padding: "4px 10px", borderRadius: "100px", background: "rgba(74,222,128,0.15)",
+              border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.72rem", fontWeight: "bold",
               whiteSpace: "nowrap", flexShrink: 0,
             }}>
-              ● Shift
+              ● Shift Aktif
             </span>
 
             <select
               defaultValue="Saray Coffee & Space (Yogyakarta)"
+              className="growkas-outlet-select"
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.15)",
                 color: "#F5F0E8",
-                padding: "6px 10px",
+                padding: "6px 12px",
                 borderRadius: "8px",
-                fontSize: "0.82rem",
+                fontSize: "0.85rem",
                 fontWeight: "700",
                 outline: "none",
                 cursor: "pointer",
-                maxWidth: "180px",
                 textOverflow: "ellipsis",
                 overflow: "hidden",
                 whiteSpace: "nowrap",
               }}
             >
-              <option value="Saray Coffee & Space (Yogyakarta)" style={{ background: "#161616" }}>📍 Saray (Yogyakarta)</option>
-              <option value="Outlet Jakarta Pusat" style={{ background: "#161616" }}>📍 Jakarta Pusat</option>
-              <option value="Outlet Bandung" style={{ background: "#161616" }}>📍 Bandung</option>
-              <option value="Outlet Surabaya" style={{ background: "#161616" }}>📍 Surabaya</option>
+              <option value="Saray Coffee & Space (Yogyakarta)" style={{ background: "#161616" }}>📍 Saray Coffee &amp; Space (Yogyakarta)</option>
+              <option value="Outlet Jakarta Pusat" style={{ background: "#161616" }}>📍 Outlet Jakarta Pusat</option>
+              <option value="Outlet Bandung" style={{ background: "#161616" }}>📍 Outlet Bandung</option>
+              <option value="Outlet Surabaya" style={{ background: "#161616" }}>📍 Outlet Surabaya</option>
             </select>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <div className="growkas-clock-badge" style={{ fontSize: "0.85rem", fontFamily: "monospace", color: "rgba(245,240,232,0.6)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexShrink: 0 }}>
+            <div className="growkas-clock-badge" style={{ fontSize: "0.88rem", fontFamily: "monospace", color: "rgba(245,240,232,0.6)" }}>
               {clock || "00:00:00"}
             </div>
 
             <div style={{
-              display: "flex", background: "rgba(255,255,255,0.05)", padding: "2px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)",
+              display: "flex", background: "rgba(255,255,255,0.05)", padding: "3px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)",
             }}>
               <button
                 onClick={() => onRoleChange("kasir")}
                 style={{
-                  padding: "5px 10px", borderRadius: "6px", border: "none",
+                  padding: "5px 12px", borderRadius: "6px", border: "none",
                   background: activeRole === "kasir" ? "#D4651C" : "transparent",
                   color: activeRole === "kasir" ? "#FFF" : "rgba(245,240,232,0.6)",
-                  fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
+                  fontSize: "0.78rem", fontWeight: "700", cursor: "pointer",
                 }}
               >
-                Kasir
+                View Kasir
               </button>
               <button
                 onClick={() => onRoleChange("admin")}
                 style={{
-                  padding: "5px 10px", borderRadius: "6px", border: "none",
+                  padding: "5px 12px", borderRadius: "6px", border: "none",
                   background: activeRole === "admin" ? "#D4651C" : "transparent",
                   color: activeRole === "admin" ? "#FFF" : "rgba(245,240,232,0.6)",
-                  fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
+                  fontSize: "0.78rem", fontWeight: "700", cursor: "pointer",
                 }}
               >
-                Admin
+                View Admin
               </button>
             </div>
           </div>
         </header>
 
-        <main style={{ flex: 1, padding: "14px", overflowY: "auto", minWidth: 0, boxSizing: "border-box" }}>
+        <main style={{ flex: 1, padding: "16px 20px", overflow: "hidden", minWidth: 0, boxSizing: "border-box" }}>
           {children}
         </main>
       </div>

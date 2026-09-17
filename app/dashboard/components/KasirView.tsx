@@ -667,7 +667,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
       gap: "18px",
       width: "100%",
       maxWidth: "100%",
-      height: "calc(100vh - 84px)",
+      height: "100%",
       boxSizing: "border-box",
       overflow: "hidden",
       position: "relative",
@@ -829,15 +829,9 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         </div>
 
         {/* BARIS 3: GRID PRODUK (AUTO-SCROLL) */}
-        <div style={{
+        <div className="growkas-product-grid" style={{
           flex: 1,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(145px, 1fr))",
-          gap: "12px",
-          overflowY: "auto",
-          paddingRight: "4px",
-          paddingBottom: "80px",
-          alignContent: "start",
+          minHeight: 0,
         }}>
           {filteredProducts.length === 0 ? (
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 0", color: "rgba(245,240,232,0.4)" }}>
@@ -866,7 +860,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     position: "relative",
-                    minHeight: "190px",
+                    minHeight: "175px",
                     boxSizing: "border-box",
                     boxShadow: inCart ? "0 4px 16px rgba(212,101,28,0.2)" : "none",
                   }}
