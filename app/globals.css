@@ -226,12 +226,18 @@ input, textarea, select {
   }
   .growkas-pos-desktop-cart {
     display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
   .growkas-pos-mobile-cart-bar {
     display: none !important;
   }
   .growkas-pos-grid {
     grid-template-columns: 1fr 340px !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
   .growkas-clock-badge {
     display: block !important;
@@ -240,6 +246,7 @@ input, textarea, select {
     grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)) !important;
     gap: 14px !important;
     padding-bottom: 14px !important;
+    min-height: 0 !important;
   }
   .growkas-outlet-select {
     max-width: none !important;

@@ -357,16 +357,16 @@ export default function DashboardLayout({
         
         {/* Top Header Bar */}
         <header style={{
-          minHeight: "56px",
+          height: "56px",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
-          padding: "8px 16px",
+          padding: "0 16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           background: "rgba(255,255,255,0.01)",
           flexShrink: 0,
           gap: "8px",
-          flexWrap: "wrap",
+          overflow: "hidden",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 1, minWidth: 0 }}>
             {/* Hamburger Button untuk Mobile / Tablet */}
@@ -459,7 +459,16 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <main style={{ flex: 1, padding: "16px 20px", overflow: "hidden", minWidth: 0, boxSizing: "border-box" }}>
+        <main style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+          padding: "16px 20px",
+          overflow: "hidden",
+          minWidth: 0,
+          boxSizing: "border-box"
+        }}>
           {children}
         </main>
       </div>
