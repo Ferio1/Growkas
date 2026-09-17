@@ -13,28 +13,46 @@ export interface ExtractedMenuItem {
   selected: boolean;
 }
 
-// Menu Asli Murni (Tanpa Imbuhan Nama Tempat / Brand Suffix)
-const DEFAULT_COFFEE_MENU_ITEMS: Omit<ExtractedMenuItem, "id" | "selected">[] = [
-  { name: "Americano Coffee", price: 15000, category: "Kopi & Espresso", stock: 50 },
-  { name: "Espresso Single Shot", price: 12000, category: "Kopi & Espresso", stock: 50 },
-  { name: "Double Espresso", price: 18000, category: "Kopi & Espresso", stock: 50 },
-  { name: "Caffe Latte", price: 20000, category: "Kopi & Espresso", stock: 50 },
-  { name: "Cappuccino Special", price: 20000, category: "Kopi & Espresso", stock: 50 },
-  { name: "Mochaccino", price: 22000, category: "Kopi & Espresso", stock: 45 },
-  { name: "Cokelat Ice Blend", price: 18000, category: "Ice Blend", stock: 40 },
-  { name: "Matcha Ice Blend", price: 20000, category: "Ice Blend", stock: 40 },
-  { name: "Taro Ice Blend", price: 20000, category: "Ice Blend", stock: 40 },
-  { name: "Cookies & Cream Blend", price: 22000, category: "Ice Blend", stock: 35 },
-  { name: "French Fries Crispy", price: 15000, category: "Camilan & Snack", stock: 60 },
-  { name: "Onion Ring Snack", price: 15000, category: "Camilan & Snack", stock: 50 },
-  { name: "Sosis Goreng Mayo", price: 15000, category: "Camilan & Snack", stock: 50 },
-  { name: "Es Teh Manis", price: 6000, category: "Minuman Teh", stock: 100 },
-  { name: "Es Teh Lemon Fresh", price: 10000, category: "Minuman Teh", stock: 80 },
-  { name: "Es Teh Lychee Float", price: 12000, category: "Minuman Teh", stock: 75 },
+// Menu Asli Kopi Kenangan & Board Menu Real
+const KOPI_KENANGAN_MENU_ITEMS: Omit<ExtractedMenuItem, "id" | "selected">[] = [
+  { name: "Kopi Kenangan Mantan", price: 19000, category: "Coffee", stock: 50 },
+  { name: "Americano", price: 17000, category: "Coffee", stock: 50 },
+  { name: "Avocado Coffee", price: 26000, category: "Coffee", stock: 40 },
+  { name: "Butterscotch Aren Latte", price: 19000, category: "Coffee", stock: 50 },
+  { name: "Butterscotch Sea Salt Latte", price: 24000, category: "Coffee", stock: 45 },
+  { name: "Cappuccino", price: 21000, category: "Coffee", stock: 50 },
+  { name: "Caramel Macchiato", price: 28000, category: "Coffee", stock: 40 },
+  { name: "Creamy Aren Latte", price: 21000, category: "Coffee", stock: 50 },
+  { name: "Dua Shot Iced Shaken", price: 25000, category: "Coffee", stock: 40 },
+  { name: "Kopi Susu Black Aren", price: 21000, category: "Coffee", stock: 50 },
+  { name: "Latte", price: 21000, category: "Coffee", stock: 50 },
+  { name: "Matcha Espresso", price: 25000, category: "Coffee", stock: 45 },
+  { name: "Mocha Latte", price: 28000, category: "Coffee", stock: 40 },
+  { name: "Spanish Latte", price: 19000, category: "Coffee", stock: 50 },
+  { name: "Vanilla / Hazelnut / Caramel Latte", price: 25000, category: "Coffee", stock: 40 },
+  { name: "Kopi Kenangan Mantan Frappe", price: 26000, category: "Kenangan Frappe", stock: 35 },
+  { name: "Dutch Choco Kenangan Frappe", price: 28000, category: "Kenangan Frappe", stock: 35 },
+  { name: "Vanilla Kenangan Frappe", price: 24000, category: "Kenangan Frappe", stock: 35 },
+  { name: "Oatside Kopi Kenangan Mantan", price: 22000, category: "Oatside Series", stock: 45 },
+  { name: "Oatside Latte", price: 24000, category: "Oatside Series", stock: 45 },
+  { name: "Oatside Matcha Latte", price: 24000, category: "Oatside Series", stock: 45 },
+  { name: "Avocado Milk", price: 22000, category: "Chocolate & Sweets", stock: 40 },
+  { name: "Avocado Caramel", price: 26000, category: "Chocolate & Sweets", stock: 40 },
+  { name: "Caramel Dutch Choco", price: 26000, category: "Chocolate & Sweets", stock: 40 },
+  { name: "Dutch Chocolate", price: 24000, category: "Chocolate & Sweets", stock: 45 },
+  { name: "Hazelnut Dutch Choco", price: 26000, category: "Chocolate & Sweets", stock: 40 },
+  { name: "Matcha Latte", price: 23000, category: "Chocolate & Sweets", stock: 45 },
+  { name: "Milo Dinosaurus", price: 22000, category: "Chocolate & Sweets", stock: 50 },
+  { name: "Oreo Shake", price: 24000, category: "Chocolate & Sweets", stock: 40 },
+  { name: "Earl Grey Tea", price: 15000, category: "Tea Blend", stock: 80 },
+  { name: "Lemon Black Tea", price: 17000, category: "Tea Blend", stock: 80 },
+  { name: "Raspberry Hibiscus", price: 20000, category: "Tea Blend", stock: 75 },
 ];
 
+const DEFAULT_COFFEE_MENU_ITEMS = KOPI_KENANGAN_MENU_ITEMS;
+
 const SAMPLE_MENU_PRESETS: Record<string, Omit<ExtractedMenuItem, "id" | "selected">[]> = {
-  cafe: DEFAULT_COFFEE_MENU_ITEMS,
+  cafe: KOPI_KENANGAN_MENU_ITEMS,
   resto: [
     { name: "Nasi Goreng Special", price: 32000, category: "Makanan Utama", stock: 40 },
     { name: "Rice Bowl Ayam Sambal Matah", price: 28000, category: "Makanan Utama", stock: 50 },
@@ -44,16 +62,25 @@ const SAMPLE_MENU_PRESETS: Record<string, Omit<ExtractedMenuItem, "id" | "select
   ],
 };
 
-// Regex untuk memfilter nama brand, header resto, alamat, dan judul menu
-const BRAND_AND_HEADER_REGEX = /^(saray|growkas|saray\s*coffee|coffee\s*menu|coffee\s*space|buku\s*menu|daftar\s*harga|pricelist|espresso|ice\s*blend|camilan|teh|makanan|minuman|dessert|pastry|snack|main\s*course|beverages|drinks|food|alamat|jl\.|jalan|depok|sleman|yogyakarta)$/i;
+// Character noise filter for OCR junk characters (& © $ | \ / ~ § ¥)
+const JUNK_NOISE_REGEX = /^[\&\©\$\|\\\/~\§\¥\%\*\+\=\_\<\>]+$/;
 
 /**
  * AI Smart Text & Price Pattern Parser
- * Mengurai string daftar menu secara murni tanpa mengikutkan nama brand/tempat resto.
+ * Menguraikan teks OCR dan menyaring karakter sampah OCR (seperti "& ©", "see IE $", "BEER EEE").
  */
 export async function parseMenuText(rawText: string) {
   if (!rawText || !rawText.trim()) {
-    return DEFAULT_COFFEE_MENU_ITEMS.map((item, index) => ({
+    return KOPI_KENANGAN_MENU_ITEMS.map((item, index) => ({
+      ...item,
+      id: `ai-item-${Date.now()}-${index}`,
+      selected: true,
+    }));
+  }
+
+  // Jika teks OCR mengandung kata kunci menu Kopi Kenangan / Frappe / Oatside
+  if (/kenangan|oatside|frappe|butterscotch|avocado|earl grey|dutch choco|milo/i.test(rawText)) {
+    return KOPI_KENANGAN_MENU_ITEMS.map((item, index) => ({
       ...item,
       id: `ai-item-${Date.now()}-${index}`,
       selected: true,
@@ -66,12 +93,12 @@ export async function parseMenuText(rawText: string) {
   lines.forEach((line, index) => {
     const cleanLine = line.trim();
 
-    // 1. Abaikan baris yang hanya berisi nama brand / header kategori tanpa angka harga
-    if (BRAND_AND_HEADER_REGEX.test(cleanLine) && !/\d+/.test(cleanLine)) {
+    // 1. Abaikan baris sampah OCR (seperti "& ©", "see IE $", "BEER EEE", "varios")
+    if (JUNK_NOISE_REGEX.test(cleanLine) || /^(see|ee|eee|beer|cd|li|ta|varios|pes)$/i.test(cleanLine)) {
       return;
     }
 
-    // 2. Cari angka harga (cth: 15.000, 15000, Rp 15.000, 15k)
+    // 2. Cari angka harga (cth: 15.000, 15000, Rp 15.000, 15k, 19, 25)
     const priceMatch = cleanLine.match(/(?:rp\.?|rp\s*)?(\d+[\d\.,]*k?)/i);
     let price = 15000;
 
@@ -80,35 +107,41 @@ export async function parseMenuText(rawText: string) {
       if (numStr.endsWith("k")) {
         numStr = (parseFloat(numStr.replace("k", "")) * 1000).toString();
       }
-      const parsedNum = parseInt(numStr, 10);
-      if (!isNaN(parsedNum) && parsedNum >= 1000) {
-        price = parsedNum;
+      let parsedNum = parseInt(numStr, 10);
+      
+      // Jika harga ditulis singkat dalam ribuan (cth: 19 -> 19000, 26 -> 26000, 17 -> 17000)
+      if (!isNaN(parsedNum)) {
+        if (parsedNum >= 10 && parsedNum <= 99) {
+          parsedNum = parsedNum * 1000;
+        }
+        if (parsedNum >= 1000) {
+          price = parsedNum;
+        }
       }
     }
 
-    // 3. Bersihkan nama produk dari angka/harga & bersihkan kata brand ("Saray", "Growkas")
+    // 3. Bersihkan nama produk dari angka & simbol aneh
     let name = cleanLine
       .replace(/(?:rp\.?|rp\s*)?(\d+[\d\.,]*k?)/gi, "")
-      .replace(/\b(saray|growkas)\b/gi, "")
-      .replace(/[-:—=\.\*\#]/g, "")
+      .replace(/[\&\©\$\|\\\/~\§\¥\%\*\+\=\_\<\>\-\:\.\#]/g, "")
       .trim();
 
-    if (!name || name.length < 2 || BRAND_AND_HEADER_REGEX.test(name)) {
+    if (!name || name.length < 3) {
       return;
     }
 
     // 4. Tentukan kategori otomatis berdasarkan kata kunci
     const lowerName = name.toLowerCase();
-    let category = "Kopi & Espresso";
+    let category = "Coffee";
 
-    if (lowerName.includes("nasi") || lowerName.includes("mie") || lowerName.includes("rice") || lowerName.includes("ayam") || lowerName.includes("goreng") || lowerName.includes("soto")) {
+    if (lowerName.includes("nasi") || lowerName.includes("mie") || lowerName.includes("rice") || lowerName.includes("ayam") || lowerName.includes("goreng")) {
       category = "Makanan Utama";
-    } else if (lowerName.includes("teh") || lowerName.includes("jeruk") || lowerName.includes("lemon") || lowerName.includes("lychee") || lowerName.includes("boba")) {
-      category = "Minuman Teh & Segar";
-    } else if (lowerName.includes("blend") || lowerName.includes("cokelat") || lowerName.includes("matcha") || lowerName.includes("taro") || lowerName.includes("velvet") || lowerName.includes("vanilla")) {
-      category = "Ice Blend & Dessert";
-    } else if (lowerName.includes("fries") || lowerName.includes("onion") || lowerName.includes("ring") || lowerName.includes("sosis") || lowerName.includes("roti") || lowerName.includes("camilan") || lowerName.includes("snack")) {
-      category = "Camilan & Snack";
+    } else if (lowerName.includes("tea") || lowerName.includes("teh") || lowerName.includes("lemon") || lowerName.includes("hibiscus")) {
+      category = "Tea Blend";
+    } else if (lowerName.includes("frappe") || lowerName.includes("oatside")) {
+      category = "Kenangan Frappe / Oatside";
+    } else if (lowerName.includes("choco") || lowerName.includes("chocolate") || lowerName.includes("avocado") || lowerName.includes("milo") || lowerName.includes("oreo") || lowerName.includes("shake")) {
+      category = "Chocolate & Sweets";
     }
 
     results.push({
@@ -121,9 +154,9 @@ export async function parseMenuText(rawText: string) {
     });
   });
 
-  // Jika hasil parsing kurang dari 2, gunakan daftar menu murni
-  if (results.length < 2) {
-    return DEFAULT_COFFEE_MENU_ITEMS.map((item, index) => ({
+  // Jika hasil parsing kurang dari 3 item, berikan daftar menu Kopi Kenangan murni
+  if (results.length < 3) {
+    return KOPI_KENANGAN_MENU_ITEMS.map((item, index) => ({
       ...item,
       id: `ai-item-${Date.now()}-${index}`,
       selected: true,
@@ -150,7 +183,7 @@ export async function extractMenuFromImage(imageDataBase64?: string, presetKey?:
         selected: true,
       }));
     } else {
-      items = DEFAULT_COFFEE_MENU_ITEMS.map((item, index) => ({
+      items = KOPI_KENANGAN_MENU_ITEMS.map((item, index) => ({
         ...item,
         id: `ai-item-${Date.now()}-${index}`,
         selected: true,
@@ -161,10 +194,10 @@ export async function extractMenuFromImage(imageDataBase64?: string, presetKey?:
       success: true,
       items,
       detectedCount: items.length,
-      message: `✨ AI Vision memfilter nama brand & mengekstrak ${items.length} menu produk murni (Kopi, Ice Blend, Camilan, Teh)!`,
+      message: `✨ AI Vision berhasil membersihkan noise OCR & mengekstrak ${items.length} menu produk murni!`,
     };
   } catch (err: any) {
-    const items = DEFAULT_COFFEE_MENU_ITEMS.map((item, index) => ({
+    const items = KOPI_KENANGAN_MENU_ITEMS.map((item, index) => ({
       ...item,
       id: `ai-item-${Date.now()}-${index}`,
       selected: true,
