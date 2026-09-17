@@ -24,6 +24,8 @@ export interface CartItemModifier {
   tableNumber?: string;
   iceLevel?: "Normal Ice" | "Less Ice" | "No Ice";
   sugarLevel?: "Normal Sugar" | "Less Sugar" | "No Sugar";
+  spicyLevel?: "Tidak Pedas" | "Sedang" | "Pedas Mantap";
+  warmOption?: "Hangat / Toasted" | "Normal";
   addOns?: string[];
   addOnPrice?: number;
   customNote?: string;

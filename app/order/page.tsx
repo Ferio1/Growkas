@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import GrowkasLogo from "@/app/components/GrowkasLogo";
 import { getProductsAndCategories, ProductItem, CartItem, saveTransaction } from "@/app/actions/posActions";
 import { createTableOrder } from "@/app/actions/orderActions";
+import { getProductType, formatItemModifiersSummary, ProductType } from "@/app/utils/productUtils";
 
 function OrderPageContent() {
   const searchParams = useSearchParams();
@@ -25,10 +26,23 @@ function OrderPageContent() {
 
   // Customizer Modal State
   const [customizerProduct, setCustomizerProduct] = useState<ProductItem | null>(null);
+
+  // Drink Modifiers (Kopi & Minuman)
   const [iceLevel, setIceLevel] = useState<"Normal Ice" | "Less Ice" | "No Ice">("Normal Ice");
   const [sugarLevel, setSugarLevel] = useState<"Normal Sugar" | "Less Sugar" | "No Sugar">("Normal Sugar");
   const [extraShot, setExtraShot] = useState(false);
   const [extraSyrup, setExtraSyrup] = useState(false);
+
+  // Food Modifiers (Makanan Utama)
+  const [spicyLevel, setSpicyLevel] = useState<"Tidak Pedas" | "Sedang" | "Pedas Mantap">("Sedang");
+  const [extraEgg, setExtraEgg] = useState(false);
+  const [extraSambal, setExtraSambal] = useState(false);
+
+  // Snack / Pastry Modifiers (Camilan / Roti)
+  const [warmOption, setWarmOption] = useState<"Hangat / Toasted" | "Normal">("Hangat / Toasted");
+  const [extraCheese, setExtraCheese] = useState(false);
+
+  // Catatan Khusus
   const [customNote, setCustomNote] = useState("");
 
   useEffect(() => {
@@ -40,33 +54,77 @@ function OrderPageContent() {
   }, []);
 
   const openCustomizer = (product: ProductItem) => {
+    const type = getProductType(product);
+
+    // Jika produk retail/sembako (Minyak Goreng, Sabun, dsb.) -> Langsung masuk ke cart tanpa modal es/gula
+    if (type === "retail") {
+      setCart((prev) => [
+        ...prev,
+        {
+          product,
+          quantity: 1,
+          note: "",
+          modifiers: {
+            orderType: "Dine In",
+            tableNumber: `Meja ${tableNum}`,
+          },
+        },
+      ]);
+      return;
+    }
+
     setCustomizerProduct(product);
     setIceLevel("Normal Ice");
     setSugarLevel("Normal Sugar");
     setExtraShot(false);
     setExtraSyrup(false);
+    setSpicyLevel("Sedang");
+    setExtraEgg(false);
+    setExtraSambal(false);
+    setWarmOption("Hangat / Toasted");
+    setExtraCheese(false);
     setCustomNote("");
   };
 
   const handleSaveCustomizer = () => {
     if (!customizerProduct) return;
 
+    const type = getProductType(customizerProduct);
     const addOns: string[] = [];
     let addOnPrice = 0;
-    if (extraShot) {
-      addOns.push("Extra Shot (+Rp 4.000)");
-      addOnPrice += 4000;
-    }
-    if (extraSyrup) {
-      addOns.push("Extra Syrup (+Rp 3.000)");
-      addOnPrice += 3000;
+
+    if (type === "coffee" || type === "beverage") {
+      if (extraShot) {
+        addOns.push("Extra Shot (+Rp 4.000)");
+        addOnPrice += 4000;
+      }
+      if (extraSyrup) {
+        addOns.push("Extra Syrup (+Rp 3.000)");
+        addOnPrice += 3000;
+      }
+    } else if (type === "food") {
+      if (extraEgg) {
+        addOns.push("Telur Ceplok (+Rp 4.000)");
+        addOnPrice += 4000;
+      }
+      if (extraSambal) {
+        addOns.push("Ekstra Sambal (+Rp 3.000)");
+        addOnPrice += 3000;
+      }
+    } else if (type === "snack") {
+      if (extraCheese) {
+        addOns.push("Ekstra Topping (+Rp 3.000)");
+        addOnPrice += 3000;
+      }
     }
 
     const modifierObj = {
       orderType: "Dine In" as const,
       tableNumber: `Meja ${tableNum}`,
-      iceLevel,
-      sugarLevel,
+      iceLevel: (type === "coffee" || type === "beverage") ? iceLevel : undefined,
+      sugarLevel: (type === "coffee" || type === "beverage") ? sugarLevel : undefined,
+      spicyLevel: type === "food" ? spicyLevel : undefined,
+      warmOption: type === "snack" ? warmOption : undefined,
       addOns,
       addOnPrice,
       customNote,
@@ -85,12 +143,7 @@ function OrderPageContent() {
   const subtotal = cart.reduce((acc, item) => acc + getItemPrice(item) * item.quantity, 0);
 
   const formatModifiersSummary = (item: CartItem) => {
-    const parts: string[] = [];
-    if (item.modifiers?.iceLevel) parts.push(item.modifiers.iceLevel);
-    if (item.modifiers?.sugarLevel) parts.push(item.modifiers.sugarLevel);
-    if (item.modifiers?.addOns && item.modifiers.addOns.length > 0) parts.push(item.modifiers.addOns.join(", "));
-    if (item.note) parts.push(`Note: ${item.note}`);
-    return parts.join(" • ");
+    return formatItemModifiersSummary(item.modifiers, item.note);
   };
 
   const handlePayOnline = async () => {
@@ -145,18 +198,39 @@ function OrderPageContent() {
   };
 
   const CATEGORY_TABS = [
-    { id: "all", label: "Semua", icon: "🌐" },
+    { id: "all", label: "Semua Menu", icon: "🌐" },
     { id: "kopi", label: "Kopi", icon: "☕" },
     { id: "nonkopi", label: "Non-Coffee", icon: "🍹" },
     { id: "makanan", label: "Makanan", icon: "🍱" },
-    { id: "snack", label: "Snack", icon: "🥐" },
+    { id: "snack", label: "Snack & Roti", icon: "🥐" },
+    { id: "lainnya", label: "Lainnya", icon: "🛒" },
   ];
 
+  // Smart F&B Filter (Minyak Goreng/Sembako hanya masuk kategori 'Lainnya' atau saat dicari)
   const filteredProducts = products.filter((p) => {
     const q = searchQuery.toLowerCase();
     const matchSearch = q === "" || p.name.toLowerCase().includes(q);
-    return matchSearch;
+    if (!matchSearch) return false;
+
+    const type = getProductType(p);
+
+    if (selectedCategory === "all") {
+      // Pada tab 'Semua Menu', utamakan menu cafe F&B (exclude barang sembako jika ada)
+      return type !== "retail";
+    }
+    if (selectedCategory === "kopi") return type === "coffee";
+    if (selectedCategory === "nonkopi") return type === "beverage";
+    if (selectedCategory === "makanan") return type === "food";
+    if (selectedCategory === "snack") return type === "snack";
+    if (selectedCategory === "lainnya") return type === "retail";
+
+    return true;
   });
+
+  const activeProductType = customizerProduct ? getProductType(customizerProduct) : "coffee";
+  const isBeverage = activeProductType === "coffee" || activeProductType === "beverage";
+  const isFood = activeProductType === "food";
+  const isSnack = activeProductType === "snack";
 
   return (
     <div style={{ background: "#0A0A0A", color: "#F5F0E8", minHeight: "100vh", fontFamily: "system-ui, sans-serif", paddingBottom: "100px" }}>
@@ -179,65 +253,91 @@ function OrderPageContent() {
         <h1 style={{ fontSize: "1.25rem", fontWeight: "900", margin: "2px 0 0" }}>{branchName}</h1>
       </div>
 
-      <div style={{ padding: "16px" }}>
-        
-        {/* SEARCH BAR */}
-        <div style={{ marginBottom: "14px" }}>
-          <input
-            type="text"
-            placeholder="Cari kopi, minuman, atau makanan..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%", padding: "12px 16px", borderRadius: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", color: "#F5F0E8", fontSize: "0.88rem", outline: "none", boxSizing: "border-box",
-            }}
-          />
+      {/* SUCCESS SCREEN SETELAH ORDER */}
+      {isOrderComplete ? (
+        <div style={{ padding: "40px 20px", textAlign: "center" }}>
+          <div style={{ fontSize: "3.5rem", marginBottom: "12px" }}>🎉</div>
+          <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#4ADE80", marginBottom: "6px" }}>
+            Pesanan Berhasil Terkirim!
+          </h2>
+          <p style={{ color: "rgba(245,240,232,0.7)", fontSize: "0.9rem", maxWidth: "340px", margin: "0 auto 20px" }}>
+            Pesanan Anda (#{completedInvoice}) untuk <strong>Meja {tableNum}</strong> telah masuk ke antrean dapur &amp; kasir. Silakan tunggu disajikan.
+          </p>
+          <button
+            onClick={() => setIsOrderComplete(false)}
+            style={{ padding: "12px 24px", background: "#D4651C", color: "#FFF", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
+          >
+            Pesan Menu Tambahan
+          </button>
         </div>
-
-        {/* KATEGORI PILLS */}
-        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "12px" }}>
-          {CATEGORY_TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setSelectedCategory(t.id)}
+      ) : (
+        <div style={{ padding: "16px" }}>
+          
+          {/* SEARCH INPUT */}
+          <div style={{ marginBottom: "14px" }}>
+            <input
+              type="text"
+              placeholder="Cari menu kopi, minuman, atau makanan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               style={{
-                padding: "8px 14px", borderRadius: "8px",
-                background: selectedCategory === t.id ? "#D4651C" : "rgba(255,255,255,0.05)",
-                color: selectedCategory === t.id ? "#FFF" : "rgba(245,240,232,0.7)",
-                border: "none", fontSize: "0.8rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer",
+                width: "100%", padding: "12px 16px", borderRadius: "10px", background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.12)", color: "#FFF", fontSize: "0.9rem", boxSizing: "border-box", outline: "none",
               }}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
-        </div>
+            />
+          </div>
 
-        {/* LIST KATALOG PRODUK MOBILE */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-          {filteredProducts.map((p) => (
-            <div
-              key={p.id}
-              onClick={() => openCustomizer(p)}
-              style={{
-                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "12px", display: "flex", flexDirection: "column", justifyContent: "space-between", cursor: "pointer", minHeight: "150px",
-              }}
-            >
-              <div>
-                <h3 style={{ fontSize: "0.85rem", fontWeight: "700", margin: "0 0 6px", lineHeight: "1.3" }}>{p.name}</h3>
-                <div style={{ fontSize: "0.72rem", color: "rgba(245,240,232,0.5)" }}>Stok: {p.stock}</div>
-              </div>
+          {/* KATEGORI PILLS */}
+          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "12px" }}>
+            {CATEGORY_TABS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedCategory(t.id)}
+                style={{
+                  padding: "8px 14px", borderRadius: "8px",
+                  background: selectedCategory === t.id ? "#D4651C" : "rgba(255,255,255,0.05)",
+                  color: selectedCategory === t.id ? "#FFF" : "rgba(245,240,232,0.7)",
+                  border: "none", fontSize: "0.8rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer",
+                }}
+              >
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#D4651C" }}>Rp {p.price.toLocaleString("id-ID")}</span>
-                <span style={{ background: "#D4651C", color: "#FFF", borderRadius: "6px", padding: "3px 8px", fontSize: "0.72rem", fontWeight: "bold" }}>+ Pesan</span>
-              </div>
-            </div>
-          ))}
+          {/* LIST KATALOG PRODUK MOBILE */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            {filteredProducts.map((p) => {
+              const pType = getProductType(p);
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => openCustomizer(p)}
+                  style={{
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "12px", display: "flex", flexDirection: "column", justifyContent: "space-between", cursor: "pointer", minHeight: "150px",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: "0.68rem", color: "#D4651C", fontWeight: "bold", textTransform: "uppercase" }}>
+                      {pType === "coffee" ? "Kopi" : pType === "beverage" ? "Minuman" : pType === "food" ? "Makanan" : pType === "snack" ? "Camilan" : "Produk"}
+                    </span>
+                    <h3 style={{ fontSize: "0.85rem", fontWeight: "700", margin: "2px 0 6px", lineHeight: "1.3" }}>{p.name}</h3>
+                    <div style={{ fontSize: "0.72rem", color: "rgba(245,240,232,0.5)" }}>Stok: {p.stock}</div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#D4651C" }}>Rp {p.price.toLocaleString("id-ID")}</span>
+                    <span style={{ background: "#D4651C", color: "#FFF", borderRadius: "6px", padding: "3px 8px", fontSize: "0.72rem", fontWeight: "bold" }}>+ Pesan</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* STICKY BOTTOM CART BAR */}
-      {cart.length > 0 && (
+      {cart.length > 0 && !isOrderComplete && (
         <div style={{
           position: "fixed", bottom: "16px", left: "16px", right: "16px", zIndex: 200,
           background: "#D4651C", borderRadius: "14px", padding: "14px 18px", color: "#FFF",
@@ -253,51 +353,132 @@ function OrderPageContent() {
         </div>
       )}
 
-      {/* MODAL F&B CUSTOMIZER */}
+      {/* MODAL F&B CUSTOMIZER SESUAI TIPE PRODUK */}
       {customizerProduct && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <div style={{ background: "#161616", borderTop: "2px solid #D4651C", borderTopLeftRadius: "20px", borderTopRightRadius: "20px", width: "100%", maxWidth: "500px", padding: "20px", boxSizing: "border-box" }}>
+            
+            {/* Header Produk */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0 }}>{customizerProduct.name}</h3>
+              <div>
+                <div style={{ fontSize: "0.7rem", color: "#D4651C", fontWeight: "bold", textTransform: "uppercase" }}>
+                  {isBeverage ? "Kustomisasi Minuman" : isFood ? "Kustomisasi Makanan Utama" : "Penyajian Camilan"}
+                </div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: "2px 0 0" }}>{customizerProduct.name}</h3>
+              </div>
               <span style={{ color: "#D4651C", fontWeight: "800", fontSize: "1rem" }}>Rp {customizerProduct.price.toLocaleString("id-ID")}</span>
             </div>
 
-            {/* Opsi Level Es */}
-            <div style={{ marginBottom: "14px" }}>
-              <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Level Es</label>
-              <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
-                {(["Normal Ice", "Less Ice", "No Ice"] as const).map((l) => (
-                  <button key={l} onClick={() => setIceLevel(l)} style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid " + (iceLevel === l ? "#D4651C" : "rgba(255,255,255,0.1)"), background: iceLevel === l ? "rgba(212,101,28,0.2)" : "transparent", color: iceLevel === l ? "#D4651C" : "#FFF", fontSize: "0.78rem" }}>{l}</button>
-                ))}
-              </div>
+            {/* JIKA MINUMAN: LEVEL ES & LEVEL GULA */}
+            {isBeverage && (
+              <>
+                {/* Opsi Level Es */}
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Level Es</label>
+                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                    {(["Normal Ice", "Less Ice", "No Ice"] as const).map((l) => (
+                      <button key={l} onClick={() => setIceLevel(l)} style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid " + (iceLevel === l ? "#D4651C" : "rgba(255,255,255,0.1)"), background: iceLevel === l ? "rgba(212,101,28,0.2)" : "transparent", color: iceLevel === l ? "#D4651C" : "#FFF", fontSize: "0.78rem" }}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Opsi Level Gula */}
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Level Gula</label>
+                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                    {(["Normal Sugar", "Less Sugar", "No Sugar"] as const).map((s) => (
+                      <button key={s} onClick={() => setSugarLevel(s)} style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid " + (sugarLevel === s ? "#D4651C" : "rgba(255,255,255,0.1)"), background: sugarLevel === s ? "rgba(212,101,28,0.2)" : "transparent", color: sugarLevel === s ? "#D4651C" : "#FFF", fontSize: "0.78rem" }}>{s}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Add-Ons Minuman */}
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Tambahan Add-On Minuman</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
+                    <label style={{ fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraShot} onChange={(e) => setExtraShot(e.target.checked)} /> Extra Shot Espresso (+Rp 4.000)
+                    </label>
+                    <label style={{ fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraSyrup} onChange={(e) => setExtraSyrup(e.target.checked)} /> Extra Flavor Syrup (+Rp 3.000)
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* JIKA MAKANAN UTAMA: LEVEL PEDAS & ADD-ON LAUK */}
+            {isFood && (
+              <>
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Level Kepedasan</label>
+                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                    {(["Tidak Pedas", "Sedang", "Pedas Mantap"] as const).map((lvl) => (
+                      <button key={lvl} onClick={() => setSpicyLevel(lvl)} style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid " + (spicyLevel === lvl ? "#D4651C" : "rgba(255,255,255,0.1)"), background: spicyLevel === lvl ? "rgba(212,101,28,0.2)" : "transparent", color: spicyLevel === lvl ? "#D4651C" : "#FFF", fontSize: "0.78rem" }}>{lvl}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Tambahan Lauk / Topping</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
+                    <label style={{ fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraEgg} onChange={(e) => setExtraEgg(e.target.checked)} /> Telur Ceplok (+Rp 4.000)
+                    </label>
+                    <label style={{ fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraSambal} onChange={(e) => setExtraSambal(e.target.checked)} /> Ekstra Sambal (+Rp 3.000)
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* JIKA SNACK / ROTI: PENYAJIAN HANGAT & TOPPING */}
+            {isSnack && (
+              <>
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Pilihan Penyajian</label>
+                  <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                    {(["Hangat / Toasted", "Normal"] as const).map((opt) => (
+                      <button key={opt} onClick={() => setWarmOption(opt)} style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid " + (warmOption === opt ? "#D4651C" : "rgba(255,255,255,0.1)"), background: warmOption === opt ? "rgba(212,101,28,0.2)" : "transparent", color: warmOption === opt ? "#D4651C" : "#FFF", fontSize: "0.78rem" }}>{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Tambahan</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
+                    <label style={{ fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraCheese} onChange={(e) => setExtraCheese(e.target.checked)} /> Ekstra Topping/Keju (+Rp 3.000)
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Catatan Khusus Pesanan */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Catatan Khusus (Opsional)</label>
+              <input
+                type="text"
+                placeholder="Cth: Sambal dipisah, jangan pakai daun bawang..."
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                style={{
+                  width: "100%", padding: "10px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)", color: "#FFF", fontSize: "0.82rem", marginTop: "4px", boxSizing: "border-box", outline: "none",
+                }}
+              />
             </div>
 
-            {/* Opsi Level Gula */}
-            <div style={{ marginBottom: "14px" }}>
-              <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Level Gula</label>
-              <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
-                {(["Normal Sugar", "Less Sugar", "No Sugar"] as const).map((s) => (
-                  <button key={s} onClick={() => setSugarLevel(s)} style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid " + (sugarLevel === s ? "#D4651C" : "rgba(255,255,255,0.1)"), background: sugarLevel === s ? "rgba(212,101,28,0.2)" : "transparent", color: sugarLevel === s ? "#D4651C" : "#FFF", fontSize: "0.78rem" }}>{s}</button>
-                ))}
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              <button onClick={() => setCustomizerProduct(null)} style={{ padding: "12px", borderRadius: "10px", background: "rgba(255,255,255,0.08)", color: "#FFF", border: "none" }}>
+                Batal
+              </button>
+              <button onClick={handleSaveCustomizer} style={{ padding: "12px", borderRadius: "10px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "800", fontSize: "0.9rem" }}>
+                + Tambahkan
+              </button>
             </div>
-
-            {/* Add-Ons */}
-            <div style={{ marginBottom: "14px" }}>
-              <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "rgba(245,240,232,0.6)", textTransform: "uppercase" }}>Tambahan Add-On</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
-                <label style={{ fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <input type="checkbox" checked={extraShot} onChange={(e) => setExtraShot(e.target.checked)} /> Extra Shot (+Rp 4.000)
-                </label>
-                <label style={{ fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <input type="checkbox" checked={extraSyrup} onChange={(e) => setExtraSyrup(e.target.checked)} /> Extra Syrup (+Rp 3.000)
-                </label>
-              </div>
-            </div>
-
-            <button onClick={handleSaveCustomizer} style={{ width: "100%", padding: "12px", borderRadius: "10px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "800", fontSize: "0.9rem" }}>
-              + Tambahkan Pesanan
-            </button>
           </div>
         </div>
       )}
@@ -354,28 +535,13 @@ function OrderPageContent() {
         </div>
       )}
 
-      {/* SUKSES BERHASIL ORDER */}
-      {isOrderComplete && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#0A0A0A", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", textAlign: "center" }}>
-          <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🎉</div>
-          <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#4ade80", marginBottom: "6px" }}>Pesanan Diterima!</h2>
-          <p style={{ color: "rgba(245,240,232,0.7)", fontSize: "0.88rem", marginBottom: "20px" }}>
-            No. Invoice: <strong>{completedInvoice}</strong><br />
-            Pesanan Meja <strong>{tableNum}</strong> sedang disiapkan oleh barista &amp; dapur.
-          </p>
-          <button onClick={() => setIsOrderComplete(false)} style={{ padding: "12px 24px", borderRadius: "10px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "bold" }}>
-            Pesan Menu Lain ➔
-          </button>
-        </div>
-      )}
-
     </div>
   );
 }
 
 export default function OrderPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 20, color: '#F5F0E8' }}>Loading menu...</div>}>
+    <Suspense fallback={<div style={{ background: "#0A0A0A", color: "#FFF", padding: "40px", textAlign: "center" }}>Memuat Halaman Menu...</div>}>
       <OrderPageContent />
     </Suspense>
   );

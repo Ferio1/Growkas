@@ -9,6 +9,7 @@ import ShiftManagerModal from "./ShiftManagerModal";
 import { getActiveShift, recordSaleToActiveShift, CashierShift } from "@/app/actions/shiftActions";
 import { getTableOrders } from "@/app/actions/orderActions";
 import { deductRawIngredientsForItems } from "@/app/actions/ingredientActions";
+import { getProductType, formatItemModifiersSummary } from "@/app/utils/productUtils";
 import Link from "next/link";
 
 interface KasirViewProps {
@@ -121,14 +122,22 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   };
 
   const filteredProducts = products.filter((p) => {
-    const group = getProductGroup(p);
-    const matchCategory = selectedCategory === "all" || group === selectedCategory;
     const q = searchQuery.trim().toLowerCase();
     const matchSearch =
       q === "" ||
       p.name.toLowerCase().includes(q) ||
       (p.barcode && p.barcode.toLowerCase().includes(q));
-    return matchCategory && matchSearch;
+    if (!matchSearch) return false;
+
+    const pType = getProductType(p);
+    if (selectedCategory === "all") return pType !== "retail";
+    if (selectedCategory === "kopi") return pType === "coffee";
+    if (selectedCategory === "nonkopi") return pType === "beverage";
+    if (selectedCategory === "makanan") return pType === "food";
+    if (selectedCategory === "snack") return pType === "snack";
+    if (selectedCategory === "retail") return pType === "retail";
+
+    return true;
   });
 
   // Customizer Modal State
@@ -136,13 +145,45 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   const [customizerCartIndex, setCustomizerCartIndex] = useState<number | null>(null);
   const [orderType, setOrderType] = useState<"Dine In" | "Takeaway">("Dine In");
   const [tableNumber, setTableNumber] = useState("Meja 01");
+
+  // Drink Modifiers
   const [iceLevel, setIceLevel] = useState<"Normal Ice" | "Less Ice" | "No Ice">("Normal Ice");
   const [sugarLevel, setSugarLevel] = useState<"Normal Sugar" | "Less Sugar" | "No Sugar">("Normal Sugar");
   const [extraShot, setExtraShot] = useState(false);
   const [extraSyrup, setExtraSyrup] = useState(false);
+
+  // Food Modifiers
+  const [spicyLevel, setSpicyLevel] = useState<"Tidak Pedas" | "Sedang" | "Pedas Mantap">("Sedang");
+  const [extraEgg, setExtraEgg] = useState(false);
+  const [extraSambal, setExtraSambal] = useState(false);
+
+  // Snack / Pastry Modifiers
+  const [warmOption, setWarmOption] = useState<"Hangat / Toasted" | "Normal">("Hangat / Toasted");
+  const [extraCheese, setExtraCheese] = useState(false);
+
   const [customNote, setCustomNote] = useState("");
 
   const openCustomizer = (product: ProductItem, existingCartIdx?: number) => {
+    const type = getProductType(product);
+
+    // JIKA BARANG RETAIL / SEMBAKO (cth: Minyak Goreng, Sabun, Beras):
+    // Langsung tambahkan ke keranjang kasir tanpa modal es/gula
+    if (type === "retail") {
+      setCart((prev) => [
+        ...prev,
+        {
+          product,
+          quantity: 1,
+          note: "",
+          modifiers: {
+            orderType,
+            tableNumber: orderType === "Dine In" ? tableNumber : undefined,
+          },
+        },
+      ]);
+      return;
+    }
+
     setCustomizerProduct(product);
     if (existingCartIdx !== undefined && existingCartIdx !== null) {
       setCustomizerCartIndex(existingCartIdx);
@@ -152,8 +193,13 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         setTableNumber(existing.modifiers.tableNumber || "Meja 01");
         setIceLevel(existing.modifiers.iceLevel || "Normal Ice");
         setSugarLevel(existing.modifiers.sugarLevel || "Normal Sugar");
+        setSpicyLevel(existing.modifiers.spicyLevel || "Sedang");
+        setWarmOption(existing.modifiers.warmOption || "Hangat / Toasted");
         setExtraShot(existing.modifiers.addOns?.includes("Extra Shot (+Rp 4.000)") || false);
         setExtraSyrup(existing.modifiers.addOns?.includes("Extra Syrup (+Rp 3.000)") || false);
+        setExtraEgg(existing.modifiers.addOns?.includes("Telur Ceplok (+Rp 4.000)") || false);
+        setExtraSambal(existing.modifiers.addOns?.includes("Ekstra Sambal (+Rp 3.000)") || false);
+        setExtraCheese(existing.modifiers.addOns?.includes("Ekstra Topping (+Rp 3.000)") || false);
         setCustomNote(existing.modifiers.customNote || existing.note || "");
         return;
       }
@@ -164,31 +210,55 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     setTableNumber("Meja 01");
     setIceLevel("Normal Ice");
     setSugarLevel("Normal Sugar");
+    setSpicyLevel("Sedang");
+    setWarmOption("Hangat / Toasted");
     setExtraShot(false);
     setExtraSyrup(false);
+    setExtraEgg(false);
+    setExtraSambal(false);
+    setExtraCheese(false);
     setCustomNote("");
   };
 
   const handleSaveCustomizer = () => {
     if (!customizerProduct) return;
 
+    const type = getProductType(customizerProduct);
     const addOns: string[] = [];
     let addOnPrice = 0;
 
-    if (extraShot) {
-      addOns.push("Extra Shot (+Rp 4.000)");
-      addOnPrice += 4000;
-    }
-    if (extraSyrup) {
-      addOns.push("Extra Syrup (+Rp 3.000)");
-      addOnPrice += 3000;
+    if (type === "coffee" || type === "beverage") {
+      if (extraShot) {
+        addOns.push("Extra Shot (+Rp 4.000)");
+        addOnPrice += 4000;
+      }
+      if (extraSyrup) {
+        addOns.push("Extra Syrup (+Rp 3.000)");
+        addOnPrice += 3000;
+      }
+    } else if (type === "food") {
+      if (extraEgg) {
+        addOns.push("Telur Ceplok (+Rp 4.000)");
+        addOnPrice += 4000;
+      }
+      if (extraSambal) {
+        addOns.push("Ekstra Sambal (+Rp 3.000)");
+        addOnPrice += 3000;
+      }
+    } else if (type === "snack") {
+      if (extraCheese) {
+        addOns.push("Ekstra Topping (+Rp 3.000)");
+        addOnPrice += 3000;
+      }
     }
 
     const modifierObj = {
       orderType,
       tableNumber: orderType === "Dine In" ? tableNumber : undefined,
-      iceLevel,
-      sugarLevel,
+      iceLevel: (type === "coffee" || type === "beverage") ? iceLevel : undefined,
+      sugarLevel: (type === "coffee" || type === "beverage") ? sugarLevel : undefined,
+      spicyLevel: type === "food" ? spicyLevel : undefined,
+      warmOption: type === "snack" ? warmOption : undefined,
       addOns,
       addOnPrice,
       customNote,
@@ -253,19 +323,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   };
 
   const formatModifiersSummary = (item: CartItem) => {
-    const parts: string[] = [];
-    if (item.modifiers?.orderType) {
-      parts.push(item.modifiers.orderType === "Dine In" ? `Dine In (${item.modifiers.tableNumber || "Meja 01"})` : "Takeaway");
-    }
-    if (item.modifiers?.iceLevel) parts.push(item.modifiers.iceLevel);
-    if (item.modifiers?.sugarLevel) parts.push(item.modifiers.sugarLevel);
-    if (item.modifiers?.addOns && item.modifiers.addOns.length > 0) {
-      parts.push(item.modifiers.addOns.join(", "));
-    }
-    if (item.note || item.modifiers?.customNote) {
-      parts.push(`Note: ${item.note || item.modifiers?.customNote}`);
-    }
-    return parts.join(" • ");
+    return formatItemModifiersSummary(item.modifiers, item.note);
   };
 
   const handleCompleteTransaction = async () => {
@@ -327,13 +385,14 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     clearCart();
   };
 
-  // Kategori Bersih Khusus F&B (Tanpa Sembako/Makanan Umum)
+  // Kategori Bersih Khusus F&B & Retail
   const CATEGORY_TABS = [
-    { id: "all", label: "Semua Menu", icon: "🌐" },
+    { id: "all", label: "Semua Menu F&B", icon: "🌐" },
     { id: "kopi", label: "Kopi & Espresso", icon: "☕" },
     { id: "nonkopi", label: "Non-Coffee & Mocktail", icon: "🍹" },
     { id: "makanan", label: "Makanan Utama", icon: "🍱" },
     { id: "snack", label: "Pastry & Snack", icon: "🥐" },
+    { id: "retail", label: "Retail / Lainnya", icon: "🛒" },
   ];
 
   return (
@@ -908,68 +967,155 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
               )}
             </div>
 
-            {/* OPSI 2: LEVEL ES */}
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
-                Level Es (Ice Level)
-              </label>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {(["Normal Ice", "Less Ice", "No Ice"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setIceLevel(l)}
-                    style={{
-                      flex: 1, padding: "6px", borderRadius: "6px",
-                      border: "1px solid " + (iceLevel === l ? "#D4651C" : "rgba(255,255,255,0.1)"),
-                      background: iceLevel === l ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
-                      color: iceLevel === l ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
-                    }}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* OPSI KHUSUS MINUMAN (KOPI / NON-COFFEE) */}
+            {(getProductType(customizerProduct) === "coffee" || getProductType(customizerProduct) === "beverage") && (
+              <>
+                {/* OPSI 2: LEVEL ES */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                    Level Es (Ice Level)
+                  </label>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {(["Normal Ice", "Less Ice", "No Ice"] as const).map((l) => (
+                      <button
+                        key={l}
+                        onClick={() => setIceLevel(l)}
+                        style={{
+                          flex: 1, padding: "6px", borderRadius: "6px",
+                          border: "1px solid " + (iceLevel === l ? "#D4651C" : "rgba(255,255,255,0.1)"),
+                          background: iceLevel === l ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                          color: iceLevel === l ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
+                        }}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            {/* OPSI 3: LEVEL GULA */}
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
-                Level Gula (Sugar Level)
-              </label>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {(["Normal Sugar", "Less Sugar", "No Sugar"] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSugarLevel(s)}
-                    style={{
-                      flex: 1, padding: "6px", borderRadius: "6px",
-                      border: "1px solid " + (sugarLevel === s ? "#D4651C" : "rgba(255,255,255,0.1)"),
-                      background: sugarLevel === s ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
-                      color: sugarLevel === s ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
-                    }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
+                {/* OPSI 3: LEVEL GULA */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                    Level Gula (Sugar Level)
+                  </label>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {(["Normal Sugar", "Less Sugar", "No Sugar"] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSugarLevel(s)}
+                        style={{
+                          flex: 1, padding: "6px", borderRadius: "6px",
+                          border: "1px solid " + (sugarLevel === s ? "#D4651C" : "rgba(255,255,255,0.1)"),
+                          background: sugarLevel === s ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                          color: sugarLevel === s ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            {/* OPSI 4: EKSTRA ADD-ON */}
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
-                Tambahan / Add-On
-              </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
-                  <input type="checkbox" checked={extraShot} onChange={(e) => setExtraShot(e.target.checked)} />
-                  <span>☕ Extra Shot Espresso (+Rp 4.000)</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
-                  <input type="checkbox" checked={extraSyrup} onChange={(e) => setExtraSyrup(e.target.checked)} />
-                  <span>🧪 Extra Flavor Syrup (+Rp 3.000)</span>
-                </label>
-              </div>
-            </div>
+                {/* OPSI 4: EKSTRA ADD-ON MINUMAN */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                    Tambahan Add-On Minuman
+                  </label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraShot} onChange={(e) => setExtraShot(e.target.checked)} />
+                      <span>☕ Extra Shot Espresso (+Rp 4.000)</span>
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraSyrup} onChange={(e) => setExtraSyrup(e.target.checked)} />
+                      <span>🧪 Extra Flavor Syrup (+Rp 3.000)</span>
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* OPSI KHUSUS MAKANAN UTAMA (FOOD) */}
+            {getProductType(customizerProduct) === "food" && (
+              <>
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                    Level Kepedasan
+                  </label>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {(["Tidak Pedas", "Sedang", "Pedas Mantap"] as const).map((lvl) => (
+                      <button
+                        key={lvl}
+                        onClick={() => setSpicyLevel(lvl)}
+                        style={{
+                          flex: 1, padding: "6px", borderRadius: "6px",
+                          border: "1px solid " + (spicyLevel === lvl ? "#D4651C" : "rgba(255,255,255,0.1)"),
+                          background: spicyLevel === lvl ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                          color: spicyLevel === lvl ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
+                        }}
+                      >
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                    Tambahan Lauk / Topping
+                  </label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraEgg} onChange={(e) => setExtraEgg(e.target.checked)} />
+                      <span>🍳 Telur Ceplok (+Rp 4.000)</span>
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraSambal} onChange={(e) => setExtraSambal(e.target.checked)} />
+                      <span>🌶️ Ekstra Sambal (+Rp 3.000)</span>
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* OPSI KHUSUS SNACK / PASTRY / ROTI */}
+            {getProductType(customizerProduct) === "snack" && (
+              <>
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                    Pilihan Penyajian
+                  </label>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {(["Hangat / Toasted", "Normal"] as const).map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => setWarmOption(opt)}
+                        style={{
+                          flex: 1, padding: "6px", borderRadius: "6px",
+                          border: "1px solid " + (warmOption === opt ? "#D4651C" : "rgba(255,255,255,0.1)"),
+                          background: warmOption === opt ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                          color: warmOption === opt ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                    Tambahan
+                  </label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={extraCheese} onChange={(e) => setExtraCheese(e.target.checked)} />
+                      <span>🧀 Ekstra Keju / Topping (+Rp 3.000)</span>
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* OPSI 5: CATATAN DAPUR */}
             <div style={{ marginBottom: "20px" }}>
