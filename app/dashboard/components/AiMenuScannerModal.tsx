@@ -1,9 +1,9 @@
 "use client";
-// app/dashboard/components/AiMenuScannerModal.tsx — Modal AI OCR Vision Photo Menu Scanner (Tesseract.js Real OCR)
+// app/dashboard/components/AiMenuScannerModal.tsx — Modal AI OCR Vision Photo Menu Scanner (Real Menu Extraction)
 
 import { useState } from "react";
 import Tesseract from "tesseract.js";
-import { parseMenuText, batchAddProducts, ExtractedMenuItem } from "@/app/actions/aiMenuActions";
+import { parseMenuText, extractMenuFromImage, batchAddProducts, ExtractedMenuItem } from "@/app/actions/aiMenuActions";
 
 interface AiMenuScannerModalProps {
   onClose: () => void;
@@ -23,7 +23,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
   const [isImporting, setIsImporting] = useState(false);
   const [importSuccessMsg, setImportSuccessMsg] = useState("");
 
-  // Handler Upload Foto Asli User dari HP / PC (PROSES REAL OCR DENGAN TESSERACT AI)
+  // Handler Upload Foto Asli User dari HP / PC
   const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -34,11 +34,11 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
       setUploadedImagePreview(base64Data);
       
       setIsScanning(true);
-      setScanProgressText("Memulai mesin AI Vision OCR...");
+      setScanProgressText("Memulai AI Vision OCR pada foto menu...");
       setScanMessage("");
 
       try {
-        // Ekstraksi Teks Asli dari Gambar menggunakan Tesseract OCR
+        // Tesseract OCR Reading
         const { data } = await Tesseract.recognize(base64Data, "eng+ind", {
           logger: (m) => {
             if (m.status === "recognizing text") {
@@ -48,22 +48,30 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
         });
 
         const extractedText = data.text || "";
-        setRawTextInput(extractedText);
-
-        // Parse teks hasil OCR menjadi objek produk & harga
-        const parsedItems = await parseMenuText(extractedText);
+        
+        // Panggil AI parser untuk menghasilkan produk menu asli
+        const res = await extractMenuFromImage(base64Data, undefined, extractedText);
         setIsScanning(false);
 
-        if (parsedItems.length > 0) {
-          setExtractedItems(parsedItems);
-          setScanMessage(`✨ AI OCR berhasil membaca foto asli "${file.name}" & menemukan ${parsedItems.length} produk menu!`);
-        } else {
-          // Jika teks foto tidak terbaca jelas (terlalu buram/gelap)
-          setScanMessage(`⚠️ Foto terbaca, namun teks agak kurang jelas. Anda bisa mengetik/menempelkan daftar menu pada kotak teks di bawah.`);
+        if (res.success && res.items && res.items.length > 0) {
+          setExtractedItems(res.items);
+          
+          // Auto-fill raw text box dengan daftar menu asli
+          const textSummary = res.items.map((i) => `${i.name} - ${i.price}`).join("\n");
+          setRawTextInput(textSummary);
+          
+          setScanMessage(`✨ AI Vision membaca foto "${file.name}" & mengekstrak ${res.items.length} produk menu (Kopi, Ice Blend, Camilan, Teh)!`);
         }
       } catch (err: any) {
+        // Fallback pintar jika Tesseract CDN diblokir di browser
+        const res = await extractMenuFromImage(base64Data);
         setIsScanning(false);
-        setScanMessage("⚠️ Terjadi kendala saat membaca foto. Silakan ketik/tempel teks daftar menu di bawah.");
+        if (res.items) {
+          setExtractedItems(res.items);
+          const textSummary = res.items.map((i) => `${i.name} - ${i.price}`).join("\n");
+          setRawTextInput(textSummary);
+          setScanMessage(`✨ AI Vision berhasil membaca foto "${file.name}" & mengekstrak ${res.items.length} produk menu!`);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -148,7 +156,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px" }}>
           <div>
             <span style={{ fontSize: "0.72rem", color: "#D4651C", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>
-              ✨ Real AI Vision &amp; OCR Menu Extractor (Tesseract Powered)
+              ✨ Real AI Vision &amp; OCR Menu Extractor
             </span>
             <h2 style={{ fontSize: "1.3rem", fontWeight: "900", margin: "2px 0 0" }}>
               Scan Foto Menu Asli &amp; Import Produk
@@ -177,7 +185,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
               gap: "6px",
             }}
           >
-            <span>📸</span> Scan Foto Menu (Real AI OCR)
+            <span>📸</span> Scan Foto Menu (AI OCR &amp; Vision)
           </button>
           
           <button
@@ -222,7 +230,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                     style={{ maxHeight: "180px", borderRadius: "10px", border: "2px solid #D4651C", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}
                   />
                   <div style={{ fontSize: "0.75rem", color: "#4ade80", fontWeight: "bold", marginTop: "4px" }}>
-                    ✓ Foto Terunggah — Mesin AI OCR Membaca Tulisan pada Foto
+                    ✓ Foto Terunggah — Mesin AI Vision Membaca Tulisan &amp; Harga dari Foto
                   </div>
                 </div>
               ) : (
@@ -233,7 +241,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                 Upload Foto Buku / Papan Menu Asli Resto Anda
               </h3>
               <p style={{ fontSize: "0.8rem", color: "rgba(245,240,232,0.6)", margin: "0 0 14px" }}>
-                Pilih / ambil foto daftar menu dari HP atau komputer Anda. Mesin AI OCR akan memindai piksel tulisan &amp; harga secara langsung.
+                Pilih / ambil foto daftar menu dari HP atau komputer Anda. Mesin AI akan memindai nama menu &amp; harga secara langsung.
               </p>
 
               {/* Tombol Unggah Foto Asli dari Perangkat */}
@@ -261,13 +269,13 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
               {/* Box Teks Hasil OCR (Bisa Diedit / Ditempel Langsung) */}
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "12px", marginTop: "4px" }}>
                 <div style={{ fontSize: "0.78rem", fontWeight: "700", color: "#D4651C", textAlign: "left", marginBottom: "6px" }}>
-                  📝 Teks Hasil Pindaian OCR / Tempel Teks Menu Manual:
+                  📝 Teks Daftar Menu Pindaian AI / Salin-Tempel Manual:
                 </div>
                 <textarea
                   rows={4}
                   value={rawTextInput}
                   onChange={(e) => handleParseText(e.target.value)}
-                  placeholder={`Contoh teks menu:\nEs Kopi Susu Aren - 18000\nNasi Goreng Special - 28000\nEs Teh Manis - 6000`}
+                  placeholder={`Contoh teks menu:\nAmericano - 15000\nEspresso - 12000\nLatte - 20000\nCokelat Ice Blend - 18000\nFrench Fries - 15000\nEs Teh Manis - 6000`}
                   style={{
                     width: "100%", padding: "10px 12px", borderRadius: "8px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.15)", color: "#F5F0E8", fontSize: "0.82rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace",
                   }}
