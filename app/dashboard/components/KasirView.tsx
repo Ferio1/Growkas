@@ -461,18 +461,60 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   const renderCartContent = (isMobileSheet: boolean) => (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, justifyContent: "space-between", overflow: "hidden", boxSizing: "border-box" }}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
-        {/* Header Tiket */}
+        {/* Header Tiket Transaksi */}
         <div style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0
+          marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0
         }}>
-          <h2 style={{ fontSize: "1.05rem", fontWeight: "800", margin: 0 }}>
-            Pesanan Aktif {isMobileSheet && cart.length > 0 && `(${cart.reduce((s, c) => s + c.quantity, 0)})`}
-          </h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{
+              width: "32px", height: "32px", borderRadius: "8px",
+              background: "rgba(212,101,28,0.15)", border: "1px solid rgba(212,101,28,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem"
+            }}>
+              🧾
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <h2 style={{ fontSize: "0.98rem", fontWeight: "800", color: "#F5F0E8", margin: 0, letterSpacing: "-0.01em" }}>
+                  Pesanan Aktif
+                </h2>
+                {cart.length > 0 && (
+                  <span style={{
+                    background: "#D4651C", color: "#FFF", fontSize: "0.7rem", fontWeight: "800",
+                    padding: "2px 7px", borderRadius: "10px", lineHeight: 1
+                  }}>
+                    {cart.reduce((s, c) => s + c.quantity, 0)}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: "0.68rem", color: "rgba(245,240,232,0.45)", fontWeight: "500", marginTop: "1px" }}>
+                Tiket Transaksi Kasir #{tableNumber.replace(/[^0-9]/g, "") || "01"}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             {cart.length > 0 && (
-              <button onClick={clearCart} style={{ background: "none", border: "none", color: "#f87171", fontSize: "0.78rem", cursor: "pointer", fontWeight: "600" }}>
-                Hapus Semua
+              <button
+                onClick={clearCart}
+                title="Hapus semua pesanan"
+                style={{
+                  background: "rgba(239, 68, 68, 0.12)",
+                  border: "1px solid rgba(239, 68, 68, 0.25)",
+                  color: "#f87171",
+                  fontSize: "0.72rem",
+                  cursor: "pointer",
+                  fontWeight: "700",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                🗑️ Reset
               </button>
             )}
             {isMobileSheet && (
@@ -498,69 +540,94 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           </div>
         </div>
 
-        {/* QUICK DINE IN / TAKEAWAY & TABLE SELECTOR */}
+        {/* SEGMENTED CONTROL: DINE IN vs TAKEAWAY */}
         <div style={{
-          display: "flex",
-          gap: "6px",
-          marginBottom: "8px",
-          background: "rgba(255,255,255,0.03)",
-          padding: "4px",
-          borderRadius: "8px",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          background: "rgba(0,0,0,0.35)",
+          padding: "3px",
+          borderRadius: "10px",
           border: "1px solid rgba(255,255,255,0.06)",
+          marginBottom: "8px",
           flexShrink: 0,
+          gap: "4px"
         }}>
           <button
             type="button"
             onClick={() => setOrderType("Dine In")}
             style={{
-              flex: 1,
-              padding: "6px 8px",
-              borderRadius: "6px",
+              padding: "7px 10px",
+              borderRadius: "8px",
               border: "none",
-              background: orderType === "Dine In" ? "#D4651C" : "transparent",
+              background: orderType === "Dine In" ? "linear-gradient(135deg, #D4651C 0%, #B85214 100%)" : "transparent",
               color: orderType === "Dine In" ? "#FFF" : "rgba(245,240,232,0.6)",
-              fontSize: "0.75rem",
+              fontSize: "0.76rem",
               fontWeight: "700",
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              boxShadow: orderType === "Dine In" ? "0 2px 8px rgba(212,101,28,0.35)" : "none",
+              transition: "all 0.2s ease"
             }}
           >
-            🪑 Dine In
+            🍽️ Dine In
           </button>
           <button
             type="button"
             onClick={() => setOrderType("Takeaway")}
             style={{
-              flex: 1,
-              padding: "6px 8px",
-              borderRadius: "6px",
+              padding: "7px 10px",
+              borderRadius: "8px",
               border: "none",
-              background: orderType === "Takeaway" ? "#D4651C" : "transparent",
+              background: orderType === "Takeaway" ? "linear-gradient(135deg, #D4651C 0%, #B85214 100%)" : "transparent",
               color: orderType === "Takeaway" ? "#FFF" : "rgba(245,240,232,0.6)",
-              fontSize: "0.75rem",
+              fontSize: "0.76rem",
               fontWeight: "700",
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              boxShadow: orderType === "Takeaway" ? "0 2px 8px rgba(212,101,28,0.35)" : "none",
+              transition: "all 0.2s ease"
             }}
           >
-            🛍️ Takeaway
+            🥡 Takeaway
           </button>
         </div>
 
-        {orderType === "Dine In" && (
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px", flexShrink: 0 }}>
-            <span style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.6)", fontWeight: "600" }}>No. Meja:</span>
+        {/* LOKASI MEJA ATAU STATUS TAKEAWAY */}
+        {orderType === "Dine In" ? (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "10px",
+            padding: "5px 10px",
+            marginBottom: "10px",
+            flexShrink: 0
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "rgba(245,240,232,0.7)", fontWeight: "600" }}>
+              <span>🪑</span>
+              <span>Nomor Meja:</span>
+            </div>
             <select
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               style={{
-                flex: 1,
-                padding: "5px 8px",
+                padding: "4px 8px",
                 borderRadius: "6px",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(212,101,28,0.12)",
+                border: "1px solid rgba(212,101,28,0.35)",
                 color: "#F5F0E8",
-                fontSize: "0.78rem",
-                fontWeight: "bold",
+                fontSize: "0.76rem",
+                fontWeight: "700",
                 outline: "none",
+                cursor: "pointer"
               }}
             >
               {["Meja 01", "Meja 02", "Meja 03", "Meja 04", "Meja 05", "Meja 06", "Meja 07", "Meja 08", "Meja 09", "Meja 10", "Bar Counter"].map((tbl) => (
@@ -570,8 +637,27 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
               ))}
             </select>
           </div>
+        ) : (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "rgba(212,101,28,0.08)",
+            border: "1px dashed rgba(212,101,28,0.3)",
+            borderRadius: "10px",
+            padding: "6px 10px",
+            marginBottom: "10px",
+            fontSize: "0.74rem",
+            color: "#D4651C",
+            fontWeight: "700",
+            flexShrink: 0
+          }}>
+            <span>🥡</span>
+            <span>Pesanan Dibawa Pulang (Takeaway)</span>
+          </div>
         )}
 
+        {/* AREA ITEM PESANAN ATAU EMPTY STATE ESTETIK */}
         {cart.length === 0 ? (
           <div style={{
             display: "flex",
@@ -580,13 +666,45 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             justifyContent: "center",
             flex: 1,
             minHeight: 0,
-            padding: "16px 8px",
-            color: "rgba(245,240,232,0.4)",
+            padding: "16px 12px",
             textAlign: "center",
           }}>
-            <div style={{ fontSize: "2rem", marginBottom: "6px" }}>🛒</div>
-            <p style={{ fontSize: "0.85rem", fontWeight: "600", margin: "0 0 4px 0" }}>Belum ada item dipilih.</p>
-            <p style={{ fontSize: "0.72rem", opacity: 0.7, margin: 0 }}>Klik produk untuk menambah ke pesanan.</p>
+            <div style={{
+              width: "64px",
+              height: "64px",
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(212,101,28,0.18) 0%, rgba(212,101,28,0.03) 70%)",
+              border: "1.5px dashed rgba(212,101,28,0.35)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.8rem",
+              marginBottom: "12px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+            }}>
+              ☕
+            </div>
+            <h3 style={{ fontSize: "0.92rem", fontWeight: "800", color: "#F5F0E8", margin: "0 0 4px 0" }}>
+              Belum Ada Item Terpilih
+            </h3>
+            <p style={{ fontSize: "0.74rem", color: "rgba(245,240,232,0.45)", lineHeight: "1.4", margin: "0 0 12px 0", maxWidth: "220px" }}>
+              Pilih menu di sebelah kiri atau scan barcode untuk menambah pesanan.
+            </p>
+            <div style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              padding: "4px 10px",
+              borderRadius: "100px",
+              fontSize: "0.68rem",
+              color: "rgba(245,240,232,0.6)",
+              fontWeight: "600"
+            }}>
+              <span>💡</span>
+              <span>Klik kartu produk untuk memilih</span>
+            </div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", overflowX: "hidden", paddingRight: "4px", flex: 1, minHeight: 0 }}>
@@ -595,39 +713,121 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
               const modSummary = formatModifiersSummary(item);
 
               return (
-                <div key={idx} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", fontWeight: "600", fontSize: "0.85rem", marginBottom: "4px" }}>
-                    <span style={{ flex: 1, minWidth: 0, wordBreak: "break-word", lineHeight: "1.3" }}>{item.product.name}</span>
-                    <span style={{ color: "#D4651C", whiteSpace: "nowrap", flexShrink: 0 }}>Rp {(itemPrice * item.quantity).toLocaleString("id-ID")}</span>
+                <div key={idx} style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "12px",
+                  padding: "10px 12px",
+                  flexShrink: 0,
+                  transition: "border-color 0.15s ease",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: "700", fontSize: "0.85rem", color: "#F5F0E8", lineHeight: "1.3", wordBreak: "break-word" }}>
+                        {item.product.name}
+                      </div>
+                      {item.quantity > 1 && (
+                        <div style={{ fontSize: "0.7rem", color: "rgba(245,240,232,0.45)", marginTop: "2px" }}>
+                          @ Rp {itemPrice.toLocaleString("id-ID")}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontWeight: "800", fontSize: "0.9rem", color: "#D4651C", whiteSpace: "nowrap", flexShrink: 0 }}>
+                      Rp {(itemPrice * item.quantity).toLocaleString("id-ID")}
+                    </div>
                   </div>
 
                   {modSummary && (
-                    <div style={{ fontSize: "0.72rem", color: "#D4651C", opacity: 0.9, marginBottom: "6px", fontStyle: "italic", whiteSpace: "normal", lineHeight: "1.3", wordBreak: "break-word" }}>
-                      ⚡ {modSummary}
+                    <div style={{
+                      background: "rgba(212,101,28,0.1)",
+                      border: "1px solid rgba(212,101,28,0.2)",
+                      borderRadius: "6px",
+                      padding: "4px 8px",
+                      fontSize: "0.72rem",
+                      color: "#E27B38",
+                      marginBottom: "8px",
+                      lineHeight: "1.3",
+                      wordBreak: "break-word",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}>
+                      <span>⚡</span>
+                      <span>{modSummary}</span>
                     </div>
                   )}
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px", paddingTop: "6px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                     <button
                       onClick={() => openCustomizer(item.product, idx)}
                       style={{
-                        background: "rgba(212,101,28,0.15)",
-                        border: "1px solid rgba(212,101,28,0.3)",
-                        color: "#D4651C",
-                        fontSize: "0.7rem",
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "rgba(245,240,232,0.8)",
+                        fontSize: "0.72rem",
                         padding: "3px 8px",
-                        borderRadius: "4px",
-                        fontWeight: "bold",
+                        borderRadius: "6px",
+                        fontWeight: "600",
                         cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        transition: "all 0.15s ease"
                       }}
                     >
-                      ⚙️ Custom / Note
+                      <span>⚙️</span> Catatan
                     </button>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,0,0,0.3)", padding: "2px 6px", borderRadius: "6px" }}>
-                      <button onClick={() => updateQuantity(idx, -1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer", padding: "0 4px" }}>-</button>
-                      <span style={{ fontSize: "0.8rem", fontWeight: "bold", width: "18px", textAlign: "center" }}>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(idx, 1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer", padding: "0 4px" }}>+</button>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      padding: "3px 6px",
+                      borderRadius: "8px"
+                    }}>
+                      <button
+                        onClick={() => updateQuantity(idx, -1)}
+                        style={{
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "4px",
+                          background: "rgba(255,255,255,0.08)",
+                          border: "none",
+                          color: "#F5F0E8",
+                          fontSize: "0.85rem",
+                          fontWeight: "bold",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        -
+                      </button>
+                      <span style={{ fontSize: "0.82rem", fontWeight: "800", width: "20px", textAlign: "center", color: "#F5F0E8" }}>
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(idx, 1)}
+                        style={{
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "4px",
+                          background: "#D4651C",
+                          border: "none",
+                          color: "#FFF",
+                          fontSize: "0.85rem",
+                          fontWeight: "bold",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -637,14 +837,25 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         )}
       </div>
 
-      <div style={{ paddingTop: "10px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "8px", flexShrink: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.82rem", color: "rgba(245,240,232,0.6)" }}>
-          <span>Subtotal</span>
+      {/* FOOTER TOTAL & TOMBOL CHECKOUT */}
+      <div style={{
+        paddingTop: "10px",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        marginTop: "8px",
+        flexShrink: 0,
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.78rem", color: "rgba(245,240,232,0.55)" }}>
+          <span>Subtotal Item</span>
           <span>Rp {subtotal.toLocaleString("id-ID")}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "1.02rem", fontWeight: "800", color: "#F5F0E8" }}>
-          <span>Total Pembayaran</span>
-          <span style={{ color: "#D4651C" }}>Rp {totalAmount.toLocaleString("id-ID")}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "10px" }}>
+          <div>
+            <div style={{ fontSize: "0.86rem", fontWeight: "700", color: "#F5F0E8" }}>Total Pembayaran</div>
+            <div style={{ fontSize: "0.66rem", color: "rgba(245,240,232,0.4)" }}>Termasuk pajak &amp; layanan</div>
+          </div>
+          <div style={{ fontSize: "1.18rem", fontWeight: "900", color: cart.length > 0 ? "#D4651C" : "rgba(245,240,232,0.4)" }}>
+            Rp {totalAmount.toLocaleString("id-ID")}
+          </div>
         </div>
 
         <button
@@ -655,19 +866,35 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           disabled={cart.length === 0}
           style={{
             width: "100%",
-            padding: "11px",
-            borderRadius: "10px",
-            background: cart.length > 0 ? "#D4651C" : "rgba(255,255,255,0.05)",
+            padding: "12px 16px",
+            borderRadius: "12px",
+            background: cart.length > 0
+              ? "linear-gradient(135deg, #D4651C 0%, #EA580C 100%)"
+              : "rgba(255,255,255,0.04)",
             color: cart.length > 0 ? "#FFF" : "rgba(245,240,232,0.3)",
-            border: "none",
+            border: cart.length > 0 ? "none" : "1px solid rgba(255,255,255,0.08)",
             fontWeight: "800",
-            fontSize: "0.88rem",
+            fontSize: "0.9rem",
             cursor: cart.length > 0 ? "pointer" : "not-allowed",
-            boxShadow: cart.length > 0 ? "0 4px 14px rgba(212,101,28,0.35)" : "none",
-            transition: "all 0.15s ease",
+            boxShadow: cart.length > 0 ? "0 6px 20px rgba(212,101,28,0.4)" : "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          Bayar Sekarang →
+          {cart.length > 0 ? (
+            <>
+              <span>💳</span>
+              <span>Proses Pembayaran →</span>
+            </>
+          ) : (
+            <>
+              <span style={{ opacity: 0.6 }}>🛒</span>
+              <span>Pilih Menu Dahulu</span>
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -975,16 +1202,18 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
 
       {/* TIKET PESANAN / KERANJANG (KANAN - DESKTOP ONLY >= 1024px) */}
       <div className="growkas-pos-desktop-cart" style={{
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "linear-gradient(180deg, rgba(26, 22, 20, 0.85) 0%, rgba(16, 14, 13, 0.95) 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.09)",
         borderRadius: "16px",
-        padding: "14px",
+        padding: "14px 16px",
         display: "flex",
         flexDirection: "column",
         height: "100%",
         minHeight: 0,
         boxSizing: "border-box",
         overflow: "hidden",
+        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+        backdropFilter: "blur(16px)",
       }}>
         {renderCartContent(false)}
       </div>
