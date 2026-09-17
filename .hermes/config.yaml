@@ -1,0 +1,10 @@
+name: Growkas-POS
+version: 1.0.0
+description: Hermes Agent AI app configuration
+framework: Next.js 16 (App Router)
+database: Supabase PostgreSQL
+plugins:
+  - superpowers
+context_files:
+  - HERMES.md
+  - docs/catatan-harian/README.md
