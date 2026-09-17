@@ -1,8 +1,9 @@
 "use client";
-// app/dashboard/components/AiMenuScannerModal.tsx — Modal AI Scan Foto Buku Menu & Batch Import ke Supabase
+// app/dashboard/components/AiMenuScannerModal.tsx — Modal AI OCR Vision Photo Menu Scanner (Tesseract.js Real OCR)
 
 import { useState } from "react";
-import { extractMenuFromImage, parseMenuText, batchAddProducts, ExtractedMenuItem } from "@/app/actions/aiMenuActions";
+import Tesseract from "tesseract.js";
+import { parseMenuText, batchAddProducts, ExtractedMenuItem } from "@/app/actions/aiMenuActions";
 
 interface AiMenuScannerModalProps {
   onClose: () => void;
@@ -16,12 +17,13 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
   const [rawTextInput, setRawTextInput] = useState<string>("");
   const [isScanning, setIsScanning] = useState(false);
+  const [scanProgressText, setScanProgressText] = useState("");
   const [extractedItems, setExtractedItems] = useState<ExtractedMenuItem[]>([]);
   const [scanMessage, setScanMessage] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [importSuccessMsg, setImportSuccessMsg] = useState("");
 
-  // Handler Upload Foto Asli User dari HP / PC
+  // Handler Upload Foto Asli User dari HP / PC (PROSES REAL OCR DENGAN TESSERACT AI)
   const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -32,18 +34,37 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
       setUploadedImagePreview(base64Data);
       
       setIsScanning(true);
+      setScanProgressText("Memulai mesin AI Vision OCR...");
       setScanMessage("");
 
-      // Panggil AI Vision Server Action dengan Base64 foto asli!
-      const res = await extractMenuFromImage(base64Data);
+      try {
+        // Ekstraksi Teks Asli dari Gambar menggunakan Tesseract OCR
+        const { data } = await Tesseract.recognize(base64Data, "eng+ind", {
+          logger: (m) => {
+            if (m.status === "recognizing text") {
+              setScanProgressText(`AI sedang membaca piksel foto & teks menu... ${Math.round(m.progress * 100)}%`);
+            }
+          },
+        });
 
-      setTimeout(() => {
+        const extractedText = data.text || "";
+        setRawTextInput(extractedText);
+
+        // Parse teks hasil OCR menjadi objek produk & harga
+        const parsedItems = await parseMenuText(extractedText);
         setIsScanning(false);
-        if (res.success && res.items) {
-          setExtractedItems(res.items);
-          setScanMessage(`✨ AI Vision membaca foto "${file.name}" & mengekstrak ${res.items.length} produk menu!`);
+
+        if (parsedItems.length > 0) {
+          setExtractedItems(parsedItems);
+          setScanMessage(`✨ AI OCR berhasil membaca foto asli "${file.name}" & menemukan ${parsedItems.length} produk menu!`);
+        } else {
+          // Jika teks foto tidak terbaca jelas (terlalu buram/gelap)
+          setScanMessage(`⚠️ Foto terbaca, namun teks agak kurang jelas. Anda bisa mengetik/menempelkan daftar menu pada kotak teks di bawah.`);
         }
-      }, 500);
+      } catch (err: any) {
+        setIsScanning(false);
+        setScanMessage("⚠️ Terjadi kendala saat membaca foto. Silakan ketik/tempel teks daftar menu di bawah.");
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -54,6 +75,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
     if (!textValue.trim()) return;
 
     setIsScanning(true);
+    setScanProgressText("Mengurai daftar menu & harga...");
     const parsed = await parseMenuText(textValue);
     setIsScanning(false);
 
@@ -61,21 +83,6 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
       setExtractedItems(parsed);
       setScanMessage(`✨ AI mengekstrak ${parsed.length} menu dari teks daftar harga!`);
     }
-  };
-
-  // Handler Jalankan Preset Sampel
-  const handleRunPreset = async (presetKey: string) => {
-    setIsScanning(true);
-    setUploadedImagePreview(null);
-    const res = await extractMenuFromImage(undefined, presetKey);
-
-    setTimeout(() => {
-      setIsScanning(false);
-      if (res.success && res.items) {
-        setExtractedItems(res.items);
-        setScanMessage(res.message || "Berhasil memuat sampel menu!");
-      }
-    }, 400);
   };
 
   // Handler Tambah Baris Menu Kosong
@@ -134,17 +141,17 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
       display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", color: "#F5F0E8", fontFamily: "system-ui, sans-serif",
     }}>
       <div style={{
-        background: "#161616", border: "1px solid rgba(212,101,28,0.4)", borderRadius: "18px", width: "100%", maxWidth: "720px", maxHeight: "90vh", overflowY: "auto", padding: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.7)",
+        background: "#161616", border: "1px solid rgba(212,101,28,0.4)", borderRadius: "18px", width: "100%", maxWidth: "740px", maxHeight: "90vh", overflowY: "auto", padding: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.7)",
       }}>
         
         {/* Header Modal */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px" }}>
           <div>
             <span style={{ fontSize: "0.72rem", color: "#D4651C", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>
-              ✨ Growkas AI Vision &amp; OCR Menu Extractor
+              ✨ Real AI Vision &amp; OCR Menu Extractor (Tesseract Powered)
             </span>
             <h2 style={{ fontSize: "1.3rem", fontWeight: "900", margin: "2px 0 0" }}>
-              Tambah &amp; Import Produk Menu Resto
+              Scan Foto Menu Asli &amp; Import Produk
             </h2>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "1.2rem", cursor: "pointer" }}>✕</button>
@@ -170,7 +177,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
               gap: "6px",
             }}
           >
-            <span>📸</span> Scan Foto Menu (AI OCR &amp; Vision)
+            <span>📸</span> Scan Foto Menu (Real AI OCR)
           </button>
           
           <button
@@ -195,7 +202,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
           </button>
         </div>
 
-        {/* TAB 1: AI VISION SCANNER */}
+        {/* TAB 1: AI VISION OCR SCANNER */}
         {activeTab === "ai_scan" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             
@@ -212,10 +219,10 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                   <img
                     src={uploadedImagePreview}
                     alt="Foto Menu Resto"
-                    style={{ maxHeight: "160px", borderRadius: "10px", border: "1px solid #D4651C", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}
+                    style={{ maxHeight: "180px", borderRadius: "10px", border: "2px solid #D4651C", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}
                   />
                   <div style={{ fontSize: "0.75rem", color: "#4ade80", fontWeight: "bold", marginTop: "4px" }}>
-                    ✓ Foto Menu Terbaca oleh AI Vision
+                    ✓ Foto Terunggah — Mesin AI OCR Membaca Tulisan pada Foto
                   </div>
                 </div>
               ) : (
@@ -226,23 +233,23 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                 Upload Foto Buku / Papan Menu Asli Resto Anda
               </h3>
               <p style={{ fontSize: "0.8rem", color: "rgba(245,240,232,0.6)", margin: "0 0 14px" }}>
-                Pilih foto daftar makanan/minuman dari HP atau PC Anda. AI akan membaca nama produk &amp; harga secara otomatis.
+                Pilih / ambil foto daftar menu dari HP atau komputer Anda. Mesin AI OCR akan memindai piksel tulisan &amp; harga secara langsung.
               </p>
 
               {/* Tombol Unggah Foto Asli dari Perangkat */}
               <label style={{
                 display: "inline-block",
-                padding: "11px 22px",
+                padding: "12px 24px",
                 borderRadius: "10px",
                 background: "#D4651C",
                 color: "#FFF",
                 fontWeight: "900",
-                fontSize: "0.88rem",
+                fontSize: "0.9rem",
                 cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(212,101,28,0.4)",
+                boxShadow: "0 4px 16px rgba(212,101,28,0.5)",
                 marginBottom: "14px",
               }}>
-                📷 Pilih / Ambil Foto Menu dari Perangkat Anda
+                📷 Upload / Ambil Foto Menu dari HP Anda
                 <input
                   type="file"
                   accept="image/*"
@@ -251,43 +258,20 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                 />
               </label>
 
-              {/* Option 2: Salin-Tempel Teks Menu (Instant AI Text Parser) */}
+              {/* Box Teks Hasil OCR (Bisa Diedit / Ditempel Langsung) */}
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "12px", marginTop: "4px" }}>
                 <div style={{ fontSize: "0.78rem", fontWeight: "700", color: "#D4651C", textAlign: "left", marginBottom: "6px" }}>
-                  📝 ATAU Salin-Tempel Teks Menu / Daftar Harga Anda (AI Auto-Parse):
+                  📝 Teks Hasil Pindaian OCR / Tempel Teks Menu Manual:
                 </div>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={rawTextInput}
                   onChange={(e) => handleParseText(e.target.value)}
-                  placeholder={`Contoh tempel teks:\nEs Kopi Susu Aren - 18000\nNasi Goreng Special - 28000\nEs Teh Manis - 6000`}
+                  placeholder={`Contoh teks menu:\nEs Kopi Susu Aren - 18000\nNasi Goreng Special - 28000\nEs Teh Manis - 6000`}
                   style={{
                     width: "100%", padding: "10px 12px", borderRadius: "8px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.15)", color: "#F5F0E8", fontSize: "0.82rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace",
                   }}
                 />
-              </div>
-
-              {/* Sample Preset Selector */}
-              <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap", marginTop: "12px" }}>
-                <span style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.5)", alignSelf: "center" }}>Preset Sampel:</span>
-                <button
-                  type="button"
-                  onClick={() => handleRunPreset("cafe")}
-                  style={{
-                    padding: "6px 12px", borderRadius: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#F5F0E8", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
-                  }}
-                >
-                  ☕ Sampel Menu Kafe
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRunPreset("resto")}
-                  style={{
-                    padding: "6px 12px", borderRadius: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#F5F0E8", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
-                  }}
-                >
-                  🍜 Sampel Makanan Utama
-                </button>
               </div>
 
             </div>
@@ -295,11 +279,11 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
             {/* Scanning Status */}
             {isScanning && (
               <div style={{ textAlign: "center", padding: "14px", color: "#D4651C", fontWeight: "800", fontSize: "0.9rem" }}>
-                🔄 AI Vision sedang membaca foto &amp; menyusun daftar menu...
+                🔄 {scanProgressText || "AI Vision OCR sedang membaca foto menu..."}
               </div>
             )}
 
-            {/* Success Message */}
+            {/* Success / Info Message */}
             {scanMessage && !isScanning && (
               <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.85rem", fontWeight: "700" }}>
                 {scanMessage}
@@ -311,7 +295,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                   <h4 style={{ fontSize: "0.9rem", fontWeight: "800", margin: 0 }}>
-                    Hasil Ekstraksi AI ({extractedItems.filter((i) => i.selected).length} Produk Dipilih):
+                    Daftar Produk Terdeteksi ({extractedItems.filter((i) => i.selected).length} Dipilih):
                   </h4>
                   
                   <button
@@ -480,7 +464,7 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "10px" }}>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => onClose()}
                 style={{ padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", color: "#F5F0E8", border: "none", fontWeight: "600", cursor: "pointer" }}
               >
                 Batal
