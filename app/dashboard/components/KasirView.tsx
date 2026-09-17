@@ -1,9 +1,15 @@
 "use client";
 // app/dashboard/components/KasirView.tsx — Tampilan POS khusus Kasir (Layout Non-Cutoff & Big Search)
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProductItem, CategoryItem, CartItem, saveTransaction, TransactionPayload } from "@/app/actions/posActions";
 import ReceiptModal from "./ReceiptModal";
+import KitchenDisplayModal, { playKitchenChime } from "./KitchenDisplayModal";
+import ShiftManagerModal from "./ShiftManagerModal";
+import { getActiveShift, recordSaleToActiveShift, CashierShift } from "@/app/actions/shiftActions";
+import { getTableOrders } from "@/app/actions/orderActions";
+import { deductRawIngredientsForItems } from "@/app/actions/ingredientActions";
+import Link from "next/link";
 
 interface KasirViewProps {
   initialProducts: ProductItem[];
@@ -24,6 +30,44 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [completedTransaction, setCompletedTransaction] = useState<TransactionPayload | null>(null);
+
+  // KDS (Kitchen Display System) State
+  const [isKitchenModalOpen, setIsKitchenModalOpen] = useState(false);
+  const [pendingTableOrdersCount, setPendingTableOrdersCount] = useState(0);
+
+  // Shift Kasir State
+  const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
+
+  useEffect(() => {
+    async function initShiftAndOrders() {
+      const shiftRes = await getActiveShift();
+      if (shiftRes.shift) setActiveShift(shiftRes.shift);
+
+      const ordRes = await getTableOrders();
+      if (ordRes.orders) {
+        const count = ordRes.orders.filter((o) => o.status === "pending" || o.status === "processing").length;
+        setPendingTableOrdersCount(count);
+      }
+    }
+    initShiftAndOrders();
+
+    // Polling setiap 5 detik untuk order masuk dari HP pelanggan
+    const interval = setInterval(async () => {
+      const ordRes = await getTableOrders();
+      if (ordRes.orders) {
+        const count = ordRes.orders.filter((o) => o.status === "pending" || o.status === "processing").length;
+        setPendingTableOrdersCount((prev) => {
+          if (count > prev && prev !== 0) {
+            playKitchenChime();
+          }
+          return count;
+        });
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Klasifikasi Kategori Produk F&B yang Presisi
   const getProductGroup = (p: ProductItem): "kopi" | "nonkopi" | "makanan" | "snack" => {
@@ -256,6 +300,15 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
 
     await saveTransaction(payload);
 
+    // Otomatis potong stok bahan baku mentah
+    await deductRawIngredientsForItems(payload.items);
+
+    // Otomatis catat ke shift kasir yang sedang aktif
+    const shiftRes = await recordSaleToActiveShift(payload.payment_method, payload.total_amount);
+    if (shiftRes.shift) {
+      setActiveShift(shiftRes.shift);
+    }
+
     setProducts((prevProducts) =>
       prevProducts.map((p) => {
         const itemBought = payload.items.find(
@@ -298,6 +351,92 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
       {/* KATALOG PRODUK (KIRI) */}
       <div style={{ display: "flex", flexDirection: "column", gap: "14px", minWidth: 0, height: "100%", overflow: "hidden" }}>
         
+        {/* BARIS 0: TOP OPERATIONAL TOOLBAR (KDS ORDERS & SHIFT CONTROL) */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              onClick={() => setIsKitchenModalOpen(true)}
+              style={{
+                padding: "8px 14px",
+                borderRadius: "10px",
+                background: pendingTableOrdersCount > 0 ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)",
+                border: "1px solid " + (pendingTableOrdersCount > 0 ? "#EF4444" : "rgba(255,255,255,0.12)"),
+                color: pendingTableOrdersCount > 0 ? "#EF4444" : "#FFF",
+                fontSize: "0.82rem",
+                fontWeight: "800",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <span>🍳</span> Pesanan Meja (KDS)
+              {pendingTableOrdersCount > 0 && (
+                <span style={{
+                  background: "#EF4444",
+                  color: "#FFF",
+                  fontSize: "0.72rem",
+                  fontWeight: "900",
+                  padding: "2px 7px",
+                  borderRadius: "10px",
+                }}>
+                  {pendingTableOrdersCount} BARU
+                </span>
+              )}
+            </button>
+
+            <Link
+              href="/kitchen"
+              target="_blank"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "10px",
+                background: "rgba(212,101,28,0.12)",
+                border: "1px solid rgba(212,101,28,0.3)",
+                color: "#D4651C",
+                fontSize: "0.8rem",
+                fontWeight: "700",
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span>📺</span> Buka Layar Dapur ↗
+            </Link>
+          </div>
+
+          <button
+            onClick={() => setIsShiftModalOpen(true)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "10px",
+              background: activeShift ? "rgba(74,222,128,0.12)" : "rgba(245,158,11,0.12)",
+              border: "1px solid " + (activeShift ? "rgba(74,222,128,0.4)" : "rgba(245,158,11,0.4)"),
+              color: activeShift ? "#4ADE80" : "#F59E0B",
+              fontSize: "0.82rem",
+              fontWeight: "800",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <span style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: activeShift ? "#4ADE80" : "#F59E0B",
+              display: "inline-block",
+            }} />
+            <span>
+              {activeShift
+                ? `Shift Aktif (${activeShift.cashier_name} • Kas: Rp ${activeShift.expected_cash.toLocaleString("id-ID")})`
+                : "Buka Shift Kasir"}
+            </span>
+          </button>
+        </div>
+
         {/* BARIS 1: SEARCH BAR PROMINEN & BESAR (FULL-WIDTH) */}
         <div style={{ position: "relative", width: "100%", flexShrink: 0 }}>
           <span style={{ position: "absolute", left: "18px", top: "50%", transform: "translateY(-50%)", fontSize: "1.2rem", opacity: 0.7 }}>🔍</span>
@@ -871,6 +1010,24 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         <ReceiptModal
           transaction={completedTransaction}
           onClose={() => setCompletedTransaction(null)}
+        />
+      )}
+
+      {/* MODAL KDS & PESANAN MEJA MASUK */}
+      {isKitchenModalOpen && (
+        <KitchenDisplayModal
+          onClose={() => setIsKitchenModalOpen(false)}
+          onOrderCountChanged={setPendingTableOrdersCount}
+        />
+      )}
+
+      {/* MODAL MANAJEMEN SHIFT KASIR */}
+      {isShiftModalOpen && (
+        <ShiftManagerModal
+          currentShift={activeShift}
+          cashierName={userSession?.user?.name || "Kasir Saray"}
+          onShiftUpdated={setActiveShift}
+          onClose={() => setIsShiftModalOpen(false)}
         />
       )}
 

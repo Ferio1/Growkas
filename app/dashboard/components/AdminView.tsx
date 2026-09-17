@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { getBranches, BranchItem } from "@/app/actions/branchActions";
+import { getIngredientsAndCOGS, restockIngredient, IngredientItem } from "@/app/actions/ingredientActions";
 import BranchManagerModal from "./BranchManagerModal";
 import QRCodeGenerator from "./QRCodeGenerator";
 import AiMenuScannerModal from "./AiMenuScannerModal";
@@ -19,8 +20,13 @@ interface AdminViewProps {
 
 export default function AdminView({ initialAnalytics }: AdminViewProps) {
   const [analytics] = useState(initialAnalytics);
-  const [activeTab, setActiveTab] = useState<"analytics" | "qrcode">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "qrcode" | "ingredients">("analytics");
   const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>("all");
+
+  // Ingredients & COGS state
+  const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
+  const [recipesAnalysis, setRecipesAnalysis] = useState<any[]>([]);
+  const [lowStockAlerts, setLowStockAlerts] = useState<IngredientItem[]>([]);
   
   // Modals state
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -31,6 +37,15 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
     { id: "br-1", name: "Saray Coffee & Space", city: "Yogyakarta", target_revenue: 10000000 },
   ]);
 
+  const loadIngredients = async () => {
+    const res = await getIngredientsAndCOGS();
+    if (res.success) {
+      setIngredients(res.ingredients);
+      setRecipesAnalysis(res.recipesAnalysis);
+      setLowStockAlerts(res.lowStockAlerts);
+    }
+  };
+
   useEffect(() => {
     async function loadBranches() {
       const res = await getBranches();
@@ -39,7 +54,15 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
       }
     }
     loadBranches();
+    loadIngredients();
   }, []);
+
+  const handleRestock = async (id: string, amount: number) => {
+    const res = await restockIngredient(id, amount);
+    if (res.success) {
+      loadIngredients();
+    }
+  };
 
   const handleBranchAdded = (newBranch: BranchItem) => {
     setBranches((prev) => [...prev, newBranch]);
@@ -144,6 +167,37 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
           }}
         >
           <span>📱</span> Generator Stiker QR Code Meja
+        </button>
+
+        <button
+          onClick={() => setActiveTab("ingredients")}
+          style={{
+            padding: "10px 20px",
+            borderRadius: "8px",
+            background: activeTab === "ingredients" ? "rgba(212,101,28,0.2)" : "transparent",
+            border: "1px solid " + (activeTab === "ingredients" ? "#D4651C" : "transparent"),
+            color: activeTab === "ingredients" ? "#D4651C" : "rgba(245,240,232,0.6)",
+            fontWeight: "800",
+            fontSize: "0.88rem",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>☕</span> Bahan Baku &amp; HPP (COGS)
+          {lowStockAlerts.length > 0 && (
+            <span style={{
+              background: "#EF4444",
+              color: "#FFF",
+              fontSize: "0.7rem",
+              fontWeight: "900",
+              padding: "2px 6px",
+              borderRadius: "10px",
+            }}>
+              {lowStockAlerts.length} Menipis
+            </span>
+          )}
         </button>
       </div>
 
@@ -322,6 +376,201 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
       {/* KONTEN TAB 2: GENERATOR STIKER QR CODE MEJA */}
       {activeTab === "qrcode" && (
         <QRCodeGenerator branches={branches} />
+      )}
+
+      {/* KONTEN TAB 3: BAHAN BAKU & HPP (COGS / RECIPE MANAGEMENT) */}
+      {activeTab === "ingredients" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          
+          {/* ALERT BANNER JIKA ADA BAHAN MENIPIS */}
+          {lowStockAlerts.length > 0 && (
+            <div style={{
+              background: "rgba(239,68,68,0.12)",
+              border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: "12px",
+              padding: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "1.5rem" }}>⚠️</span>
+                <div>
+                  <div style={{ fontWeight: "800", color: "#EF4444", fontSize: "0.95rem" }}>
+                    Peringatan: {lowStockAlerts.length} Bahan Baku Menipis di Bawah Batas Minimum!
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "rgba(245,240,232,0.7)" }}>
+                    {lowStockAlerts.map((i) => `${i.name} (${i.stock} ${i.unit})`).join(", ")}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUMMARY METRICS ROW */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px" }}>
+              <div style={{ fontSize: "0.75rem", color: "#AAA", textTransform: "uppercase", fontWeight: "bold" }}>Total Master Bahan</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#FFF", marginTop: "4px" }}>
+                {ingredients.length} Jenis
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#888", marginTop: "4px" }}>Kopi, Susu, Sirup, Makanan, Kemasan</div>
+            </div>
+
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px" }}>
+              <div style={{ fontSize: "0.75rem", color: "#AAA", textTransform: "uppercase", fontWeight: "bold" }}>Stok Perlu Restok</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: "900", color: lowStockAlerts.length > 0 ? "#EF4444" : "#4ADE80", marginTop: "4px" }}>
+                {lowStockAlerts.length} Bahan
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#888", marginTop: "4px" }}>
+                {lowStockAlerts.length > 0 ? "Segera lakukan pembelian bahan" : "Seluruh stok di atas batas minimum"}
+              </div>
+            </div>
+
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px" }}>
+              <div style={{ fontSize: "0.75rem", color: "#AAA", textTransform: "uppercase", fontWeight: "bold" }}>Rata-Rata Margin Menu</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#D4651C", marginTop: "4px" }}>
+                {recipesAnalysis.length > 0
+                  ? Math.round(recipesAnalysis.reduce((acc, r) => acc + r.profit_percent, 0) / recipesAnalysis.length)
+                  : 0}%
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#888", marginTop: "4px" }}>Persentase laba kotor di atas HPP</div>
+            </div>
+          </div>
+
+          {/* TABEL 1: MASTER INVENTARIS BAHAN BAKU */}
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0 }}>
+                  📦 Master Inventaris Bahan Baku Mentah
+                </h3>
+                <p style={{ fontSize: "0.78rem", color: "#888", margin: "2px 0 0" }}>
+                  Stok otomatis berkurang secara real-time setiap kali menu F&amp;B terjual di kasir atau via QR Meja.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", color: "#AAA" }}>
+                    <th style={{ padding: "10px 12px" }}>Bahan Baku</th>
+                    <th style={{ padding: "10px 12px" }}>Kategori</th>
+                    <th style={{ padding: "10px 12px" }}>Stok Fisik</th>
+                    <th style={{ padding: "10px 12px" }}>Min. Stok</th>
+                    <th style={{ padding: "10px 12px" }}>Harga Beli / Satuan</th>
+                    <th style={{ padding: "10px 12px" }}>Status</th>
+                    <th style={{ padding: "10px 12px", textAlign: "right" }}>Aksi Restok</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingredients.map((ing) => {
+                    const isLow = ing.stock <= ing.min_stock;
+                    return (
+                      <tr key={ing.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <td style={{ padding: "12px", fontWeight: "700", color: "#FFF" }}>{ing.name}</td>
+                        <td style={{ padding: "12px", color: "#AAA" }}>{ing.category.toUpperCase()}</td>
+                        <td style={{ padding: "12px", fontWeight: "800", color: isLow ? "#EF4444" : "#4ADE80" }}>
+                          {ing.stock.toLocaleString("id-ID")} {ing.unit}
+                        </td>
+                        <td style={{ padding: "12px", color: "#888" }}>{ing.min_stock.toLocaleString("id-ID")} {ing.unit}</td>
+                        <td style={{ padding: "12px" }}>Rp {ing.cost_per_unit.toLocaleString("id-ID")} / {ing.unit}</td>
+                        <td style={{ padding: "12px" }}>
+                          <span style={{
+                            fontSize: "0.72rem",
+                            fontWeight: "800",
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            background: isLow ? "rgba(239,68,68,0.15)" : "rgba(74,222,128,0.15)",
+                            color: isLow ? "#EF4444" : "#4ADE80",
+                          }}>
+                            {isLow ? "⚠️ Menipis" : "✅ Aman"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px", textAlign: "right" }}>
+                          <button
+                            onClick={() => handleRestock(ing.id, ing.unit === "pcs" ? 50 : 1000)}
+                            style={{
+                              padding: "5px 10px",
+                              borderRadius: "6px",
+                              background: "rgba(212,101,28,0.15)",
+                              color: "#D4651C",
+                              border: "1px solid rgba(212,101,28,0.3)",
+                              fontSize: "0.75rem",
+                              fontWeight: "700",
+                              cursor: "pointer",
+                            }}
+                          >
+                            + {ing.unit === "pcs" ? "50 pcs" : "1.000 " + ing.unit}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* TABEL 2: ANALISIS HPP RESEP MENU (BILL OF MATERIALS) */}
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "20px" }}>
+            <div style={{ marginBottom: "16px" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0 }}>
+                💡 Analisis Resep Menu &amp; HPP (Harga Pokok Penjualan)
+              </h3>
+              <p style={{ fontSize: "0.78rem", color: "#888", margin: "2px 0 0" }}>
+                Dihitung dari total biaya bahan baku mentah per porsi untuk mengetahui margin profit bersih pemilik usaha.
+              </p>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", color: "#AAA" }}>
+                    <th style={{ padding: "10px 12px" }}>Nama Menu</th>
+                    <th style={{ padding: "10px 12px" }}>Harga Jual</th>
+                    <th style={{ padding: "10px 12px" }}>Komposisi Resep Bahan Baku</th>
+                    <th style={{ padding: "10px 12px" }}>Total HPP</th>
+                    <th style={{ padding: "10px 12px" }}>Margin Bersih</th>
+                    <th style={{ padding: "10px 12px" }}>Profit %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recipesAnalysis.map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <td style={{ padding: "12px", fontWeight: "800", color: "#FFF" }}>{item.product_name}</td>
+                      <td style={{ padding: "12px", fontWeight: "700" }}>Rp {item.selling_price.toLocaleString("id-ID")}</td>
+                      <td style={{ padding: "12px", fontSize: "0.78rem", color: "#AAA" }}>
+                        {item.ingredients.map((ing: any) => `${ing.ingredient_name} (${ing.quantity} ${ing.unit})`).join(" • ")}
+                      </td>
+                      <td style={{ padding: "12px", fontWeight: "800", color: "#EF4444" }}>
+                        Rp {item.total_cogs.toLocaleString("id-ID")}
+                      </td>
+                      <td style={{ padding: "12px", fontWeight: "800", color: "#4ADE80" }}>
+                        + Rp {item.profit_margin.toLocaleString("id-ID")}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        <span style={{
+                          fontSize: "0.75rem",
+                          fontWeight: "900",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          background: item.profit_percent >= 60 ? "rgba(74,222,128,0.15)" : "rgba(212,101,28,0.15)",
+                          color: item.profit_percent >= 60 ? "#4ADE80" : "#D4651C",
+                        }}>
+                          {item.profit_percent}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
       )}
 
       {/* MODAL TAMBAH OUTLET BARU */}

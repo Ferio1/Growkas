@@ -131,6 +131,17 @@ export default function DashboardLayout({
             </button>
 
             <Link
+              href="/kitchen"
+              target="_blank"
+              style={{
+                display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "8px",
+                color: "rgba(245,240,232,0.7)", fontSize: "0.88rem", textDecoration: "none",
+              }}
+            >
+              <span>🍳</span> Layar Dapur (KDS) ↗
+            </Link>
+
+            <Link
               href="/dashboard/supabase-demo"
               style={{
                 display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "8px",

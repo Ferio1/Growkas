@@ -1,22 +1,22 @@
 "use client";
-// app/dashboard/components/ReceiptModal.tsx — Struk Belanja Kasir Digital/Cetak Thermal 58mm & 80mm
+// app/dashboard/components/KitchenTicketModal.tsx — Cetak Tiket Dapur (Kitchen Order Ticket / KOT) Thermal 58mm & 80mm
 
 import { useState } from "react";
-import { TransactionPayload } from "@/app/actions/posActions";
+import { TableOrder } from "@/app/actions/orderActions";
 
-interface ReceiptModalProps {
-  transaction: TransactionPayload;
+interface KitchenTicketModalProps {
+  order: TableOrder;
   onClose: () => void;
 }
 
-export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps) {
+export default function KitchenTicketModal({ order, onClose }: KitchenTicketModalProps) {
   const [paperWidth, setPaperWidth] = useState<"58mm" | "80mm">("58mm");
 
   const handlePrint = () => {
     window.print();
   };
 
-  const maxWidthPx = paperWidth === "58mm" ? "300px" : "400px";
+  const maxWidthPx = paperWidth === "58mm" ? "290px" : "380px";
 
   return (
     <div style={{
@@ -37,16 +37,16 @@ export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps
             body * {
               visibility: hidden;
             }
-            #receipt-print-area, #receipt-print-area * {
+            #kitchen-ticket-print-area, #kitchen-ticket-print-area * {
               visibility: visible;
             }
-            #receipt-print-area {
+            #kitchen-ticket-print-area {
               position: absolute;
               left: 0;
               top: 0;
               width: ${paperWidth === "58mm" ? "54mm" : "76mm"} !important;
               margin: 0 !important;
-              padding: 3mm !important;
+              padding: 4mm !important;
               box-shadow: none !important;
               border: none !important;
               background: #FFF !important;
@@ -68,7 +68,7 @@ export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps
         border: "1px solid rgba(255,255,255,0.12)",
         borderRadius: "16px",
         width: "100%",
-        maxWidth: "460px",
+        maxWidth: "440px",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -84,8 +84,8 @@ export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps
           background: "rgba(255,255,255,0.02)",
         }}>
           <div>
-            <div style={{ fontSize: "0.72rem", color: "#D4651C", fontWeight: "bold" }}>THERMAL PRINTER READY</div>
-            <div style={{ fontSize: "0.92rem", fontWeight: "700", color: "#FFF" }}>Struk Pembayaran Kasir</div>
+            <div style={{ fontSize: "0.75rem", color: "#D4651C", fontWeight: "bold" }}>THERMAL PRINT PREVIEW</div>
+            <div style={{ fontSize: "0.95rem", fontWeight: "700", color: "#FFF" }}>Tiket Dapur / KOT</div>
           </div>
 
           <div style={{ display: "flex", gap: "6px" }}>
@@ -124,87 +124,62 @@ export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps
 
         {/* Paper Container */}
         <div style={{ padding: "20px", display: "flex", justifyContent: "center", background: "#0D0D0E" }}>
-          <div id="receipt-print-area" style={{
+          <div id="kitchen-ticket-print-area" style={{
             background: "#FFFFFF",
-            color: "#111111",
+            color: "#000000",
             width: "100%",
             maxWidth: maxWidthPx,
-            padding: "20px 16px",
+            padding: "18px 16px",
             boxShadow: "0 10px 25px rgba(0,0,0,0.4)",
             fontFamily: "'Courier New', Courier, monospace",
-            lineHeight: "1.35",
+            lineHeight: "1.3",
             boxSizing: "border-box",
           }}>
-            {/* Header Struk */}
-            <div style={{ textAlign: "center", marginBottom: "14px" }}>
-              <h2 style={{ fontSize: "1.25rem", fontWeight: "900", letterSpacing: "1.5px", margin: "0 0 2px" }}>
-                GROWKAS
-              </h2>
-              <div style={{ fontSize: "0.78rem", fontWeight: "bold", color: "#333" }}>
-                {transaction.branch_name}
+            {/* Header Ticket */}
+            <div style={{ textAlign: "center", borderBottom: "2px dashed #000", paddingBottom: "10px", marginBottom: "10px" }}>
+              <div style={{ fontSize: "1rem", fontWeight: "900", letterSpacing: "1px" }}>*** TIKET DAPUR (KOT) ***</div>
+              <div style={{ fontSize: "0.75rem", margin: "2px 0" }}>{order.branch_name}</div>
+              <div style={{
+                fontSize: "1.5rem",
+                fontWeight: "900",
+                margin: "8px 0",
+                background: "#000",
+                color: "#FFF",
+                padding: "4px 8px",
+                borderRadius: "4px",
+                display: "inline-block",
+              }}>
+                {order.table_number.toUpperCase()}
               </div>
-              <div style={{ fontSize: "0.72rem", color: "#666", marginTop: "2px" }}>
-                Invoice: #{transaction.invoice_number}
+              <div style={{ fontSize: "0.75rem", color: "#333" }}>
+                No: {order.invoice_number} | {new Date(order.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB
               </div>
             </div>
-
-            <div style={{ borderBottom: "1px dashed #444", margin: "10px 0" }} />
-
-            {/* Info Transaksi */}
-            <div style={{ fontSize: "0.75rem", color: "#444", marginBottom: "10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>Kasir: {transaction.cashier_name}</span>
-                <span>{transaction.payment_method.toUpperCase()}</span>
-              </div>
-              <div>Waktu: {new Date().toLocaleString("id-ID")}</div>
-            </div>
-
-            <div style={{ borderBottom: "1px dashed #444", margin: "10px 0" }} />
 
             {/* Items List */}
-            <div style={{ fontSize: "0.8rem", marginBottom: "10px" }}>
-              {transaction.items.map((item, idx) => (
-                <div key={idx} style={{ marginBottom: "8px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                    <span>{item.product_name}</span>
-                    <span>Rp {item.subtotal.toLocaleString("id-ID")}</span>
+            <div style={{ marginBottom: "12px" }}>
+              {order.items.map((item, idx) => (
+                <div key={idx} style={{ marginBottom: "10px", borderBottom: "1px dotted #888", paddingBottom: "6px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: "1.05rem", fontWeight: "900" }}>
+                      {item.quantity}x {item.product_name}
+                    </span>
                   </div>
                   {item.modifiers_summary && (
-                    <div style={{ fontSize: "0.7rem", color: "#555", fontStyle: "italic" }}>
+                    <div style={{ fontSize: "0.8rem", color: "#222", fontWeight: "bold", marginTop: "2px", paddingLeft: "10px" }}>
                       ↳ {item.modifiers_summary}
                     </div>
                   )}
-                  <div style={{ fontSize: "0.72rem", color: "#666" }}>
-                    {item.quantity} x Rp {item.price.toLocaleString("id-ID")}
-                  </div>
                 </div>
               ))}
             </div>
 
-            <div style={{ borderBottom: "1px dashed #444", margin: "10px 0" }} />
-
-            {/* Total Rincian */}
-            <div style={{ fontSize: "0.82rem", display: "flex", flexDirection: "column", gap: "5px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "900", fontSize: "1.05rem" }}>
-                <span>TOTAL</span>
-                <span style={{ color: "#D4651C" }}>Rp {transaction.total_amount.toLocaleString("id-ID")}</span>
+            {/* Notes / Special Instructions */}
+            <div style={{ borderTop: "2px dashed #000", paddingTop: "8px", textAlign: "center", fontSize: "0.75rem" }}>
+              <div>Metode: <strong>{order.payment_method.toUpperCase()} ({order.payment_status.toUpperCase()})</strong></div>
+              <div style={{ marginTop: "4px", fontStyle: "italic" }}>
+                *** SEGERA DISAJIKAN KE MEJA ***
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#555" }}>
-                <span>Bayar ({transaction.payment_method.toUpperCase()})</span>
-                <span>Rp {transaction.paid_amount.toLocaleString("id-ID")}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#555" }}>
-                <span>Kembali</span>
-                <span>Rp {transaction.change_amount.toLocaleString("id-ID")}</span>
-              </div>
-            </div>
-
-            <div style={{ borderBottom: "1px dashed #444", margin: "14px 0" }} />
-
-            {/* Footer */}
-            <div style={{ textAlign: "center", fontSize: "0.72rem", color: "#666" }}>
-              Terima kasih atas kunjungan Anda!<br />
-              Growkas Cloud POS • Powered by Hermes AI
             </div>
           </div>
         </div>
@@ -235,7 +210,7 @@ export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps
               gap: "6px",
             }}
           >
-            <span>🖨️</span> Cetak Struk ({paperWidth})
+            <span>🖨️</span> Cetak Tiket ({paperWidth})
           </button>
           <button
             onClick={onClose}
@@ -250,7 +225,7 @@ export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps
               cursor: "pointer",
             }}
           >
-            Selesai
+            Tutup
           </button>
         </div>
       </div>

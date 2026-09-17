@@ -5,6 +5,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import GrowkasLogo from "@/app/components/GrowkasLogo";
 import { getProductsAndCategories, ProductItem, CartItem, saveTransaction } from "@/app/actions/posActions";
+import { createTableOrder } from "@/app/actions/orderActions";
 
 function OrderPageContent() {
   const searchParams = useSearchParams();
@@ -116,6 +117,24 @@ function OrderPageContent() {
       })),
     };
 
+    const orderPayload = {
+      invoice_number: invoiceNum,
+      table_number: `Meja ${tableNum}`,
+      branch_name: branchName,
+      payment_method: paymentMethod,
+      payment_status: paymentMethod === "qris" ? ("paid" as const) : ("unpaid" as const),
+      status: "pending" as const,
+      total_amount: subtotal,
+      items: cart.map((c) => ({
+        product_name: c.product.name,
+        price: getItemPrice(c),
+        quantity: c.quantity,
+        subtotal: getItemPrice(c) * c.quantity,
+        modifiers_summary: formatModifiersSummary(c),
+      })),
+    };
+
+    await createTableOrder(orderPayload);
     await saveTransaction(payload);
 
     setIsSubmitting(false);
