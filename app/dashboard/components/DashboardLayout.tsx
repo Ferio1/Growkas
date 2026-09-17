@@ -19,6 +19,7 @@ export default function DashboardLayout({
   userSession,
 }: DashboardLayoutProps) {
   const [clock, setClock] = useState("");
+  const [dateStr, setDateStr] = useState("");
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
@@ -59,7 +60,14 @@ export default function DashboardLayout({
         now.toLocaleTimeString("id-ID", {
           hour: "2-digit",
           minute: "2-digit",
-          second: "2-digit",
+        }) + " WIB"
+      );
+      setDateStr(
+        now.toLocaleDateString("id-ID", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
         })
       );
     };
@@ -106,26 +114,30 @@ export default function DashboardLayout({
             <button
               onClick={() => onRoleChange("kasir")}
               style={{
-                display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "8px",
-                background: activeRole === "kasir" ? "rgba(212,101,28,0.15)" : "transparent",
-                border: "1px solid " + (activeRole === "kasir" ? "rgba(212,101,28,0.3)" : "transparent"),
-                color: activeRole === "kasir" ? "#D4651C" : "rgba(245,240,232,0.7)",
-                fontWeight: activeRole === "kasir" ? "700" : "500",
+                display: "flex", alignItems: "center", gap: "10px", padding: "11px 14px", borderRadius: "10px",
+                background: activeRole === "kasir" ? "linear-gradient(135deg, #D4651C 0%, #EA580C 100%)" : "transparent",
+                border: activeRole === "kasir" ? "none" : "1px solid transparent",
+                color: activeRole === "kasir" ? "#FFFFFF" : "rgba(245,240,232,0.7)",
+                fontWeight: activeRole === "kasir" ? "800" : "500",
                 fontSize: "0.88rem", cursor: "pointer", width: "100%", textAlign: "left",
+                boxShadow: activeRole === "kasir" ? "0 4px 16px rgba(212,101,28,0.35)" : "none",
+                transition: "all 0.15s ease",
               }}
             >
-              <span>🛒</span> Kasir (POS)
+              <span>🛒</span> Kasir POS
             </button>
 
             <button
               onClick={() => onRoleChange("admin")}
               style={{
-                display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "8px",
-                background: activeRole === "admin" ? "rgba(212,101,28,0.15)" : "transparent",
-                border: "1px solid " + (activeRole === "admin" ? "rgba(212,101,28,0.3)" : "transparent"),
-                color: activeRole === "admin" ? "#D4651C" : "rgba(245,240,232,0.7)",
-                fontWeight: activeRole === "admin" ? "700" : "500",
+                display: "flex", alignItems: "center", gap: "10px", padding: "11px 14px", borderRadius: "10px",
+                background: activeRole === "admin" ? "linear-gradient(135deg, #D4651C 0%, #EA580C 100%)" : "transparent",
+                border: activeRole === "admin" ? "none" : "1px solid transparent",
+                color: activeRole === "admin" ? "#FFFFFF" : "rgba(245,240,232,0.7)",
+                fontWeight: activeRole === "admin" ? "800" : "500",
                 fontSize: "0.88rem", cursor: "pointer", width: "100%", textAlign: "left",
+                boxShadow: activeRole === "admin" ? "0 4px 16px rgba(212,101,28,0.35)" : "none",
+                transition: "all 0.15s ease",
               }}
             >
               <span>📊</span> Dashboard Konsolidasi
@@ -398,11 +410,11 @@ export default function DashboardLayout({
             </span>
 
             <span style={{
-              padding: "4px 10px", borderRadius: "100px", background: "rgba(74,222,128,0.15)",
-              border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.72rem", fontWeight: "bold",
-              whiteSpace: "nowrap", flexShrink: 0,
+              padding: "5px 12px", borderRadius: "100px", background: "rgba(245,158,11,0.12)",
+              border: "1px solid rgba(245,158,11,0.35)", color: "#F59E0B", fontSize: "0.74rem", fontWeight: "700",
+              whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: "6px"
             }}>
-              ● Shift Aktif
+              <span>🕒</span> Shift Pagi: 07:00 - 15:00
             </span>
 
             <select
@@ -431,8 +443,8 @@ export default function DashboardLayout({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <div className="growkas-clock-badge" style={{ fontSize: "0.88rem", fontFamily: "monospace", color: "rgba(245,240,232,0.6)" }}>
-              {clock || "00:00:00"}
+            <div className="growkas-clock-badge" style={{ fontSize: "0.82rem", color: "rgba(245,240,232,0.7)", fontWeight: "600", whiteSpace: "nowrap" }}>
+              {dateStr ? `${dateStr}, ${clock}` : (clock || "00:00:00")}
             </div>
 
             <div className="growkas-header-role-toggle" style={{

@@ -448,15 +448,27 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     clearCart();
   };
 
-  // Kategori Bersih Khusus F&B & Retail
+  // Kategori Bersih Khusus F&B & Retail dengan Jumlah Produk Dinamis Sesuai Showcase
+  const categoryCounts = {
+    all: products.filter((p) => getProductType(p) !== "retail").length,
+    kopi: products.filter((p) => getProductType(p) === "coffee").length,
+    nonkopi: products.filter((p) => getProductType(p) === "beverage").length,
+    makanan: products.filter((p) => getProductType(p) === "food").length,
+    snack: products.filter((p) => getProductType(p) === "snack").length,
+    retail: products.filter((p) => getProductType(p) === "retail").length,
+  };
+
   const CATEGORY_TABS = [
-    { id: "all", label: "Semua Menu F&B", icon: "🌐" },
-    { id: "kopi", label: "Kopi & Espresso", icon: "☕" },
-    { id: "nonkopi", label: "Non-Coffee & Mocktail", icon: "🍹" },
-    { id: "makanan", label: "Makanan Utama", icon: "🍱" },
-    { id: "snack", label: "Pastry & Snack", icon: "🥐" },
-    { id: "retail", label: "Retail / Lainnya", icon: "🛒" },
+    { id: "all", label: "Semua Menu", count: categoryCounts.all },
+    { id: "kopi", label: "Kopi", count: categoryCounts.kopi },
+    { id: "nonkopi", label: "Non-Coffee", count: categoryCounts.nonkopi },
+    { id: "makanan", label: "Makanan", count: categoryCounts.makanan },
+    { id: "snack", label: "Snack", count: categoryCounts.snack },
   ];
+
+  if (categoryCounts.retail > 0) {
+    CATEGORY_TABS.push({ id: "retail", label: "Retail", count: categoryCounts.retail });
+  }
 
   const renderCartContent = (isMobileSheet: boolean) => (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, justifyContent: "space-between", overflow: "hidden", boxSizing: "border-box" }}>
@@ -466,31 +478,22 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           display: "flex", justifyContent: "space-between", alignItems: "center",
           marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{
-              width: "32px", height: "32px", borderRadius: "8px",
-              background: "rgba(212,101,28,0.15)", border: "1px solid rgba(212,101,28,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem"
-            }}>
-              🧾
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <h2 style={{ fontSize: "1.05rem", fontWeight: "800", color: "#F5F0E8", margin: 0, letterSpacing: "-0.01em" }}>
+                Pesanan Aktif
+              </h2>
+              {cart.length > 0 && (
+                <span style={{
+                  background: "#D4651C", color: "#FFF", fontSize: "0.7rem", fontWeight: "800",
+                  padding: "2px 7px", borderRadius: "10px", lineHeight: 1
+                }}>
+                  {cart.reduce((s, c) => s + c.quantity, 0)}
+                </span>
+              )}
             </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <h2 style={{ fontSize: "0.98rem", fontWeight: "800", color: "#F5F0E8", margin: 0, letterSpacing: "-0.01em" }}>
-                  Pesanan Aktif
-                </h2>
-                {cart.length > 0 && (
-                  <span style={{
-                    background: "#D4651C", color: "#FFF", fontSize: "0.7rem", fontWeight: "800",
-                    padding: "2px 7px", borderRadius: "10px", lineHeight: 1
-                  }}>
-                    {cart.reduce((s, c) => s + c.quantity, 0)}
-                  </span>
-                )}
-              </div>
-              <div style={{ fontSize: "0.68rem", color: "rgba(245,240,232,0.45)", fontWeight: "500", marginTop: "1px" }}>
-                Tiket Transaksi Kasir #{tableNumber.replace(/[^0-9]/g, "") || "01"}
-              </div>
+            <div style={{ fontSize: "0.72rem", color: "rgba(245,240,232,0.45)", fontWeight: "500", marginTop: "2px" }}>
+              No. Pesanan: #GK-{tableNumber.replace(/[^0-9]/g, "") || "01"}
             </div>
           </div>
 
@@ -604,25 +607,25 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.06)",
             borderRadius: "10px",
-            padding: "5px 10px",
+            padding: "6px 10px",
             marginBottom: "10px",
             flexShrink: 0
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "rgba(245,240,232,0.7)", fontWeight: "600" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.76rem", color: "rgba(245,240,232,0.7)", fontWeight: "600" }}>
               <span>🪑</span>
-              <span>Nomor Meja:</span>
+              <span>Table</span>
             </div>
             <select
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               style={{
-                padding: "4px 8px",
-                borderRadius: "6px",
-                background: "rgba(212,101,28,0.12)",
-                border: "1px solid rgba(212,101,28,0.35)",
+                padding: "4px 10px",
+                borderRadius: "100px",
+                background: "rgba(212,101,28,0.18)",
+                border: "1px solid rgba(212,101,28,0.45)",
                 color: "#F5F0E8",
                 fontSize: "0.76rem",
                 fontWeight: "700",
@@ -630,7 +633,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                 cursor: "pointer"
               }}
             >
-              {["Meja 01", "Meja 02", "Meja 03", "Meja 04", "Meja 05", "Meja 06", "Meja 07", "Meja 08", "Meja 09", "Meja 10", "Bar Counter"].map((tbl) => (
+              {["Meja 01", "Meja 02", "Meja 03", "Meja 04", "Meja 05", "Meja 06", "Meja 07", "Meja 08", "Meja 09", "Meja 10", "Meja 14", "Bar Counter"].map((tbl) => (
                 <option key={tbl} value={tbl} style={{ background: "#181818", color: "#FFF" }}>
                   {tbl}
                 </option>
@@ -717,118 +720,114 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                   background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: "12px",
-                  padding: "10px 12px",
+                  padding: "8px 10px",
                   flexShrink: 0,
-                  transition: "border-color 0.15s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  transition: "all 0.15s ease",
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: "700", fontSize: "0.85rem", color: "#F5F0E8", lineHeight: "1.3", wordBreak: "break-word" }}>
-                        {item.product.name}
-                      </div>
-                      {item.quantity > 1 && (
-                        <div style={{ fontSize: "0.7rem", color: "rgba(245,240,232,0.45)", marginTop: "2px" }}>
-                          @ Rp {itemPrice.toLocaleString("id-ID")}
-                        </div>
-                      )}
+                  {/* Nomor Urut (1), (2), (3) */}
+                  <span style={{ fontSize: "0.72rem", color: "rgba(245,240,232,0.4)", fontWeight: "600", flexShrink: 0, width: "18px" }}>
+                    ({idx + 1})
+                  </span>
+
+                  {/* Foto Thumbnail Produk */}
+                  <div style={{
+                    width: "42px",
+                    height: "42px",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    background: "rgba(0,0,0,0.3)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}>
+                    <img
+                      src={getProductImageUrl(item.product)}
+                      alt={item.product.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  </div>
+
+                  {/* Detail Nama & Modifiers */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: "700", fontSize: "0.82rem", color: "#F5F0E8", lineHeight: "1.25", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {item.product.name}
                     </div>
-                    <div style={{ fontWeight: "800", fontSize: "0.9rem", color: "#D4651C", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {modSummary ? (
+                      <div
+                        onClick={() => openCustomizer(item.product, idx)}
+                        style={{ fontSize: "0.68rem", color: "#E27B38", marginTop: "1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }}
+                        title="Klik untuk ubah catatan"
+                      >
+                        ⚡ {modSummary}
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => openCustomizer(item.product, idx)}
+                        style={{ fontSize: "0.68rem", color: "rgba(245,240,232,0.4)", marginTop: "1px", cursor: "pointer" }}
+                        title="Klik untuk tambah catatan"
+                      >
+                        + Catatan
+                      </div>
+                    )}
+                    <div style={{ fontWeight: "800", fontSize: "0.82rem", color: "#D4651C", marginTop: "2px" }}>
                       Rp {(itemPrice * item.quantity).toLocaleString("id-ID")}
                     </div>
                   </div>
 
-                  {modSummary && (
-                    <div style={{
-                      background: "rgba(212,101,28,0.1)",
-                      border: "1px solid rgba(212,101,28,0.2)",
-                      borderRadius: "6px",
-                      padding: "4px 8px",
-                      fontSize: "0.72rem",
-                      color: "#E27B38",
-                      marginBottom: "8px",
-                      lineHeight: "1.3",
-                      wordBreak: "break-word",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px"
-                    }}>
-                      <span>⚡</span>
-                      <span>{modSummary}</span>
-                    </div>
-                  )}
-
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px", paddingTop: "6px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                  {/* Stepper Jumlah [-] [qty] [+] */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "rgba(0,0,0,0.4)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    padding: "2px 4px",
+                    borderRadius: "8px",
+                    flexShrink: 0,
+                  }}>
                     <button
-                      onClick={() => openCustomizer(item.product, idx)}
+                      onClick={() => updateQuantity(idx, -1)}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        color: "rgba(245,240,232,0.8)",
-                        fontSize: "0.72rem",
-                        padding: "3px 8px",
-                        borderRadius: "6px",
-                        fontWeight: "600",
-                        cursor: "pointer",
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "4px",
+                        background: "rgba(255,255,255,0.08)",
+                        border: "none",
+                        color: "#F5F0E8",
+                        fontSize: "0.85rem",
+                        fontWeight: "bold",
                         display: "flex",
                         alignItems: "center",
-                        gap: "4px",
-                        transition: "all 0.15s ease"
+                        justifyContent: "center",
+                        cursor: "pointer",
                       }}
                     >
-                      <span>⚙️</span> Catatan
+                      -
                     </button>
-
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      background: "rgba(0,0,0,0.4)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      padding: "3px 6px",
-                      borderRadius: "8px"
-                    }}>
-                      <button
-                        onClick={() => updateQuantity(idx, -1)}
-                        style={{
-                          width: "22px",
-                          height: "22px",
-                          borderRadius: "4px",
-                          background: "rgba(255,255,255,0.08)",
-                          border: "none",
-                          color: "#F5F0E8",
-                          fontSize: "0.85rem",
-                          fontWeight: "bold",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                        }}
-                      >
-                        -
-                      </button>
-                      <span style={{ fontSize: "0.82rem", fontWeight: "800", width: "20px", textAlign: "center", color: "#F5F0E8" }}>
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(idx, 1)}
-                        style={{
-                          width: "22px",
-                          height: "22px",
-                          borderRadius: "4px",
-                          background: "#D4651C",
-                          border: "none",
-                          color: "#FFF",
-                          fontSize: "0.85rem",
-                          fontWeight: "bold",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
+                    <span style={{ fontSize: "0.8rem", fontWeight: "800", width: "16px", textAlign: "center", color: "#F5F0E8" }}>
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(idx, 1)}
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "4px",
+                        background: "#D4651C",
+                        border: "none",
+                        color: "#FFF",
+                        fontSize: "0.85rem",
+                        fontWeight: "bold",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
               );
@@ -844,18 +843,11 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         marginTop: "8px",
         flexShrink: 0,
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.78rem", color: "rgba(245,240,232,0.55)" }}>
-          <span>Subtotal Item</span>
-          <span>Rp {subtotal.toLocaleString("id-ID")}</span>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "10px" }}>
-          <div>
-            <div style={{ fontSize: "0.86rem", fontWeight: "700", color: "#F5F0E8" }}>Total Pembayaran</div>
-            <div style={{ fontSize: "0.66rem", color: "rgba(245,240,232,0.4)" }}>Termasuk pajak &amp; layanan</div>
-          </div>
-          <div style={{ fontSize: "1.18rem", fontWeight: "900", color: cart.length > 0 ? "#D4651C" : "rgba(245,240,232,0.4)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "12px" }}>
+          <span style={{ fontSize: "0.92rem", fontWeight: "700", color: "#F5F0E8" }}>Total:</span>
+          <span style={{ fontSize: "1.18rem", fontWeight: "900", color: cart.length > 0 ? "#F5F0E8" : "rgba(245,240,232,0.4)" }}>
             Rp {totalAmount.toLocaleString("id-ID")}
-          </div>
+          </span>
         </div>
 
         <button
@@ -866,7 +858,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           disabled={cart.length === 0}
           style={{
             width: "100%",
-            padding: "12px 16px",
+            padding: "13px 16px",
             borderRadius: "12px",
             background: cart.length > 0
               ? "linear-gradient(135deg, #D4651C 0%, #EA580C 100%)"
@@ -874,9 +866,10 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             color: cart.length > 0 ? "#FFF" : "rgba(245,240,232,0.3)",
             border: cart.length > 0 ? "none" : "1px solid rgba(255,255,255,0.08)",
             fontWeight: "800",
-            fontSize: "0.9rem",
+            fontSize: "0.88rem",
+            letterSpacing: "0.02em",
             cursor: cart.length > 0 ? "pointer" : "not-allowed",
-            boxShadow: cart.length > 0 ? "0 6px 20px rgba(212,101,28,0.4)" : "none",
+            boxShadow: cart.length > 0 ? "0 8px 24px rgba(212,101,28,0.45)" : "none",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -885,15 +878,9 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           }}
         >
           {cart.length > 0 ? (
-            <>
-              <span>💳</span>
-              <span>Proses Pembayaran →</span>
-            </>
+            <span>BAYAR SEKARANG - Rp {totalAmount.toLocaleString("id-ID")}</span>
           ) : (
-            <>
-              <span style={{ opacity: 0.6 }}>🛒</span>
-              <span>Pilih Menu Dahulu</span>
-            </>
+            <span>PILIH MENU DAHULU</span>
           )}
         </button>
       </div>
@@ -1054,22 +1041,30 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                 key={tab.id}
                 onClick={() => setSelectedCategory(tab.id)}
                 style={{
-                  padding: "9px 16px",
-                  borderRadius: "8px",
-                  border: "1px solid " + (isActive ? "#D4651C" : "rgba(255,255,255,0.1)"),
-                  background: isActive ? "rgba(212,101,28,0.25)" : "rgba(255,255,255,0.03)",
-                  color: isActive ? "#D4651C" : "rgba(245,240,232,0.8)",
-                  fontWeight: isActive ? "700" : "500",
-                  fontSize: "0.85rem",
+                  padding: "8px 18px",
+                  borderRadius: "100px",
+                  border: isActive ? "1px solid #EA580C" : "1px solid rgba(255,255,255,0.1)",
+                  background: isActive ? "linear-gradient(135deg, #D4651C 0%, #EA580C 100%)" : "rgba(255,255,255,0.04)",
+                  color: isActive ? "#FFFFFF" : "rgba(245,240,232,0.75)",
+                  fontWeight: isActive ? "700" : "600",
+                  fontSize: "0.82rem",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
+                  boxShadow: isActive ? "0 4px 14px rgba(212, 101, 28, 0.4)" : "none",
                   transition: "all 0.15s ease",
                 }}
               >
-                <span>{tab.icon}</span> {tab.label}
+                <span>{tab.label}</span>
+                <span style={{
+                  opacity: isActive ? 0.95 : 0.6,
+                  fontSize: "0.76rem",
+                  fontWeight: "600",
+                }}>
+                  ({tab.count})
+                </span>
               </button>
             );
           })}
@@ -1259,9 +1254,9 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             left: "14px",
             right: "14px",
             zIndex: 80,
-            background: "linear-gradient(135deg, #D4651C 0%, #B85214 100%)",
-            borderRadius: "14px",
-            padding: "12px 16px",
+            background: "linear-gradient(135deg, #D4651C 0%, #EA580C 100%)",
+            borderRadius: "16px",
+            padding: "12px 18px",
             color: "#FFF",
             alignItems: "center",
             justifyContent: "space-between",
@@ -1269,43 +1264,29 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             cursor: "pointer",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{
-              background: "rgba(0,0,0,0.25)",
-              borderRadius: "8px",
-              padding: "6px 10px",
-              fontWeight: "900",
-              fontSize: "0.85rem",
-            }}>
-              🛒 {cart.reduce((s, c) => s + c.quantity, 0)} Item
-            </div>
-            <div>
-              <div style={{ fontSize: "0.72rem", opacity: 0.85, fontWeight: "600" }}>
-                {orderType === "Dine In" ? `🪑 ${tableNumber}` : "🛍️ Takeaway"}
-              </div>
-              <div style={{ fontSize: "1.05rem", fontWeight: "900" }}>
-                Rp {totalAmount.toLocaleString("id-ID")}
-              </div>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "800", fontSize: "0.92rem" }}>
+            <span>🛒</span>
+            <span>{cart.reduce((s, c) => s + c.quantity, 0)} Item • Rp {totalAmount.toLocaleString("id-ID")}</span>
           </div>
 
-          <button
+          <div
             style={{
-              background: "#FFF",
-              color: "#D4651C",
-              border: "none",
-              padding: "8px 14px",
-              borderRadius: "8px",
-              fontWeight: "900",
-              fontSize: "0.82rem",
+              background: "rgba(255,255,255,0.15)",
+              color: "#FFF",
+              border: "1px solid rgba(255,255,255,0.3)",
+              padding: "6px 14px",
+              borderRadius: "100px",
+              fontWeight: "800",
+              fontSize: "0.8rem",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               gap: "4px",
+              backdropFilter: "blur(4px)",
             }}
           >
             Lihat Pesanan ➔
-          </button>
+          </div>
         </div>
       )}
 
