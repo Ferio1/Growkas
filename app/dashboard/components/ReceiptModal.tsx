@@ -65,6 +65,11 @@ export default function ReceiptModal({ transaction, onClose }: ReceiptModalProps
           {transaction.items.map((item, idx) => (
             <div key={idx} style={{ marginBottom: "8px" }}>
               <div style={{ fontWeight: "bold" }}>{item.product_name}</div>
+              {item.modifiers_summary && (
+                <div style={{ fontSize: "0.72rem", color: "#666", fontStyle: "italic", marginBottom: "2px" }}>
+                  • {item.modifiers_summary}
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", color: "#555", fontSize: "0.78rem" }}>
                 <span>{item.quantity} x Rp {item.price.toLocaleString("id-ID")}</span>
                 <span style={{ fontWeight: "600", color: "#111" }}>

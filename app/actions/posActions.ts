@@ -19,10 +19,21 @@ export interface CategoryItem {
   name: string;
 }
 
+export interface CartItemModifier {
+  orderType?: "Dine In" | "Takeaway";
+  tableNumber?: string;
+  iceLevel?: "Normal Ice" | "Less Ice" | "No Ice";
+  sugarLevel?: "Normal Sugar" | "Less Sugar" | "No Sugar";
+  addOns?: string[];
+  addOnPrice?: number;
+  customNote?: string;
+}
+
 export interface CartItem {
   product: ProductItem;
   quantity: number;
   note?: string;
+  modifiers?: CartItemModifier;
 }
 
 export interface TransactionPayload {
@@ -39,6 +50,7 @@ export interface TransactionPayload {
     price: number;
     quantity: number;
     subtotal: number;
+    modifiers_summary?: string;
   }[];
 }
 

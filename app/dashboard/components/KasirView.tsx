@@ -87,23 +87,98 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     return matchCategory && matchSearch;
   });
 
-  const addToCart = (product: ProductItem) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+  // Customizer Modal State
+  const [customizerProduct, setCustomizerProduct] = useState<ProductItem | null>(null);
+  const [customizerCartIndex, setCustomizerCartIndex] = useState<number | null>(null);
+  const [orderType, setOrderType] = useState<"Dine In" | "Takeaway">("Dine In");
+  const [tableNumber, setTableNumber] = useState("Meja 01");
+  const [iceLevel, setIceLevel] = useState<"Normal Ice" | "Less Ice" | "No Ice">("Normal Ice");
+  const [sugarLevel, setSugarLevel] = useState<"Normal Sugar" | "Less Sugar" | "No Sugar">("Normal Sugar");
+  const [extraShot, setExtraShot] = useState(false);
+  const [extraSyrup, setExtraSyrup] = useState(false);
+  const [customNote, setCustomNote] = useState("");
+
+  const openCustomizer = (product: ProductItem, existingCartIdx?: number) => {
+    setCustomizerProduct(product);
+    if (existingCartIdx !== undefined && existingCartIdx !== null) {
+      setCustomizerCartIndex(existingCartIdx);
+      const existing = cart[existingCartIdx];
+      if (existing?.modifiers) {
+        setOrderType(existing.modifiers.orderType || "Dine In");
+        setTableNumber(existing.modifiers.tableNumber || "Meja 01");
+        setIceLevel(existing.modifiers.iceLevel || "Normal Ice");
+        setSugarLevel(existing.modifiers.sugarLevel || "Normal Sugar");
+        setExtraShot(existing.modifiers.addOns?.includes("Extra Shot (+Rp 4.000)") || false);
+        setExtraSyrup(existing.modifiers.addOns?.includes("Extra Syrup (+Rp 3.000)") || false);
+        setCustomNote(existing.modifiers.customNote || existing.note || "");
+        return;
       }
-      return [...prev, { product, quantity: 1, note: "" }];
-    });
+    }
+    // Default values
+    setCustomizerCartIndex(null);
+    setOrderType("Dine In");
+    setTableNumber("Meja 01");
+    setIceLevel("Normal Ice");
+    setSugarLevel("Normal Sugar");
+    setExtraShot(false);
+    setExtraSyrup(false);
+    setCustomNote("");
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const handleSaveCustomizer = () => {
+    if (!customizerProduct) return;
+
+    const addOns: string[] = [];
+    let addOnPrice = 0;
+
+    if (extraShot) {
+      addOns.push("Extra Shot (+Rp 4.000)");
+      addOnPrice += 4000;
+    }
+    if (extraSyrup) {
+      addOns.push("Extra Syrup (+Rp 3.000)");
+      addOnPrice += 3000;
+    }
+
+    const modifierObj = {
+      orderType,
+      tableNumber: orderType === "Dine In" ? tableNumber : undefined,
+      iceLevel,
+      sugarLevel,
+      addOns,
+      addOnPrice,
+      customNote,
+    };
+
+    setCart((prev) => {
+      if (customizerCartIndex !== null && prev[customizerCartIndex]) {
+        // Edit existing cart item
+        const updated = [...prev];
+        updated[customizerCartIndex] = {
+          ...updated[customizerCartIndex],
+          modifiers: modifierObj,
+          note: customNote,
+        };
+        return updated;
+      }
+
+      // Add new cart item with modifiers
+      return [...prev, { product: customizerProduct, quantity: 1, note: customNote, modifiers: modifierObj }];
+    });
+
+    setCustomizerProduct(null);
+    setCustomizerCartIndex(null);
+  };
+
+  const addToCart = (product: ProductItem) => {
+    openCustomizer(product);
+  };
+
+  const updateQuantity = (index: number, delta: number) => {
     setCart((prev) =>
       prev
-        .map((item) => {
-          if (item.product.id === productId) {
+        .map((item, idx) => {
+          if (idx === index) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -113,15 +188,15 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     );
   };
 
-  const updateNote = (productId: string, note: string) => {
-    setCart((prev) =>
-      prev.map((item) => (item.product.id === productId ? { ...item, note } : item))
-    );
-  };
-
   const clearCart = () => setCart([]);
 
-  const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  const getItemPrice = (item: CartItem) => {
+    const base = item.product.price;
+    const addOn = item.modifiers?.addOnPrice || 0;
+    return base + addOn;
+  };
+
+  const subtotal = cart.reduce((acc, item) => acc + getItemPrice(item) * item.quantity, 0);
   const totalAmount = subtotal;
 
   const paidAmount = Number(paidAmountInput) || 0;
@@ -131,6 +206,22 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     if (cart.length === 0) return;
     setPaidAmountInput(totalAmount.toString());
     setIsPaymentModalOpen(true);
+  };
+
+  const formatModifiersSummary = (item: CartItem) => {
+    const parts: string[] = [];
+    if (item.modifiers?.orderType) {
+      parts.push(item.modifiers.orderType === "Dine In" ? `Dine In (${item.modifiers.tableNumber || "Meja 01"})` : "Takeaway");
+    }
+    if (item.modifiers?.iceLevel) parts.push(item.modifiers.iceLevel);
+    if (item.modifiers?.sugarLevel) parts.push(item.modifiers.sugarLevel);
+    if (item.modifiers?.addOns && item.modifiers.addOns.length > 0) {
+      parts.push(item.modifiers.addOns.join(", "));
+    }
+    if (item.note || item.modifiers?.customNote) {
+      parts.push(`Note: ${item.note || item.modifiers?.customNote}`);
+    }
+    return parts.join(" • ");
   };
 
   const handleCompleteTransaction = async () => {
@@ -156,9 +247,10 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
       items: cart.map((c) => ({
         product_id: c.product.id,
         product_name: c.product.name,
-        price: c.product.price,
+        price: getItemPrice(c),
         quantity: c.quantity,
-        subtotal: c.product.price * c.quantity,
+        subtotal: getItemPrice(c) * c.quantity,
+        modifiers_summary: formatModifiersSummary(c),
       })),
     };
 
@@ -435,38 +527,49 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
-              {cart.map((item) => (
-                <div key={item.product.id} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "600", fontSize: "0.85rem", marginBottom: "6px" }}>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>{item.product.name}</span>
-                    <span style={{ color: "#D4651C" }}>Rp {(item.product.price * item.quantity).toLocaleString("id-ID")}</span>
-                  </div>
+              {cart.map((item, idx) => {
+                const itemPrice = getItemPrice(item);
+                const modSummary = formatModifiersSummary(item);
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <input
-                      type="text"
-                      placeholder="Catatan (cth: tanpa gula)"
-                      value={item.note || ""}
-                      onChange={(e) => updateNote(item.product.id, e.target.value)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        borderBottom: "1px solid rgba(255,255,255,0.1)",
-                        color: "rgba(245,240,232,0.6)",
-                        fontSize: "0.72rem",
-                        width: "120px",
-                        outline: "none",
-                      }}
-                    />
+                return (
+                  <div key={idx} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "600", fontSize: "0.85rem", marginBottom: "4px" }}>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>{item.product.name}</span>
+                      <span style={{ color: "#D4651C" }}>Rp {(itemPrice * item.quantity).toLocaleString("id-ID")}</span>
+                    </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,0,0,0.3)", padding: "2px 6px", borderRadius: "6px" }}>
-                      <button onClick={() => updateQuantity(item.product.id, -1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>-</button>
-                      <span style={{ fontSize: "0.8rem", fontWeight: "bold", width: "18px", textAlign: "center" }}>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.product.id, 1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>+</button>
+                    {modSummary && (
+                      <div style={{ fontSize: "0.72rem", color: "#D4651C", opacity: 0.9, marginBottom: "6px", fontStyle: "italic", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        ⚡ {modSummary}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <button
+                        onClick={() => openCustomizer(item.product, idx)}
+                        style={{
+                          background: "rgba(212,101,28,0.15)",
+                          border: "1px solid rgba(212,101,28,0.3)",
+                          color: "#D4651C",
+                          fontSize: "0.7rem",
+                          padding: "3px 8px",
+                          borderRadius: "4px",
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                        }}
+                      >
+                        ⚙️ Custom / Note
+                      </button>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,0,0,0.3)", padding: "2px 6px", borderRadius: "6px" }}>
+                        <button onClick={() => updateQuantity(idx, -1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>-</button>
+                        <span style={{ fontSize: "0.8rem", fontWeight: "bold", width: "18px", textAlign: "center" }}>{item.quantity}</span>
+                        <button onClick={() => updateQuantity(idx, 1)} style={{ background: "none", border: "none", color: "#F5F0E8", fontSize: "0.9rem", cursor: "pointer" }}>+</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -604,6 +707,160 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                 style={{ padding: "12px", borderRadius: "8px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "800", cursor: "pointer" }}
               >
                 {isSubmitting ? "Menyimpan..." : "Selesaikan ➔"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL F&B CUSTOMIZER */}
+      {customizerProduct && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
+        }}>
+          <div style={{
+            background: "#161616", border: "1px solid rgba(212,101,28,0.4)", borderRadius: "18px", width: "100%", maxWidth: "460px", padding: "24px", color: "#F5F0E8", boxShadow: "0 20px 50px rgba(0,0,0,0.6)",
+          }}>
+            {/* Header Product */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px" }}>
+              <div>
+                <span style={{ fontSize: "0.72rem", color: "#D4651C", textTransform: "uppercase", fontWeight: "bold" }}>Kustomisasi Pesanan F&B</span>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "900", margin: "2px 0 0" }}>{customizerProduct.name}</h2>
+              </div>
+              <span style={{ fontSize: "1.1rem", fontWeight: "900", color: "#D4651C" }}>
+                Rp {(customizerProduct.price + (extraShot ? 4000 : 0) + (extraSyrup ? 3000 : 0)).toLocaleString("id-ID")}
+              </span>
+            </div>
+
+            {/* OPSI 1: TIPE PESANAN & MEJA */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                Tipe Pesanan
+              </label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {(["Dine In", "Takeaway"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setOrderType(t)}
+                    style={{
+                      flex: 1, padding: "8px", borderRadius: "8px",
+                      border: "1px solid " + (orderType === t ? "#D4651C" : "rgba(255,255,255,0.1)"),
+                      background: orderType === t ? "rgba(212,101,28,0.25)" : "rgba(255,255,255,0.03)",
+                      color: orderType === t ? "#D4651C" : "#F5F0E8", fontWeight: "700", fontSize: "0.82rem", cursor: "pointer",
+                    }}
+                  >
+                    {t === "Dine In" ? "🪑 Dine In" : "🛍️ Takeaway"}
+                  </button>
+                ))}
+              </div>
+              {orderType === "Dine In" && (
+                <div style={{ marginTop: "8px" }}>
+                  <input
+                    type="text"
+                    placeholder="Nomor Meja (cth: Meja 04)"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    style={{
+                      width: "100%", padding: "8px 12px", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", color: "#F5F0E8", fontSize: "0.82rem", outline: "none", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* OPSI 2: LEVEL ES */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                Level Es (Ice Level)
+              </label>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {(["Normal Ice", "Less Ice", "No Ice"] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setIceLevel(l)}
+                    style={{
+                      flex: 1, padding: "6px", borderRadius: "6px",
+                      border: "1px solid " + (iceLevel === l ? "#D4651C" : "rgba(255,255,255,0.1)"),
+                      background: iceLevel === l ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                      color: iceLevel === l ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
+                    }}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* OPSI 3: LEVEL GULA */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                Level Gula (Sugar Level)
+              </label>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {(["Normal Sugar", "Less Sugar", "No Sugar"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSugarLevel(s)}
+                    style={{
+                      flex: 1, padding: "6px", borderRadius: "6px",
+                      border: "1px solid " + (sugarLevel === s ? "#D4651C" : "rgba(255,255,255,0.1)"),
+                      background: sugarLevel === s ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                      color: sugarLevel === s ? "#D4651C" : "#F5F0E8", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer",
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* OPSI 4: EKSTRA ADD-ON */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                Tambahan / Add-On
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                  <input type="checkbox" checked={extraShot} onChange={(e) => setExtraShot(e.target.checked)} />
+                  <span>☕ Extra Shot Espresso (+Rp 4.000)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                  <input type="checkbox" checked={extraSyrup} onChange={(e) => setExtraSyrup(e.target.checked)} />
+                  <span>🧪 Extra Flavor Syrup (+Rp 3.000)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* OPSI 5: CATATAN DAPUR */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "rgba(245,240,232,0.6)", display: "block", marginBottom: "6px" }}>
+                Catatan Khusus Pesanan
+              </label>
+              <input
+                type="text"
+                placeholder="Catatan khusus (cth: pisah es, sedotan 2)..."
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                style={{
+                  width: "100%", padding: "10px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F0E8", fontSize: "0.82rem", outline: "none", boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Tombol Aksi Modal */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <button
+                onClick={() => setCustomizerProduct(null)}
+                style={{ padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", color: "#F5F0E8", border: "none", fontWeight: "600", cursor: "pointer" }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveCustomizer}
+                style={{ padding: "10px", borderRadius: "8px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "800", cursor: "pointer" }}
+              >
+                Simpan Pesanan ➔
               </button>
             </div>
           </div>
