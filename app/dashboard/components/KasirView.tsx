@@ -9,7 +9,7 @@ import ShiftManagerModal from "./ShiftManagerModal";
 import { getActiveShift, recordSaleToActiveShift, CashierShift } from "@/app/actions/shiftActions";
 import { getTableOrders, createTableOrder } from "@/app/actions/orderActions";
 import { deductRawIngredientsForItems } from "@/app/actions/ingredientActions";
-import { getProductType, formatItemModifiersSummary } from "@/app/utils/productUtils";
+import { getProductType, formatItemModifiersSummary, getProductImageUrl } from "@/app/utils/productUtils";
 import Link from "next/link";
 
 interface KasirViewProps {
@@ -955,6 +955,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             <Link
               href="/kitchen"
               target="_blank"
+              className="growkas-kds-link-btn"
               style={{
                 padding: "8px 12px",
                 borderRadius: "10px",
@@ -1013,7 +1014,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           <span style={{ position: "absolute", left: "18px", top: "50%", transform: "translateY(-50%)", fontSize: "1.2rem", opacity: 0.7 }}>🔍</span>
           <input
             type="text"
-            placeholder="Cari menu kopi, makanan, snack, atau scan barcode..."
+            placeholder="Cari menu atau scan barcode..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -1099,61 +1100,89 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                     background: inCart ? "rgba(212,101,28,0.08)" : "rgba(255,255,255,0.03)",
                     border: inCart ? "2px solid #D4651C" : "1px solid rgba(255,255,255,0.08)",
                     borderRadius: "14px",
-                    padding: "16px",
+                    padding: "10px",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     position: "relative",
-                    minHeight: "175px",
+                    minHeight: "225px",
                     boxSizing: "border-box",
-                    boxShadow: inCart ? "0 4px 16px rgba(212,101,28,0.2)" : "none",
+                    boxShadow: inCart ? "0 4px 16px rgba(212,101,28,0.25)" : "none",
+                    overflow: "hidden",
                   }}
                 >
+                  {/* Badge Qty in Cart */}
                   {inCart && (
                     <span style={{
                       position: "absolute",
-                      top: "10px",
-                      right: "10px",
+                      top: "8px",
+                      right: "8px",
+                      zIndex: 10,
                       background: "#D4651C",
                       color: "#FFF",
-                      fontSize: "0.75rem",
-                      fontWeight: "bold",
+                      fontSize: "0.72rem",
+                      fontWeight: "900",
                       width: "22px",
                       height: "22px",
                       borderRadius: "50%",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
                     }}>
                       {inCart.quantity}
                     </span>
                   )}
 
-                  <div>
+                  {/* Foto Produk Appetizing */}
+                  <div style={{
+                    width: "100%",
+                    height: "110px",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    marginBottom: "8px",
+                    position: "relative",
+                    background: "rgba(0,0,0,0.3)",
+                    flexShrink: 0,
+                  }}>
+                    <img
+                      src={getProductImageUrl(product)}
+                      alt={product.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                      loading="lazy"
+                    />
                     <div style={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "10px",
-                      background: "rgba(212,101,28,0.15)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "1.25rem",
-                      marginBottom: "10px",
+                      position: "absolute",
+                      bottom: "4px",
+                      left: "4px",
+                      background: "rgba(0,0,0,0.65)",
+                      backdropFilter: "blur(4px)",
+                      borderRadius: "6px",
+                      padding: "2px 6px",
+                      fontSize: "0.64rem",
+                      color: "rgba(245,240,232,0.85)",
+                      fontWeight: "600",
                     }}>
-                      {icon}
+                      Stok: {product.stock}
                     </div>
+                  </div>
 
+                  {/* Info Judul Produk */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                     <h3 style={{
-                      fontSize: "0.88rem",
+                      fontSize: "0.82rem",
                       fontWeight: "700",
-                      lineHeight: "1.3",
+                      lineHeight: "1.25",
                       color: "#F5F0E8",
                       marginBottom: "4px",
-                      height: "2.6em",
+                      height: "2.5em",
                       overflow: "hidden",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
@@ -1161,36 +1190,37 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                     }}>
                       {product.name}
                     </h3>
-
-                    <div style={{ fontSize: "0.74rem", color: "rgba(245,240,232,0.45)", marginBottom: "8px" }}>
-                      Stok: {product.stock}
-                    </div>
                   </div>
 
+                  {/* Harga & Tombol Tambah Full-Width (Anti-Cutoff di Layar iPhone) */}
                   <div style={{
                     marginTop: "auto",
-                    paddingTop: "10px",
-                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                    paddingTop: "6px",
+                    borderTop: "1px solid rgba(255,255,255,0.05)",
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    flexDirection: "column",
                     gap: "6px",
                   }}>
-                    <span style={{ fontWeight: "800", color: "#D4651C", fontSize: "0.9rem", whiteSpace: "nowrap" }}>
+                    <span style={{ fontWeight: "800", color: "#D4651C", fontSize: "0.88rem" }}>
                       Rp {product.price.toLocaleString("id-ID")}
                     </span>
                     <button style={{
-                      padding: "6px 12px",
+                      width: "100%",
+                      padding: "6px 8px",
                       borderRadius: "8px",
                       background: inCart ? "#D4651C" : "rgba(255,255,255,0.08)",
                       color: inCart ? "#FFF" : "#F5F0E8",
                       border: "none",
-                      fontSize: "0.78rem",
+                      fontSize: "0.76rem",
                       fontWeight: "700",
                       cursor: "pointer",
-                      whiteSpace: "nowrap",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "4px",
+                      transition: "all 0.15s ease",
                     }}>
-                      {inCart ? "+1" : "+ Tambah"}
+                      {inCart ? `✓ (${inCart.quantity}) Tambah` : "+ Tambah"}
                     </button>
                   </div>
                 </div>

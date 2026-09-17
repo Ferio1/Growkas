@@ -392,6 +392,11 @@ export default function DashboardLayout({
               ☰
             </button>
 
+            {/* Logo Singkat Growkas di Mobile */}
+            <span className="growkas-mobile-brand" style={{ display: "none", alignItems: "center", gap: "6px", fontWeight: "800", fontSize: "0.95rem", color: "#F5F0E8", whiteSpace: "nowrap" }}>
+              <span style={{ color: "#D4651C" }}>●</span> Growkas
+            </span>
+
             <span style={{
               padding: "4px 10px", borderRadius: "100px", background: "rgba(74,222,128,0.15)",
               border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.72rem", fontWeight: "bold",
@@ -425,12 +430,12 @@ export default function DashboardLayout({
             </select>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             <div className="growkas-clock-badge" style={{ fontSize: "0.88rem", fontFamily: "monospace", color: "rgba(245,240,232,0.6)" }}>
               {clock || "00:00:00"}
             </div>
 
-            <div style={{
+            <div className="growkas-header-role-toggle" style={{
               display: "flex", background: "rgba(255,255,255,0.05)", padding: "3px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)",
             }}>
               <button

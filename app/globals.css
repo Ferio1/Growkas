@@ -178,7 +178,10 @@ input, textarea, select {
     padding-bottom: 84px !important;
   }
   .growkas-outlet-select {
-    max-width: 150px !important;
+    max-width: 130px !important;
+  }
+  .growkas-kds-link-btn {
+    display: none !important;
   }
 }
 
@@ -201,6 +204,12 @@ input, textarea, select {
   }
   .growkas-mobile-toggle {
     display: flex !important;
+  }
+  .growkas-mobile-brand {
+    display: flex !important;
+  }
+  .growkas-header-role-toggle {
+    display: none !important;
   }
   .growkas-pos-desktop-cart {
     display: none !important;
