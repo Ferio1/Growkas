@@ -221,68 +221,93 @@ export default function KitchenPage() {
                   }}
                 >
                   <div>
-                    {/* Header Card */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                      <div>
+                    {/* BARIS 1: NOMOR MEJA, BADGE ASAL, DAN TOMBOL HAPUS */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "nowrap" }}>
                         <span style={{
                           background: "#FFF",
                           color: "#000",
                           fontWeight: "900",
-                          fontSize: "1.35rem",
-                          padding: "6px 14px",
+                          fontSize: "1.3rem",
+                          padding: "4px 12px",
                           borderRadius: "8px",
-                          display: "inline-block",
+                          letterSpacing: "0.5px",
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
                         }}>
                           {ord.table_number.toUpperCase()}
                         </span>
                         <span style={{
-                          fontSize: "0.72rem",
-                          fontWeight: "bold",
-                          marginLeft: "8px",
-                          padding: "3px 8px",
-                          borderRadius: "4px",
-                          background: ord.source === "kasir_pos" ? "rgba(56,189,248,0.2)" : "rgba(34,197,94,0.2)",
+                          fontSize: "0.74rem",
+                          fontWeight: "800",
+                          padding: "4px 10px",
+                          borderRadius: "6px",
+                          background: ord.source === "kasir_pos" ? "rgba(56,189,248,0.15)" : "rgba(34,197,94,0.15)",
                           color: ord.source === "kasir_pos" ? "#38bdf8" : "#4ade80",
                           border: "1px solid " + (ord.source === "kasir_pos" ? "rgba(56,189,248,0.4)" : "rgba(34,197,94,0.4)"),
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
                         }}>
                           {ord.source === "kasir_pos" ? "🏢 KASIR POS" : "📱 QR MEJA"}
                         </span>
-                        <div style={{ fontSize: "0.75rem", color: "#888", marginTop: "6px" }}>
-                          #{ord.invoice_number}
-                        </div>
                       </div>
 
-                      <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <div style={{
-                            fontSize: "0.85rem",
-                            fontWeight: "900",
-                            color: borderColor,
-                            background: "rgba(255,255,255,0.05)",
-                            padding: "4px 10px",
-                            borderRadius: "6px",
-                          }}>
-                            ⏱️ {getElapsedTime(ord.created_at)}
-                          </div>
-                          <button
-                            onClick={() => handleDeleteOrder(ord.id)}
-                            title="Hapus / Batalkan Pesanan"
-                            style={{
-                              background: "rgba(255,255,255,0.06)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              color: "#888",
-                              fontSize: "0.8rem",
-                              borderRadius: "4px",
-                              padding: "4px 8px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            ✕
-                          </button>
+                      <button
+                        onClick={() => handleDeleteOrder(ord.id)}
+                        title="Hapus / Batalkan Pesanan"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          color: "#888",
+                          fontSize: "0.85rem",
+                          borderRadius: "6px",
+                          width: "30px",
+                          height: "30px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          flexShrink: 0,
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* BARIS 2: INVOICE & WAKTU & STATUS BAYAR */}
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "0.78rem",
+                      color: "#AAA",
+                      paddingBottom: "12px",
+                      borderBottom: "1px dashed rgba(255,255,255,0.12)",
+                      marginBottom: "12px",
+                    }}>
+                      <span style={{ color: "#888", fontFamily: "monospace", fontWeight: "600" }}>
+                        #{ord.invoice_number}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{
+                          fontSize: "0.78rem",
+                          fontWeight: "800",
+                          color: borderColor,
+                          background: "rgba(255,255,255,0.05)",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          whiteSpace: "nowrap",
+                        }}>
+                          ⏱️ {getElapsedTime(ord.created_at)}
                         </div>
-                        <div style={{ fontSize: "0.72rem", color: "#AAA", marginTop: "4px" }}>
+                        <span style={{
+                          fontSize: "0.74rem",
+                          fontWeight: "700",
+                          color: ord.payment_status === "paid" ? "#4ade80" : "#F59E0B",
+                          whiteSpace: "nowrap",
+                        }}>
                           {ord.payment_status === "paid" ? "✅ LUNAS QRIS" : "⚠️ TUNAI KASIR"}
-                        </div>
+                        </span>
                       </div>
                     </div>
 
