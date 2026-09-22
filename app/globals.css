@@ -129,152 +129,85 @@ input, textarea, select {
 }
 
 /* ================================================================
-   3-TIER ADAPTIVE RESPONSIVE UTILITIES (Mobile, Tablet, Desktop)
+   SCROLLBAR STYLING & CLEAN WEB RESPONSIVE LAYOUT
    ================================================================ */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideInLeft {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
-}
-
-.animate-slide-left {
-  animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* iOS Safe Area Support */
-.safe-area-bottom {
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
-}
-
-/* Base product grid */
-.growkas-product-grid {
-  display: grid;
-  overflow-y: auto;
-  align-content: start;
-}
-
-/* Mobile Phone (< 640px): 2 Kolom pas di layar HP */
-@media (max-width: 639px) {
-  .growkas-product-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-    padding-bottom: 84px !important;
-  }
-  .growkas-outlet-select {
-    max-width: 130px !important;
-  }
-  .growkas-kds-link-btn {
-    display: none !important;
-  }
-}
-
-/* Tablet (640px - 1023px): 3 Kolom */
-@media (min-width: 640px) and (max-width: 1023px) {
-  .growkas-product-grid {
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
-    gap: 12px !important;
-    padding-bottom: 84px !important;
-  }
-  .growkas-outlet-select {
-    max-width: 220px !important;
-  }
-}
-
-/* Responsive visibility rules */
-@media (max-width: 1023px) {
-  .growkas-sidebar-desktop {
-    display: none !important;
-  }
-  .growkas-mobile-toggle {
-    display: flex !important;
-  }
-  .growkas-mobile-brand {
-    display: flex !important;
-  }
-  .growkas-header-role-toggle {
-    display: none !important;
-  }
-  .growkas-pos-desktop-cart {
-    display: none !important;
-  }
-  .growkas-pos-mobile-cart-bar {
-    display: flex !important;
-  }
-  .growkas-pos-grid {
-    grid-template-columns: 1fr !important;
-  }
-  .growkas-clock-badge {
-    display: none !important;
-  }
-}
-
-/* Desktop & Laptop (>= 1024px): 3-4 Kolom Lega, Proporsional, & Mewah */
-@media (min-width: 1024px) {
-  .growkas-sidebar-desktop {
-    display: flex !important;
-  }
-  .growkas-mobile-toggle {
-    display: none !important;
-  }
-  .growkas-pos-desktop-cart {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
-    min-height: 0 !important;
-  }
-  .growkas-pos-mobile-cart-bar {
-    display: none !important;
-  }
-  .growkas-pos-grid {
-    grid-template-columns: 1fr 340px !important;
-    grid-template-rows: minmax(0, 1fr) !important;
-    height: 100% !important;
-    min-height: 0 !important;
-  }
-  .growkas-clock-badge {
-    display: block !important;
-  }
-  .growkas-product-grid {
-    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)) !important;
-    gap: 14px !important;
-    padding-bottom: 14px !important;
-    min-height: 0 !important;
-  }
-  .growkas-outlet-select {
-    max-width: none !important;
-  }
-}
-
-/* Touch-friendly scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.02);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 101, 28, 0.5);
+  background: rgba(212, 101, 28, 0.6);
+}
+
+/* Tablet & Layar Kecil (<= 900px) */
+@media (max-width: 900px) {
+  .growkas-pos-layout {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    gap: 16px !important;
+  }
+  .growkas-pos-catalog {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .growkas-pos-cart {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
+/* Smartphone & Layar Ponsel (<= 768px) */
+@media (max-width: 768px) {
+  .growkas-layout-wrapper {
+    flex-direction: column !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .growkas-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 12px 16px !important;
+  }
+  .growkas-sidebar-nav {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    padding-bottom: 4px !important;
+  }
+  .growkas-sidebar-nav button,
+  .growkas-sidebar-nav a {
+    white-space: nowrap !important;
+    padding: 8px 12px !important;
+  }
+  .growkas-sidebar-profile {
+    display: none !important;
+  }
+  .growkas-main-area {
+    overflow: visible !important;
+  }
+  .growkas-header {
+    padding: 8px 16px !important;
+    flex-wrap: wrap !important;
+    height: auto !important;
+    min-height: 56px !important;
+    gap: 8px !important;
+  }
+  .growkas-main-content {
+    padding: 16px !important;
+    overflow-y: visible !important;
+  }
 }
 
