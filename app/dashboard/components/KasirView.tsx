@@ -8,10 +8,8 @@ import KitchenDisplayModal, { playKitchenChime } from "./KitchenDisplayModal";
 import ShiftManagerModal from "./ShiftManagerModal";
 import { getActiveShift, recordSaleToActiveShift, CashierShift } from "@/app/actions/shiftActions";
 import { getTableOrders, createTableOrder } from "@/app/actions/orderActions";
-import { deductRawIngredientsForItems, getIngredientsAndCOGS } from "@/app/actions/ingredientActions";
+import { deductRawIngredientsForItems } from "@/app/actions/ingredientActions";
 import { getProductType, formatItemModifiersSummary } from "@/app/utils/productUtils";
-import HppDetailModal, { HppRecipeData } from "./HppDetailModal";
-import { playLowStockWarningTone } from "@/app/utils/audioUtils";
 import Link from "next/link";
 
 interface KasirViewProps {
@@ -24,11 +22,6 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   const [products, setProducts] = useState<ProductItem[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // HPP & Stock Bell State
-  const [cogsRecipes, setCogsRecipes] = useState<HppRecipeData[]>([]);
-  const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([]);
-  const [selectedHppRecipe, setSelectedHppRecipe] = useState<HppRecipeData | null>(null);
 
   const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -54,16 +47,6 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
 
-  const loadCogsData = async () => {
-    try {
-      const cogsRes = await getIngredientsAndCOGS();
-      if (cogsRes.success) {
-        setCogsRecipes(cogsRes.recipesAnalysis);
-        setLowStockAlerts(cogsRes.lowStockAlerts);
-      }
-    } catch {}
-  };
-
   useEffect(() => {
     async function initShiftAndOrders() {
       const shiftRes = await getActiveShift();
@@ -74,8 +57,6 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
         const count = ordRes.orders.filter((o) => o.status === "pending" || o.status === "processing").length;
         setPendingTableOrdersCount(count);
       }
-
-      loadCogsData();
     }
     initShiftAndOrders();
 
@@ -105,35 +86,6 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
 
     return () => clearInterval(interval);
   }, []);
-
-  // Helper membuka Pop-up HPP untuk produk tertentu
-  const openHppForProduct = (productName: string, price: number) => {
-    const found = cogsRecipes.find((r) => r.product_name.toLowerCase() === productName.toLowerCase());
-    if (found) {
-      setSelectedHppRecipe(found);
-    } else {
-      setSelectedHppRecipe({
-        product_name: productName,
-        selling_price: price,
-        total_cogs: Math.round(price * 0.35),
-        profit_margin: Math.round(price * 0.65),
-        profit_percent: 65,
-        ingredients: [
-          {
-            ingredient_id: "ing-1",
-            ingredient_name: "Bahan Baku F&B Utama",
-            quantity: 1,
-            unit: "porsi",
-            cost_per_unit: Math.round(price * 0.35),
-            item_cost: Math.round(price * 0.35),
-            current_stock: 45,
-            min_stock: 10,
-            is_low_stock: false,
-          },
-        ],
-      });
-    }
-  };
 
   // Klasifikasi Kategori Produk F&B yang Presisi
   const getProductGroup = (p: ProductItem): "kopi" | "nonkopi" | "makanan" | "snack" => {
@@ -571,34 +523,6 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
             >
               <span>📺</span> Buka Layar Dapur ↗
             </Link>
-
-            {/* BUTTON BEL STOK MENIPIS (AUDIO WARNING) */}
-            {lowStockAlerts.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  playLowStockWarningTone();
-                  if (cogsRecipes.length > 0) {
-                    setSelectedHppRecipe(cogsRecipes[0]);
-                  }
-                }}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "10px",
-                  background: "rgba(239,68,68,0.2)",
-                  border: "1px solid #EF4444",
-                  color: "#EF4444",
-                  fontSize: "0.8rem",
-                  fontWeight: "800",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <span>🔔</span> {lowStockAlerts.length} Bahan Menipis
-              </button>
-            )}
           </div>
 
           <button
@@ -740,32 +664,6 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
                     boxShadow: inCart ? "0 4px 16px rgba(212,101,28,0.2)" : "none",
                   }}
                 >
-                  {/* CHIP INFO HPP MENU */}
-                  <button
-                    type="button"
-                    title="Lihat Rincian HPP Menu Ini"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openHppForProduct(product.name, product.price);
-                    }}
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      left: "10px",
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      color: "#D4651C",
-                      fontSize: "0.68rem",
-                      fontWeight: "800",
-                      padding: "2px 6px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      zIndex: 2,
-                    }}
-                  >
-                    💡 HPP
-                  </button>
-
                   {inCart && (
                     <span style={{
                       position: "absolute",
@@ -1446,15 +1344,6 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           </div>
           <span style={{ marginLeft: "10px", color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>✕</span>
         </div>
-      )}
-
-      {/* MODAL POP-UP DETAIL HPP & COGS */}
-      {selectedHppRecipe && (
-        <HppDetailModal
-          recipe={selectedHppRecipe}
-          onClose={() => setSelectedHppRecipe(null)}
-          onRestockUpdated={loadCogsData}
-        />
       )}
 
     </div>

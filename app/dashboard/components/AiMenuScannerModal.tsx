@@ -14,25 +14,8 @@ interface AiMenuScannerModalProps {
 export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMenuScannerModalProps) {
   const [activeTab, setActiveTab] = useState<"ai_scan" | "manual">("ai_scan");
   
-  // State Engine AI (Google AI Studio vs Offline Tesseract)
+  // State Engine AI (Google AI Studio Gemini 2.0 Flash / 1.5 Pro vs Offline Tesseract)
   const [aiEngine, setAiEngine] = useState<"gemini_2_flash" | "gemini_1_5_pro" | "tesseract">("gemini_2_flash");
-  const [geminiApiKey, setGeminiApiKey] = useState<string>("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
-
-  // Muat API Key dari localStorage jika pernah disimpan
-  useEffect(() => {
-    try {
-      const savedKey = localStorage.getItem("growkas_gemini_api_key");
-      if (savedKey) setGeminiApiKey(savedKey);
-    } catch {}
-  }, []);
-
-  const handleApiKeyChange = (key: string) => {
-    setGeminiApiKey(key);
-    try {
-      localStorage.setItem("growkas_gemini_api_key", key.trim());
-    } catch {}
-  };
 
   // State AI Scanner
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
@@ -65,19 +48,16 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
         setScanProgressText(`Mengirim foto menu ke Google AI Studio (${modelName})...`);
 
         try {
-          const res = await extractMenuWithGeminiVision(base64Data, geminiApiKey, modelName);
+          const res = await extractMenuWithGeminiVision(base64Data, undefined, modelName);
           setIsScanning(false);
 
           if (res.success && res.items && res.items.length > 0) {
             setExtractedItems(res.items);
             const textSummary = res.items.map((i) => `${i.name} - ${i.price}`).join("\n");
             setRawTextInput(textSummary);
-            setScanMessage(`✨ Google Gemini (${modelName}) membaca foto "${file.name}" & berhasil mengekstrak ${res.items.length} menu dengan akurasi 99%!`);
+            setScanMessage(`✨ Google Gemini (${modelName}) membaca foto "${file.name}" & berhasil mengekstrak ${res.items.length} menu dengan akurasi tinggi!`);
           } else {
             setScanError(res.error || "Gagal mengekstrak menu dengan Google Gemini.");
-            if (res.error?.includes("API Key")) {
-              setShowApiKeyInput(true);
-            }
           }
         } catch (err: any) {
           setIsScanning(false);
@@ -275,102 +255,21 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      background: geminiApiKey ? "rgba(74, 222, 128, 0.15)" : "rgba(212, 101, 28, 0.2)",
-                      border: "1px solid " + (geminiApiKey ? "rgba(74, 222, 128, 0.4)" : "#D4651C"),
-                      color: geminiApiKey ? "#4ADE80" : "#D4651C",
-                      fontSize: "0.75rem",
-                      fontWeight: "700",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <span>🔑</span> {geminiApiKey ? "API Key Tersimpan ✓" : "Masukkan API Key"}
-                  </button>
-
-                  <a
-                    href="https://aistudio.google.com/api-keys"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.12)",
-                      color: "#F5F0E8",
-                      fontSize: "0.75rem",
-                      fontWeight: "700",
-                      textDecoration: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    <span>↗</span> Dapatkan Key Gratis
-                  </a>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  background: "rgba(74, 222, 128, 0.12)",
+                  border: "1px solid rgba(74, 222, 128, 0.35)",
+                  color: "#4ADE80",
+                  fontSize: "0.75rem",
+                  fontWeight: "700",
+                }}>
+                  <span>⚡</span> Google Gemini AI Siap Digunakan
                 </div>
               </div>
-
-              {/* INPUT API KEY ACCORDION */}
-              {showApiKeyInput && (
-                <div style={{
-                  marginBottom: "14px",
-                  padding: "12px",
-                  borderRadius: "10px",
-                  background: "rgba(0, 0, 0, 0.4)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                }}>
-                  <label style={{ display: "block", fontSize: "0.75rem", color: "rgba(245, 240, 232, 0.7)", marginBottom: "6px", fontWeight: "700" }}>
-                    Google AI Studio API Key (Gemini Multimodal Vision):
-                  </label>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      type="password"
-                      placeholder="Tempel API Key di sini (AIzaSy...)"
-                      value={geminiApiKey}
-                      onChange={(e) => handleApiKeyChange(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        background: "rgba(255, 255, 255, 0.06)",
-                        border: "1px solid rgba(255, 255, 255, 0.15)",
-                        color: "#FFF",
-                        fontSize: "0.82rem",
-                        fontFamily: "monospace",
-                        outline: "none",
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKeyInput(false)}
-                      style={{
-                        padding: "8px 14px",
-                        borderRadius: "6px",
-                        background: "#D4651C",
-                        border: "none",
-                        color: "#FFF",
-                        fontSize: "0.78rem",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Simpan
-                    </button>
-                  </div>
-                  <div style={{ fontSize: "0.72rem", color: "rgba(245, 240, 232, 0.5)", marginTop: "6px" }}>
-                    *API Key disimpan secara aman di browser lokal Anda (atau dibaca dari file <code>.env.local</code> sebagai <code>GEMINI_API_KEY</code>).
-                  </div>
-                </div>
-              )}
 
               {/* MODEL SELECTOR PILLS */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
@@ -519,17 +418,8 @@ export default function AiMenuScannerModal({ onClose, onProductsImported }: AiMe
 
             {/* Error Message */}
             {scanError && !isScanning && (
-              <div style={{ padding: "12px 14px", borderRadius: "8px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)", color: "#EF4444", fontSize: "0.82rem", fontWeight: "700", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>⚠️ {scanError}</span>
-                <button
-                  type="button"
-                  onClick={() => setShowApiKeyInput(true)}
-                  style={{
-                    padding: "4px 8px", borderRadius: "6px", background: "#EF4444", border: "none", color: "#FFF", fontSize: "0.72rem", fontWeight: "bold", cursor: "pointer",
-                  }}
-                >
-                  Buka Input Key
-                </button>
+              <div style={{ padding: "12px 14px", borderRadius: "8px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)", color: "#EF4444", fontSize: "0.82rem", fontWeight: "700" }}>
+                ⚠️ {scanError}
               </div>
             )}
 
