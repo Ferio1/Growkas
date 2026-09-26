@@ -10,7 +10,7 @@ import {
   INITIAL_CATEGORIES,
   getStoreBranches,
 } from "./storeManager";
-import { assertAuthenticated } from "@/lib/authGuard";
+import { assertAuthenticated, assertRole } from "@/lib/authGuard";
 
 export type { ProductItem, CategoryItem };
 
@@ -178,6 +178,7 @@ export async function saveTransaction(payload: TransactionPayload) {
 
 // 3. Tambah Produk Baru
 export async function addProduct(product: { name: string; price: number; stock: number; category_id?: string }) {
+  await assertRole(["admin"]);
   const store = loadMasterStore();
   const newId = "p-" + Date.now();
   const newProduct: ProductItem = {

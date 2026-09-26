@@ -90,6 +90,7 @@ export async function updateTableOrderStatus(
 
 // 4. Hapus Pesanan Spesifik dari Antrean KDS
 export async function deleteTableOrder(orderId: string): Promise<{ success: boolean }> {
+  await assertRole(["admin"]);
   const store = loadMasterStore();
   store.tableOrders = store.tableOrders.filter((o) => o.id !== orderId);
   saveMasterStore(store);

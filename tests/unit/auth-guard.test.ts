@@ -56,14 +56,20 @@ vi.mock("@/app/actions/storeManager", async (importOriginal) => {
     saveMasterStore: vi.fn(),
     addStoreBranch: vi.fn().mockImplementation((b) => b),
     deleteStoreBranch: vi.fn(),
+    resetMasterDatabaseToCleanState: vi.fn().mockReturnValue({}),
   };
 });
 
 import { assertAuthenticated, assertRole } from "@/lib/authGuard";
 import { addBranch, deleteBranch } from "@/app/actions/branchActions";
-import { clearAllTableOrders } from "@/app/actions/orderActions";
-import { updateIngredientStockManual } from "@/app/actions/ingredientActions";
-import { saveTransaction } from "@/app/actions/posActions";
+import { clearAllTableOrders, deleteTableOrder } from "@/app/actions/orderActions";
+import {
+  updateIngredientStockManual,
+  restockIngredient,
+  addNewIngredient,
+  resetDatabaseCleanAction,
+} from "@/app/actions/ingredientActions";
+import { saveTransaction, addProduct } from "@/app/actions/posActions";
 import { config as proxyConfig } from "@/proxy";
 
 describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () => {
@@ -76,6 +82,13 @@ describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () =
   describe("1. assertAuthenticated()", () => {
     it("throws Unauthorized error when no session is present in NextAuth or Supabase", async () => {
       mockAuth.mockResolvedValue(null);
+      mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+
+      await expect(assertAuthenticated()).rejects.toThrow("Unauthorized: Authentication required");
+    });
+
+    it("rejects when NextAuth session has empty user object with no id, sub, or email", async () => {
+      mockAuth.mockResolvedValue({ user: {} });
       mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
 
       await expect(assertAuthenticated()).rejects.toThrow("Unauthorized: Authentication required");
@@ -206,6 +219,22 @@ describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () =
       await expect(clearAllTableOrders()).rejects.toThrow("Forbidden: Insufficient permissions");
     });
 
+    it("deleteTableOrder rejects when user is unauthenticated or not an admin", async () => {
+      mockAuth.mockResolvedValue(null);
+      await expect(deleteTableOrder("ord-1")).rejects.toThrow("Unauthorized: Authentication required");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u1", email: "k@growkas.com", role: "kasir" },
+      });
+      await expect(deleteTableOrder("ord-1")).rejects.toThrow("Forbidden: Insufficient permissions");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u1", email: "admin@growkas.com", role: "admin" },
+      });
+      const res = await deleteTableOrder("ord-1");
+      expect(res.success).toBe(true);
+    });
+
     it("updateIngredientStockManual rejects when user is unauthenticated or not an admin", async () => {
       mockAuth.mockResolvedValue(null);
       await expect(updateIngredientStockManual("ing-1", 100)).rejects.toThrow(
@@ -218,6 +247,80 @@ describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () =
       await expect(updateIngredientStockManual("ing-1", 100)).rejects.toThrow(
         "Forbidden: Insufficient permissions"
       );
+    });
+
+    it("restockIngredient permits both admin and kasir, but rejects unauthenticated callers", async () => {
+      mockAuth.mockResolvedValue(null);
+      await expect(restockIngredient("ing-1", 50)).rejects.toThrow("Unauthorized: Authentication required");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-kasir", email: "kasir@growkas.com", role: "kasir" },
+      });
+      const resKasir = await restockIngredient("ing-1", 50);
+      expect(resKasir).toBeDefined();
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-admin", email: "admin@growkas.com", role: "admin" },
+      });
+      const resAdmin = await restockIngredient("ing-1", 50);
+      expect(resAdmin).toBeDefined();
+    });
+
+    it("addNewIngredient rejects non-admin users and allows admin", async () => {
+      mockAuth.mockResolvedValue({
+        user: { id: "u-kasir", email: "kasir@growkas.com", role: "kasir" },
+      });
+      await expect(
+        addNewIngredient({
+          name: "Sirup Pandan",
+          unit: "ml",
+          stock: 1000,
+          min_stock: 100,
+          cost_per_unit: 50,
+          category: "sirup_gula",
+        })
+      ).rejects.toThrow("Forbidden: Insufficient permissions");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-admin", email: "admin@growkas.com", role: "admin" },
+      });
+      const res = await addNewIngredient({
+        name: "Sirup Pandan",
+        unit: "ml",
+        stock: 1000,
+        min_stock: 100,
+        cost_per_unit: 50,
+        category: "sirup_gula",
+      });
+      expect(res.success).toBe(true);
+    });
+
+    it("resetDatabaseCleanAction rejects non-admin users and allows admin", async () => {
+      mockAuth.mockResolvedValue({
+        user: { id: "u-kasir", email: "kasir@growkas.com", role: "kasir" },
+      });
+      await expect(resetDatabaseCleanAction()).rejects.toThrow("Forbidden: Insufficient permissions");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-admin", email: "admin@growkas.com", role: "admin" },
+      });
+      const res = await resetDatabaseCleanAction();
+      expect(res.success).toBe(true);
+    });
+
+    it("addProduct rejects non-admin users and allows admin", async () => {
+      mockAuth.mockResolvedValue({
+        user: { id: "u-kasir", email: "kasir@growkas.com", role: "kasir" },
+      });
+      await expect(addProduct({ name: "Kopi Gayo", price: 25000, stock: 10 })).rejects.toThrow(
+        "Forbidden: Insufficient permissions"
+      );
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-admin", email: "admin@growkas.com", role: "admin" },
+      });
+      const res = await addProduct({ name: "Kopi Gayo", price: 25000, stock: 10 });
+      expect(res.success).toBe(true);
     });
 
     it("saveTransaction rejects when unauthenticated", async () => {

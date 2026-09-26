@@ -4,7 +4,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import GrowkasLogo from "@/app/components/GrowkasLogo";
-import { getProductsAndCategories, ProductItem, CartItem, saveTransaction } from "@/app/actions/posActions";
+import { getProductsAndCategories, ProductItem, CartItem } from "@/app/actions/posActions";
 import { createTableOrder } from "@/app/actions/orderActions";
 import { getProductType, formatItemModifiersSummary, ProductType } from "@/app/utils/productUtils";
 
@@ -152,24 +152,6 @@ function OrderPageContent() {
 
     const invoiceNum = "ORD-" + Math.floor(100000 + Math.random() * 900000);
 
-    const payload = {
-      invoice_number: invoiceNum,
-      cashier_name: "Self-Order QR Meja " + tableNum,
-      branch_name: branchName,
-      payment_method: (paymentMethod === "qris" ? "qris" : "cash") as any,
-      total_amount: subtotal,
-      paid_amount: subtotal,
-      change_amount: 0,
-      items: cart.map((c) => ({
-        product_id: c.product.id,
-        product_name: c.product.name,
-        price: getItemPrice(c),
-        quantity: c.quantity,
-        subtotal: getItemPrice(c) * c.quantity,
-        modifiers_summary: `Meja ${tableNum} • ` + formatModifiersSummary(c),
-      })),
-    };
-
     const orderPayload = {
       invoice_number: invoiceNum,
       table_number: `Meja ${tableNum}`,
@@ -188,7 +170,6 @@ function OrderPageContent() {
     };
 
     await createTableOrder(orderPayload);
-    await saveTransaction(payload);
 
     setIsSubmitting(false);
     setIsCheckoutOpen(false);

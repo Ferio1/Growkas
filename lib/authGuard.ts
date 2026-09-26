@@ -22,8 +22,8 @@ export async function assertAuthenticated(): Promise<AuthUser> {
   // 1. Check NextAuth session
   try {
     const session = await auth();
-    if (session?.user) {
-      const user = session.user as SessionUser;
+    const user = session?.user as SessionUser | undefined;
+    if (user && (user.id || user.sub || user.email)) {
       const userId = user.id || user.sub || "";
       const email = user.email || "";
       const role = user.role || "kasir";

@@ -133,6 +133,7 @@ export async function getIngredientsAndCOGS() {
 
 // 3. Tambah / Restok Bahan Baku Cepat (+50 / +1000)
 export async function restockIngredient(ingredientId: string, additionalStock: number) {
+  await assertRole(["admin", "kasir"]);
   const store = loadMasterStore();
   const ing = store.ingredients.find((i) => i.id === ingredientId);
   if (ing) {
@@ -152,6 +153,7 @@ export async function addNewIngredient(data: {
   cost_per_unit: number;
   category: "kopi" | "susu_dairy" | "sirup_gula" | "kemasan" | "makanan";
 }) {
+  await assertRole(["admin"]);
   const store = loadMasterStore();
   const newId = "ing-" + (store.ingredients.length + 1) + "-" + Date.now().toString().slice(-4);
   const newIng: IngredientItem = {
@@ -205,6 +207,7 @@ export async function saveRecipeConfiguration(recipeData: ProductRecipe) {
 
 // 7. Reset Seluruh Database Bersih (Kosongkan riwayat order, shift, dan opsi reset stok ke nol)
 export async function resetDatabaseCleanAction(options?: { resetIngredientsToZero?: boolean }) {
+  await assertRole(["admin"]);
   const cleanStore = resetMasterDatabaseToCleanState(options);
   return { success: true, store: cleanStore };
 }
