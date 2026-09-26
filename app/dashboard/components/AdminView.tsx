@@ -70,6 +70,10 @@ export default function AdminView({
   const [isResetting, setIsResetting] = useState(false);
   const [resetSuccessToast, setResetSuccessToast] = useState<string | null>(null);
 
+  // Modal Konfirmasi Hapus Cabang
+  const [branchToDelete, setBranchToDelete] = useState<BranchItem | null>(null);
+  const [isDeletingBranch, setIsDeletingBranch] = useState(false);
+
   // Dynamic Branches State
   const [localBranches, setLocalBranches] = useState<BranchItem[]>([]);
   const branches = propBranches && propBranches.length > 0 ? propBranches : localBranches;
@@ -158,6 +162,26 @@ export default function AdminView({
       if (currentBranchFilter === branchId) {
         handleSelectBranch("all");
       }
+    }
+  };
+
+  const confirmDeleteBranch = async () => {
+    if (!branchToDelete) return;
+    if (branchToDelete.id === "br-1") {
+      alert("Outlet utama pusat (Saray Coffee & Space) tidak dapat dihapus.");
+      setBranchToDelete(null);
+      return;
+    }
+    setIsDeletingBranch(true);
+    try {
+      await handleBranchDeleted(branchToDelete.id);
+      setResetSuccessToast(`Outlet "${branchToDelete.name} (${branchToDelete.city})" berhasil dihapus.`);
+      setTimeout(() => setResetSuccessToast(null), 4000);
+      setBranchToDelete(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDeletingBranch(false);
     }
   };
 
@@ -299,7 +323,7 @@ export default function AdminView({
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           
           {/* Filter Branch Tabs */}
-          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px", alignItems: "center" }}>
             <button
               onClick={() => handleSelectBranch("all")}
               style={{
@@ -317,24 +341,89 @@ export default function AdminView({
               🌐 Semua Outlet ({branches.length})
             </button>
             {branches.map((b) => (
-              <button
+              <div
                 key={b.id}
-                onClick={() => handleSelectBranch(b.id)}
                 style={{
-                  padding: "6px 14px",
-                  borderRadius: "6px",
+                  display: "inline-flex",
+                  alignItems: "center",
                   background: currentBranchFilter === b.id ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
                   border: "1px solid " + (currentBranchFilter === b.id ? "#D4651C" : "rgba(255,255,255,0.06)"),
-                  color: currentBranchFilter === b.id ? "#D4651C" : "rgba(245,240,232,0.5)",
-                  fontWeight: "700",
-                  fontSize: "0.82rem",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
+                  borderRadius: "6px",
+                  overflow: "hidden",
                 }}
               >
-                🏪 {b.name} ({b.city})
-              </button>
+                <button
+                  onClick={() => handleSelectBranch(b.id)}
+                  style={{
+                    padding: "6px 12px",
+                    background: "transparent",
+                    border: "none",
+                    color: currentBranchFilter === b.id ? "#D4651C" : "rgba(245,240,232,0.5)",
+                    fontWeight: "700",
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  🏪 {b.name} ({b.city})
+                </button>
+                {b.id !== "br-1" && (
+                  <button
+                    type="button"
+                    title={`Hapus cabang ${b.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBranchToDelete(b);
+                    }}
+                    style={{
+                      padding: "6px 8px",
+                      background: "transparent",
+                      border: "none",
+                      borderLeft: "1px solid rgba(255,255,255,0.08)",
+                      color: "rgba(239,68,68,0.7)",
+                      fontSize: "0.75rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#EF4444")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(239,68,68,0.7)")}
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
             ))}
+
+            {/* Tombol Hapus Cepat Cabang Aktif Terpilih */}
+            {currentBranchFilter !== "all" && currentBranchFilter !== "br-1" && (
+              (() => {
+                const curB = branches.find((b) => b.id === currentBranchFilter);
+                if (!curB) return null;
+                return (
+                  <button
+                    onClick={() => setBranchToDelete(curB)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      background: "rgba(239,68,68,0.15)",
+                      border: "1px solid rgba(239,68,68,0.4)",
+                      color: "#EF4444",
+                      fontWeight: "700",
+                      fontSize: "0.78rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      whiteSpace: "nowrap",
+                      marginLeft: "4px",
+                    }}
+                  >
+                    <span>🗑️</span> Hapus Outlet Ini
+                  </button>
+                );
+              })()
+            )}
           </div>
 
           {/* KPI SUMMARY CARDS */}
@@ -424,6 +513,11 @@ export default function AdminView({
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {analytics.branchPerformance.map((b, idx) => {
                   const percentage = Math.round((b.revenue / analytics.totalRevenue) * 100);
+                  const matchedBranch = branches.find(
+                    (br) =>
+                      b.name.toLowerCase().includes(br.name.toLowerCase()) ||
+                      b.name.toLowerCase().includes(br.city.toLowerCase())
+                  );
                   return (
                     <div key={b.name} style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
@@ -438,13 +532,37 @@ export default function AdminView({
                           <strong style={{ fontSize: "0.95rem" }}>{b.name}</strong>
                         </div>
 
-                        <div style={{ textAlign: "right" }}>
-                          <span style={{ fontWeight: "800", color: "#D4651C" }}>
-                            Rp {b.revenue.toLocaleString("id-ID")}
-                          </span>
-                          <span style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginLeft: "8px" }}>
-                            ({b.count} transaksi)
-                          </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <div style={{ textAlign: "right" }}>
+                            <span style={{ fontWeight: "800", color: "#D4651C" }}>
+                              Rp {b.revenue.toLocaleString("id-ID")}
+                            </span>
+                            <span style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginLeft: "8px" }}>
+                              ({b.count} transaksi)
+                            </span>
+                          </div>
+                          {matchedBranch && matchedBranch.id !== "br-1" && (
+                            <button
+                              type="button"
+                              title={`Hapus cabang ${matchedBranch.name}`}
+                              onClick={() => setBranchToDelete(matchedBranch)}
+                              style={{
+                                padding: "4px 8px",
+                                borderRadius: "6px",
+                                background: "rgba(239,68,68,0.15)",
+                                border: "1px solid rgba(239,68,68,0.3)",
+                                color: "#EF4444",
+                                fontSize: "0.72rem",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "3px",
+                              }}
+                            >
+                              <span>🗑️</span> Hapus
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -976,6 +1094,54 @@ export default function AdminView({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS CABANG */}
+      {branchToDelete && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", color: "#F5F0E8", fontFamily: "system-ui, sans-serif"
+        }}>
+          <div style={{
+            background: "#1C1917", border: "1.5px solid #EF4444", borderRadius: "18px", width: "100%", maxWidth: "440px", padding: "24px", boxShadow: "0 25px 60px rgba(239, 68, 68, 0.25)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+              <span style={{ fontSize: "2rem" }}>🗑️</span>
+              <div>
+                <h3 style={{ fontSize: "1.2rem", fontWeight: "900", margin: 0, color: "#EF4444" }}>Hapus Cabang / Outlet?</h3>
+                <p style={{ fontSize: "0.82rem", color: "rgba(245,240,232,0.6)", margin: "2px 0 0" }}>Tindakan ini akan menghapus cabang secara permanen dari sistem.</p>
+              </div>
+            </div>
+
+            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "10px", padding: "14px", marginBottom: "20px" }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: "bold", color: "#F5F0E8", marginBottom: "4px" }}>
+                🏪 {branchToDelete.name} ({branchToDelete.city})
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.6)" }}>
+                Alamat: {branchToDelete.address || "Tidak dicantumkan"}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <button
+                type="button"
+                onClick={() => setBranchToDelete(null)}
+                disabled={isDeletingBranch}
+                style={{ padding: "10px", borderRadius: "10px", background: "rgba(255,255,255,0.08)", color: "#F5F0E8", border: "none", fontWeight: "700", cursor: "pointer" }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteBranch}
+                disabled={isDeletingBranch}
+                style={{ padding: "10px", borderRadius: "10px", background: "#EF4444", color: "#FFF", border: "none", fontWeight: "800", cursor: "pointer" }}
+              >
+                {isDeletingBranch ? "Menghapus..." : "Ya, Hapus Cabang"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
