@@ -71,3 +71,45 @@ export async function loginWithSupabase(formData: {
     return { success: false, error: err.message || "Terjadi kesalahan saat masuk." };
   }
 }
+
+export async function sendPasswordResetEmail(email: string, redirectTo: string) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      message: `Tautan pemulihan kata sandi telah dikirim ke ${email}. Silakan cek kotak masuk atau folder spam email Anda.`,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Terjadi kesalahan saat mengirim email pemulihan." };
+  }
+}
+
+export async function resetPasswordWithToken(newPassword: string) {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      message: "Kata sandi berhasil diperbarui! Silakan masuk kembali dengan password baru Anda.",
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Gagal memperbarui kata sandi." };
+  }
+}

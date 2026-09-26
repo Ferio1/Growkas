@@ -7,6 +7,8 @@ import { getIngredientsAndCOGS, restockIngredient, IngredientItem } from "@/app/
 import BranchManagerModal from "./BranchManagerModal";
 import QRCodeGenerator from "./QRCodeGenerator";
 import AiMenuScannerModal from "./AiMenuScannerModal";
+import HppDetailModal, { HppRecipeData } from "./HppDetailModal";
+import { playLowStockWarningTone } from "@/app/utils/audioUtils";
 
 interface AdminViewProps {
   initialAnalytics: {
@@ -27,6 +29,7 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
   const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
   const [recipesAnalysis, setRecipesAnalysis] = useState<any[]>([]);
   const [lowStockAlerts, setLowStockAlerts] = useState<IngredientItem[]>([]);
+  const [selectedHppRecipe, setSelectedHppRecipe] = useState<HppRecipeData | null>(null);
   
   // Modals state
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -405,6 +408,27 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                   </div>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => playLowStockWarningTone()}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "8px",
+                  background: "rgba(239,68,68,0.25)",
+                  border: "1px solid #EF4444",
+                  color: "#FFF",
+                  fontSize: "0.8rem",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span>🔔</span> Bunyikan Bel Stok
+              </button>
             </div>
           )}
 
@@ -535,6 +559,7 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                     <th style={{ padding: "10px 12px" }}>Total HPP</th>
                     <th style={{ padding: "10px 12px" }}>Margin Bersih</th>
                     <th style={{ padding: "10px 12px" }}>Profit %</th>
+                    <th style={{ padding: "10px 12px", textAlign: "right" }}>Aksi Rincian</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -563,6 +588,28 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                           {item.profit_percent}%
                         </span>
                       </td>
+                      <td style={{ padding: "12px", textAlign: "right" }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedHppRecipe(item)}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: "8px",
+                            background: "rgba(212,101,28,0.15)",
+                            border: "1px solid rgba(212,101,28,0.35)",
+                            color: "#D4651C",
+                            fontSize: "0.78rem",
+                            fontWeight: "800",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <span>🔍</span> Pop-up HPP
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -588,6 +635,15 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
           onProductsImported={() => {
             // Optional callback
           }}
+        />
+      )}
+
+      {/* MODAL POP-UP DETAIL HPP & COGS */}
+      {selectedHppRecipe && (
+        <HppDetailModal
+          recipe={selectedHppRecipe}
+          onClose={() => setSelectedHppRecipe(null)}
+          onRestockUpdated={loadIngredients}
         />
       )}
 

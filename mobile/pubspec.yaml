@@ -1,0 +1,26 @@
+name: growkas_mobile
+description: "Growkas POS Mobile — Aplikasi Kasir & Waiter F&B Flutter terhubung ke Supabase PostgreSQL"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  supabase_flutter: ^2.8.0
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+  provider: ^6.1.2
+  shared_preferences: ^2.2.3
+  blue_thermal_printer: ^1.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

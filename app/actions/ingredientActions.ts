@@ -109,12 +109,39 @@ let MASTER_RECIPES: ProductRecipe[] = [
 // Helper: Menghitung Total HPP suatu resep
 export async function calculateRecipeCOGS(recipe: ProductRecipe) {
   let totalCost = 0;
+  const detailedIngredients = [];
+
   for (const req of recipe.ingredients) {
     const ing = MASTER_INGREDIENTS.find((i) => i.id === req.ingredient_id);
     if (ing) {
-      totalCost += ing.cost_per_unit * req.quantity;
+      const itemCost = ing.cost_per_unit * req.quantity;
+      totalCost += itemCost;
+      detailedIngredients.push({
+        ingredient_id: req.ingredient_id,
+        ingredient_name: req.ingredient_name || ing.name,
+        quantity: req.quantity,
+        unit: req.unit || ing.unit,
+        cost_per_unit: ing.cost_per_unit,
+        item_cost: itemCost,
+        current_stock: ing.stock,
+        min_stock: ing.min_stock,
+        is_low_stock: ing.stock <= ing.min_stock,
+      });
+    } else {
+      detailedIngredients.push({
+        ingredient_id: req.ingredient_id,
+        ingredient_name: req.ingredient_name,
+        quantity: req.quantity,
+        unit: req.unit,
+        cost_per_unit: 0,
+        item_cost: 0,
+        current_stock: 0,
+        min_stock: 0,
+        is_low_stock: false,
+      });
     }
   }
+
   const profitMargin = Math.max(0, recipe.selling_price - totalCost);
   const profitPercent = recipe.selling_price > 0 ? (profitMargin / recipe.selling_price) * 100 : 0;
 
@@ -124,7 +151,7 @@ export async function calculateRecipeCOGS(recipe: ProductRecipe) {
     total_cogs: totalCost,
     profit_margin: profitMargin,
     profit_percent: Math.round(profitPercent * 10) / 10,
-    ingredients: recipe.ingredients,
+    ingredients: detailedIngredients,
   };
 }
 
