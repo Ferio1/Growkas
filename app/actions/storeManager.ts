@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 export interface ProductItem {
   id: string;
@@ -46,12 +47,14 @@ export interface DeductionLog {
   invoice_number?: string;
   product_name: string;
   quantity: number;
+  modifiers_summary?: string;
   deductions: {
     ingredient_name: string;
     amount: number;
     unit: string;
     remaining: number;
     is_low_stock: boolean;
+    modifier_note?: string;
   }[];
 }
 
@@ -280,8 +283,13 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   },
 ];
 
-// Helper menentukan lokasi file master data secara absolut & kebal direktori eksekusi
+// Helper menentukan lokasi file master data secara absolut & kebal direktori eksekusi (kompatibel Vercel Serverless)
 function getMasterStorePath(): string {
+  // Jika berjalan di lingkungan Vercel serverless / AWS Lambda (Read-Only root)
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join(os.tmpdir(), "growkas_master_store.json");
+  }
+
   const current = process.cwd();
   const baseDir = current.endsWith("growkas") ? current : path.join(current, "growkas");
   const dataDir = path.join(baseDir, "data");
@@ -296,10 +304,7 @@ function getMasterStorePath(): string {
 let inMemoryCache: MasterStoreData | null = null;
 
 export function loadMasterStore(): MasterStoreData {
-  if (inMemoryCache) {
-    return inMemoryCache;
-  }
-
+  // 1. Coba baca dari storePath (bisa di data/ atau /tmp) agar data selalu mutakhir antar-request
   const storePath = getMasterStorePath();
   try {
     if (fs.existsSync(storePath)) {
@@ -311,15 +316,56 @@ export function loadMasterStore(): MasterStoreData {
       }
     }
   } catch (err) {
-    console.warn("Failed reading growkas_master_store.json, creating initial store:", err);
+    console.warn("Notice reading from storePath:", err);
   }
 
+  if (inMemoryCache) {
+    return inMemoryCache;
+  }
+
+  // 2. Jika di Vercel dan file /tmp belum ada, coba baca seed data dari project bundle
+  const bundledPaths = [
+    path.join(process.cwd(), "growkas", "data", "growkas_master_store.json"),
+    path.join(process.cwd(), "data", "growkas_master_store.json"),
+  ];
+  for (const bPath of bundledPaths) {
+    try {
+      if (fs.existsSync(/*turbopackIgnore: true*/ bPath)) {
+        const raw = fs.readFileSync(/*turbopackIgnore: true*/ bPath, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.ingredients)) {
+          inMemoryCache = parsed;
+          // Tulis salinan ke /tmp untuk mutasi berikutnya di Vercel
+          saveMasterStore(parsed);
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+
+  // 3. Fallback default jika file belum pernah dibuat sama sekali
   const initial: MasterStoreData = {
     products: INITIAL_PRODUCTS,
     categories: INITIAL_CATEGORIES,
     ingredients: INITIAL_INGREDIENTS,
     recipes: INITIAL_RECIPES,
-    deductionLogs: [],
+    deductionLogs: [
+      {
+        id: "deduct-init-inv684796",
+        timestamp: "Baru saja",
+        invoice_number: "INV-684796",
+        product_name: "50x Nasi Goreng Saray Special",
+        quantity: 50,
+        deductions: [
+          { ingredient_name: "Beras Wangi Organik (Nasi Matang)", amount: 50, unit: "porsi", remaining: 0, is_low_stock: true },
+          { ingredient_name: "Telur Ayam Negeri Fresh", amount: 50, unit: "pcs", remaining: 10, is_low_stock: true },
+          { ingredient_name: "Daging Ayam Fillet Marinasi", amount: 2500, unit: "gram", remaining: 700, is_low_stock: true },
+          { ingredient_name: "Minyak Goreng Sawit", amount: 500, unit: "ml", remaining: 4500, is_low_stock: false },
+          { ingredient_name: "Bumbu Rempah Nasi Goreng Saray", amount: 750, unit: "gram", remaining: 1250, is_low_stock: false },
+          { ingredient_name: "Kecap Manis & Saus Gurih", amount: 500, unit: "ml", remaining: 2000, is_low_stock: false },
+        ],
+      },
+    ],
     tableOrders: [],
     activeShift: {
       id: "shift-01",
@@ -346,14 +392,14 @@ export function loadMasterStore(): MasterStoreData {
 
 export function saveMasterStore(store: MasterStoreData) {
   inMemoryCache = store;
-  const storePath = getMasterStorePath();
   try {
+    const storePath = getMasterStorePath();
     const dir = path.dirname(storePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(storePath, JSON.stringify(store, null, 2), "utf-8");
   } catch (err) {
-    console.error("Failed saving growkas_master_store.json:", err);
+    console.warn("Storage write notice (in-memory active):", err);
   }
 }

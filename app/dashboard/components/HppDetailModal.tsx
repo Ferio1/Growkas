@@ -11,10 +11,11 @@ export interface HppIngredientDetail {
   quantity: number;
   unit: string;
   cost_per_unit: number;
-  item_cost: number;
+  item_cost?: number;
+  subtotal_cost?: number;
   current_stock: number;
-  min_stock: number;
-  is_low_stock: boolean;
+  min_stock?: number;
+  is_low_stock?: boolean;
 }
 
 export interface HppRecipeData {
@@ -209,28 +210,28 @@ export default function HppDetailModal({ recipe, onClose, onRestockUpdated }: Hp
             <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "12px", padding: "12px" }}>
               <div style={{ fontSize: "0.7rem", color: "#AAA", fontWeight: "700", textTransform: "uppercase" }}>Harga Jual</div>
               <div style={{ fontSize: "1.15rem", fontWeight: "900", color: "#FFF", marginTop: "4px" }}>
-                Rp {recipe.selling_price.toLocaleString("id-ID")}
+                Rp {(recipe.selling_price ?? 0).toLocaleString("id-ID")}
               </div>
             </div>
 
             <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "12px", padding: "12px" }}>
               <div style={{ fontSize: "0.7rem", color: "#AAA", fontWeight: "700", textTransform: "uppercase" }}>Total HPP Modal</div>
               <div style={{ fontSize: "1.15rem", fontWeight: "900", color: "#EF4444", marginTop: "4px" }}>
-                Rp {recipe.total_cogs.toLocaleString("id-ID")}
+                Rp {(recipe.total_cogs ?? 0).toLocaleString("id-ID")}
               </div>
             </div>
 
             <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "12px", padding: "12px" }}>
               <div style={{ fontSize: "0.7rem", color: "#AAA", fontWeight: "700", textTransform: "uppercase" }}>Laba Kotor (Margin)</div>
               <div style={{ fontSize: "1.15rem", fontWeight: "900", color: "#4ADE80", marginTop: "4px" }}>
-                + Rp {recipe.profit_margin.toLocaleString("id-ID")}
+                + Rp {(recipe.profit_margin ?? 0).toLocaleString("id-ID")}
               </div>
             </div>
 
             <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "12px", padding: "12px" }}>
               <div style={{ fontSize: "0.7rem", color: "#AAA", fontWeight: "700", textTransform: "uppercase" }}>Profit Margin</div>
-              <div style={{ fontSize: "1.15rem", fontWeight: "900", color: recipe.profit_percent >= 60 ? "#4ADE80" : "#D4651C", marginTop: "4px" }}>
-                {recipe.profit_percent}%
+              <div style={{ fontSize: "1.15rem", fontWeight: "900", color: (recipe.profit_percent ?? 0) >= 60 ? "#4ADE80" : "#D4651C", marginTop: "4px" }}>
+                {recipe.profit_percent ?? 0}%
               </div>
             </div>
           </div>
@@ -238,21 +239,40 @@ export default function HppDetailModal({ recipe, onClose, onRestockUpdated }: Hp
           {/* VISUAL RATIO BAR (HPP VS MARGIN PROFIT) */}
           <div style={{ marginBottom: "22px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "6px", fontWeight: "700" }}>
-              <span style={{ color: "#EF4444" }}>Biaya Pokok Bahan: {100 - recipe.profit_percent}%</span>
-              <span style={{ color: "#4ADE80" }}>Margin Keuntungan: {recipe.profit_percent}%</span>
+              <span style={{ color: "#EF4444" }}>Biaya Pokok Bahan: {100 - (recipe.profit_percent ?? 0)}%</span>
+              <span style={{ color: "#4ADE80" }}>Margin Keuntungan: {recipe.profit_percent ?? 0}%</span>
             </div>
             <div style={{ height: "10px", width: "100%", background: "rgba(255, 255, 255, 0.1)", borderRadius: "100px", overflow: "hidden", display: "flex" }}>
-              <div style={{ width: `${Math.min(100, Math.max(0, 100 - recipe.profit_percent))}%`, background: "#EF4444" }} />
-              <div style={{ width: `${Math.min(100, Math.max(0, recipe.profit_percent))}%`, background: "#4ADE80" }} />
+              <div style={{ width: `${Math.min(100, Math.max(0, 100 - (recipe.profit_percent ?? 0)))}%`, background: "#EF4444" }} />
+              <div style={{ width: `${Math.min(100, Math.max(0, recipe.profit_percent ?? 0))}%`, background: "#4ADE80" }} />
             </div>
             <div style={{ marginTop: "6px", fontSize: "0.74rem", color: "rgba(245, 240, 232, 0.6)" }}>
-              {recipe.profit_percent >= 60 ? (
+              {(recipe.profit_percent ?? 0) >= 60 ? (
                 <span style={{ color: "#4ADE80", fontWeight: "700" }}>🟢 Status: Margin Sangat Sehat (Ideal untuk Bisnis Kafe &amp; Resto)</span>
-              ) : recipe.profit_percent >= 40 ? (
+              ) : (recipe.profit_percent ?? 0) >= 40 ? (
                 <span style={{ color: "#F59E0B", fontWeight: "700" }}>🟡 Status: Margin Wajar / Standar Pasar</span>
               ) : (
                 <span style={{ color: "#EF4444", fontWeight: "700" }}>🔴 Status: Peringatan Margin Tipis (Pertimbangkan naikkan harga jual atau optimasi takaran)</span>
               )}
+            </div>
+          </div>
+
+          {/* BANNER PENJELASAN INTEGRASI REAL-TIME MODIFIER (LESS SUGAR / NO SUGAR / EXTRA) */}
+          <div style={{
+            background: "rgba(212, 101, 28, 0.08)",
+            border: "1px solid rgba(212, 101, 28, 0.25)",
+            borderRadius: "10px",
+            padding: "10px 14px",
+            marginBottom: "16px",
+            fontSize: "0.75rem",
+            color: "rgba(245, 240, 232, 0.8)",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px"
+          }}>
+            <span style={{ fontSize: "1.1rem" }}>⚡</span>
+            <div>
+              <strong style={{ color: "#D4651C" }}>Kalkulasi Dinamis Pemotongan Bahan Real-Time:</strong> Saat pelanggan memesan dengan kustomisasi (seperti <em>Less Sugar 50%</em>, <em>No Sugar 0%</em>, <em>No Ice +20% Susu</em>, atau <em>+18g Extra Shot</em>), pengurangan stok bahan baku akan disesuaikan secara otomatis dan presisi.
             </div>
           </div>
 
@@ -273,48 +293,52 @@ export default function HppDetailModal({ recipe, onClose, onRestockUpdated }: Hp
                 </tr>
               </thead>
               <tbody>
-                {ingredientsList.map((item, idx) => (
-                  <tr key={idx} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)", background: item.is_low_stock ? "rgba(239, 68, 68, 0.05)" : "transparent" }}>
-                    <td style={{ padding: "10px 14px", fontWeight: "700", color: "#FFF" }}>
-                      {item.ingredient_name}
-                      {item.is_low_stock && (
-                        <span style={{ marginLeft: "6px", fontSize: "0.68rem", color: "#EF4444", fontWeight: "800", background: "rgba(239,68,68,0.15)", padding: "1px 6px", borderRadius: "4px" }}>
-                          MENIPIS
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: "10px 14px" }}>
-                      {item.quantity} {item.unit}
-                    </td>
-                    <td style={{ padding: "10px 14px", color: "rgba(245, 240, 232, 0.6)" }}>
-                      Rp {item.cost_per_unit.toLocaleString("id-ID")}/{item.unit}
-                    </td>
-                    <td style={{ padding: "10px 14px", fontWeight: "800", color: "#EF4444" }}>
-                      Rp {item.item_cost.toLocaleString("id-ID")}
-                    </td>
-                    <td style={{ padding: "10px 14px", color: item.is_low_stock ? "#EF4444" : "#4ADE80", fontWeight: "700" }}>
-                      {item.current_stock.toLocaleString("id-ID")} {item.unit}
-                    </td>
-                    <td style={{ padding: "10px 14px", textAlign: "right" }}>
-                      <button
-                        onClick={() => handleQuickRestock(item.ingredient_id, item.unit)}
-                        disabled={restockingId === item.ingredient_id}
-                        style={{
-                          padding: "4px 8px",
-                          borderRadius: "6px",
-                          background: item.is_low_stock ? "#D4651C" : "rgba(255, 255, 255, 0.08)",
-                          border: "none",
-                          color: "#FFF",
-                          fontSize: "0.72rem",
-                          fontWeight: "700",
-                          cursor: restockingId === item.ingredient_id ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {restockingId === item.ingredient_id ? "..." : `+${item.unit === "pcs" || item.unit === "porsi" ? "50" : "1k"}`}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {ingredientsList.map((item, idx) => {
+                  const calculatedItemCost = item.item_cost ?? (item as any).subtotal_cost ?? ((item.cost_per_unit || 0) * (item.quantity || 1));
+                  const isItemLow = item.is_low_stock ?? (item.current_stock <= (item.min_stock ?? 0));
+                  return (
+                    <tr key={idx} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)", background: isItemLow ? "rgba(239, 68, 68, 0.05)" : "transparent" }}>
+                      <td style={{ padding: "10px 14px", fontWeight: "700", color: "#FFF" }}>
+                        {item.ingredient_name}
+                        {isItemLow && (
+                          <span style={{ marginLeft: "6px", fontSize: "0.68rem", color: "#EF4444", fontWeight: "800", background: "rgba(239,68,68,0.15)", padding: "1px 6px", borderRadius: "4px" }}>
+                            MENIPIS
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        {item.quantity} {item.unit}
+                      </td>
+                      <td style={{ padding: "10px 14px", color: "rgba(245, 240, 232, 0.6)" }}>
+                        Rp {(item.cost_per_unit ?? 0).toLocaleString("id-ID")}/{item.unit}
+                      </td>
+                      <td style={{ padding: "10px 14px", fontWeight: "800", color: "#EF4444" }}>
+                        Rp {calculatedItemCost.toLocaleString("id-ID")}
+                      </td>
+                      <td style={{ padding: "10px 14px", color: isItemLow ? "#EF4444" : "#4ADE80", fontWeight: "700" }}>
+                        {(item.current_stock ?? 0).toLocaleString("id-ID")} {item.unit}
+                      </td>
+                      <td style={{ padding: "10px 14px", textAlign: "right" }}>
+                        <button
+                          onClick={() => handleQuickRestock(item.ingredient_id, item.unit)}
+                          disabled={restockingId === item.ingredient_id}
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            background: isItemLow ? "#D4651C" : "rgba(255, 255, 255, 0.08)",
+                            border: "none",
+                            color: "#FFF",
+                            fontSize: "0.72rem",
+                            fontWeight: "700",
+                            cursor: restockingId === item.ingredient_id ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {restockingId === item.ingredient_id ? "..." : `+${item.unit === "pcs" || item.unit === "porsi" ? "50" : "1k"}`}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

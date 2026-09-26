@@ -557,6 +557,15 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                       </span>
                     </div>
 
+                    {log.modifiers_summary && (
+                      <div style={{ fontSize: "0.74rem", color: "#F97316", marginTop: "6px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <span style={{ background: "rgba(249,115,22,0.15)", padding: "2px 6px", borderRadius: "4px", border: "1px solid rgba(249,115,22,0.3)", fontWeight: "800" }}>
+                          🎯 Modifikasi:
+                        </span>
+                        <span style={{ color: "rgba(245,240,232,0.85)" }}>{log.modifiers_summary}</span>
+                      </div>
+                    )}
+
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
                       {log.deductions.map((d, idx) => (
                         <div
@@ -582,13 +591,27 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                               : "#DDD",
                             display: "flex",
                             alignItems: "center",
-                            gap: "6px"
+                            gap: "6px",
+                            flexWrap: "wrap"
                           }}
                         >
                           <span style={{ fontWeight: "800", color: "#EF4444" }}>
                             -{d.amount.toLocaleString("id-ID")} {d.unit}
                           </span>
                           <span>{d.ingredient_name}</span>
+                          {d.modifier_note && (
+                            <span style={{
+                              background: "rgba(212,101,28,0.25)",
+                              color: "#F97316",
+                              padding: "1px 6px",
+                              borderRadius: "4px",
+                              fontSize: "0.68rem",
+                              fontWeight: "800",
+                              border: "1px solid rgba(212,101,28,0.4)"
+                            }}>
+                              ⚡ {d.modifier_note}
+                            </span>
+                          )}
                           <span style={{ color: "#AAA", fontSize: "0.7rem" }}>
                             (Sisa: {d.remaining.toLocaleString("id-ID")} {d.unit}
                             {d.remaining <= 0 ? " 🔴 HABIS" : d.is_low_stock ? " ⚠️ MENIPIS" : ""})

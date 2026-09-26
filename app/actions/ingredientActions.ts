@@ -83,8 +83,11 @@ export async function calculateRecipeCOGS(recipe: ProductRecipe) {
         quantity: req.quantity,
         unit: ing.unit,
         cost_per_unit: ing.cost_per_unit,
+        item_cost: itemCost,
         subtotal_cost: itemCost,
         current_stock: ing.stock,
+        min_stock: ing.min_stock ?? 0,
+        is_low_stock: (ing.stock ?? 0) <= (ing.min_stock ?? 0),
       });
     }
   }
@@ -136,9 +139,97 @@ export async function restockIngredient(ingredientId: string, additionalStock: n
   return { success: false, error: "Bahan baku tidak ditemukan" };
 }
 
-// 4. Pemotongan Otomatis Bahan Baku saat Transaksi Berhasil (Real-Time Deduction Engine)
+/**
+ * Kalkulasi Cerdas Penyesuaian Takaran Bahan Berdasarkan Kustomisasi / Modifier Pelanggan
+ * (e.g. Less Sugar, No Sugar, Extra Sugar, No Ice, Level Pedas, Extra Shot, Ekstra Telur)
+ */
+function calculateModifierAdjustment(
+  ing: IngredientItem,
+  baseQty: number,
+  modifiersSummary?: string
+): { adjustedQty: number; modifierNote?: string } {
+  if (!modifiersSummary) {
+    return { adjustedQty: baseQty };
+  }
+
+  const mod = modifiersSummary.toLowerCase();
+  const ingName = ing.name.toLowerCase();
+  const ingCat = ing.category.toLowerCase();
+  let multiplier = 1.0;
+  let extra = 0;
+  const notes: string[] = [];
+
+  // A. LEVEL GULA & SIRUP
+  if (ingCat === "sirup_gula" || ingName.includes("gula") || ingName.includes("syrup") || ingName.includes("sirup")) {
+    if (mod.includes("no sugar") || mod.includes("0% sugar") || mod.includes("tanpa gula") || mod.includes("sugar: none") || mod.includes("0%")) {
+      multiplier = 0;
+      notes.push("No Sugar (0%)");
+    } else if (mod.includes("less sugar") || mod.includes("50% sugar") || mod.includes("sedikit gula") || mod.includes("50%")) {
+      multiplier = 0.5;
+      notes.push("Less Sugar (50%)");
+    } else if (mod.includes("extra sugar") || mod.includes("150% sugar") || mod.includes("lebih manis") || mod.includes("150%")) {
+      multiplier = 1.5;
+      notes.push("Extra Sugar (150%)");
+    }
+  }
+
+  // B. LEVEL ES (Kompensasi Volume Susu / Liquid Base)
+  if (ingCat === "susu_dairy" || ingName.includes("milk") || ingName.includes("susu")) {
+    if (mod.includes("no ice") || mod.includes("tanpa es")) {
+      multiplier = 1.2;
+      notes.push("No Ice (+20% Susu)");
+    } else if (mod.includes("less ice") || mod.includes("sedikit es")) {
+      multiplier = 1.1;
+      notes.push("Less Ice (+10% Susu)");
+    }
+  }
+
+  // C. LEVEL PEDAS (Bumbu Cabai & Rempah)
+  if (ingName.includes("rempah") || ingName.includes("bumbu") || ingName.includes("sambal") || ingName.includes("cabai") || ingName.includes("cabe")) {
+    if (mod.includes("tidak pedas") || mod.includes("tidak pedes") || mod.includes("level 0")) {
+      multiplier = 0.4;
+      notes.push("Tidak Pedas (-60% Rempah Cabai)");
+    } else if (mod.includes("pedas mantap") || mod.includes("extra pedas") || (mod.includes("pedas:") && mod.includes("mantap"))) {
+      multiplier = 1.6;
+      notes.push("Pedas Mantap (+60% Rempah Cabai)");
+    }
+  }
+
+  // D. ADD-ONS TERKAIT BAHAN SPESIFIK
+  // Extra Shot (+18g Biji Kopi)
+  if (mod.includes("extra shot") && (ingCat === "kopi" || ingName.includes("biji kopi") || ingName.includes("arabica") || ingName.includes("espresso"))) {
+    extra += 18;
+    notes.push("+18g Extra Shot Kopi");
+  }
+
+  // Extra Syrup (+20ml Sirup)
+  if (mod.includes("extra syrup") && (ingCat === "sirup_gula" || ingName.includes("karamel") || ingName.includes("sirup"))) {
+    extra += 20;
+    notes.push("+20ml Extra Syrup");
+  }
+
+  // Telur Ceplok (+1 pcs Telur)
+  if ((mod.includes("telur ceplok") || mod.includes("extra telur") || mod.includes("tambah telur")) && ingName.includes("telur")) {
+    extra += 1;
+    notes.push("+1 Telur Ceplok");
+  }
+
+  // Ekstra Sambal (+20g Sambal/Bumbu)
+  if (mod.includes("ekstra sambal") && (ingName.includes("rempah") || ingName.includes("bumbu") || ingName.includes("sambal"))) {
+    extra += 20;
+    notes.push("+20g Ekstra Sambal");
+  }
+
+  const finalQty = Math.max(0, Math.round((baseQty * multiplier + extra) * 10) / 10);
+  return {
+    adjustedQty: finalQty,
+    modifierNote: notes.length > 0 ? notes.join(" • ") : undefined,
+  };
+}
+
+// 4. Pemotongan Otomatis Bahan Baku saat Transaksi Berhasil (Real-Time Deduction Engine with Modifier Awareness)
 export async function deductRawIngredientsForItems(
-  items: { product_name: string; quantity: number }[],
+  items: { product_name: string; quantity: number; modifiers_summary?: string }[],
   invoiceNumber?: string
 ) {
   const store = loadMasterStore();
@@ -148,23 +239,93 @@ export async function deductRawIngredientsForItems(
     unit: string;
     remaining: number;
     is_low_stock: boolean;
+    modifier_note?: string;
   }> = [];
 
   for (const item of items) {
     const recipe = resolveRecipe(item.product_name, 25000, store.recipes);
+    const handledIngredientIds = new Set<string>();
 
     for (const req of recipe.ingredients) {
       const ing = store.ingredients.find((i) => i.id === req.ingredient_id);
       if (ing) {
-        const amountToDeduct = req.quantity * item.quantity;
-        ing.stock = Math.max(0, ing.stock - amountToDeduct);
+        handledIngredientIds.add(ing.id);
 
+        const { adjustedQty, modifierNote } = calculateModifierAdjustment(
+          ing,
+          req.quantity,
+          item.modifiers_summary
+        );
+
+        const amountToDeduct = Math.round(adjustedQty * item.quantity * 10) / 10;
+        if (amountToDeduct > 0) {
+          ing.stock = Math.max(0, Math.round((ing.stock - amountToDeduct) * 10) / 10);
+
+          allDeductions.push({
+            ingredient_name: ing.name,
+            amount: amountToDeduct,
+            unit: ing.unit,
+            remaining: ing.stock,
+            is_low_stock: ing.stock <= ing.min_stock,
+            modifier_note: modifierNote,
+          });
+        }
+      }
+    }
+
+    // Periksa jika ada Add-on yang bahannya belum termasuk di resep dasar
+    const mod = (item.modifiers_summary || "").toLowerCase();
+
+    // 1. Add-on Extra Shot Kopi pada menu yang belum memotong biji kopi
+    if (mod.includes("extra shot")) {
+      const coffeeIng = store.ingredients.find((i) => i.id === "ing-1" || i.category === "kopi");
+      if (coffeeIng && !handledIngredientIds.has(coffeeIng.id)) {
+        handledIngredientIds.add(coffeeIng.id);
+        const amountToDeduct = 18 * item.quantity;
+        coffeeIng.stock = Math.max(0, Math.round((coffeeIng.stock - amountToDeduct) * 10) / 10);
         allDeductions.push({
-          ingredient_name: ing.name,
+          ingredient_name: coffeeIng.name,
           amount: amountToDeduct,
-          unit: ing.unit,
-          remaining: ing.stock,
-          is_low_stock: ing.stock <= ing.min_stock,
+          unit: coffeeIng.unit,
+          remaining: coffeeIng.stock,
+          is_low_stock: coffeeIng.stock <= coffeeIng.min_stock,
+          modifier_note: "+18g Extra Shot Kopi",
+        });
+      }
+    }
+
+    // 2. Add-on Telur Ceplok pada menu tanpa telur
+    if (mod.includes("telur ceplok") || mod.includes("extra telur")) {
+      const eggIng = store.ingredients.find((i) => i.id === "ing-12" || i.name.toLowerCase().includes("telur"));
+      if (eggIng && !handledIngredientIds.has(eggIng.id)) {
+        handledIngredientIds.add(eggIng.id);
+        const amountToDeduct = 1 * item.quantity;
+        eggIng.stock = Math.max(0, eggIng.stock - amountToDeduct);
+        allDeductions.push({
+          ingredient_name: eggIng.name,
+          amount: amountToDeduct,
+          unit: eggIng.unit,
+          remaining: eggIng.stock,
+          is_low_stock: eggIng.stock <= eggIng.min_stock,
+          modifier_note: "+1 Telur Ceplok",
+        });
+      }
+    }
+
+    // 3. Add-on Extra Syrup pada menu tanpa sirup
+    if (mod.includes("extra syrup")) {
+      const syrupIng = store.ingredients.find((i) => i.id === "ing-4" || i.id === "ing-3" || i.category === "sirup_gula");
+      if (syrupIng && !handledIngredientIds.has(syrupIng.id)) {
+        handledIngredientIds.add(syrupIng.id);
+        const amountToDeduct = 20 * item.quantity;
+        syrupIng.stock = Math.max(0, Math.round((syrupIng.stock - amountToDeduct) * 10) / 10);
+        allDeductions.push({
+          ingredient_name: syrupIng.name,
+          amount: amountToDeduct,
+          unit: syrupIng.unit,
+          remaining: syrupIng.stock,
+          is_low_stock: syrupIng.stock <= syrupIng.min_stock,
+          modifier_note: "+20ml Extra Syrup",
         });
       }
     }
@@ -178,6 +339,7 @@ export async function deductRawIngredientsForItems(
       invoice_number: invoiceNumber || "INV-" + Math.floor(100000 + Math.random() * 900000),
       product_name: items.map((i) => `${i.quantity}x ${i.product_name}`).join(", "),
       quantity: items.reduce((acc, i) => acc + i.quantity, 0),
+      modifiers_summary: items.map((i) => i.modifiers_summary).filter(Boolean).join(" | "),
       deductions: allDeductions,
     };
 
