@@ -6,6 +6,7 @@ import GrowkasLogo from "@/app/components/GrowkasLogo";
 import Link from "next/link";
 
 import { BranchItem } from "@/app/actions/storeManager";
+import { getActiveShift, CashierShift } from "@/app/actions/shiftActions";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -28,6 +29,8 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [clock, setClock] = useState("");
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+  const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
+  const isShiftActive = Boolean(activeShift && activeShift.status === "open");
 
   useEffect(() => {
     // 1. Coba baca dari prop userSession
@@ -58,6 +61,18 @@ export default function DashboardLayout({
       }
     } catch {}
   }, [userSession]);
+
+  useEffect(() => {
+    const checkShift = async () => {
+      try {
+        const res = await getActiveShift();
+        setActiveShift(res.shift || null);
+      } catch {}
+    };
+    checkShift();
+    const interval = setInterval(checkShift, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const tick = () => {
@@ -213,8 +228,30 @@ export default function DashboardLayout({
           flexShrink: 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ padding: "4px 10px", borderRadius: "100px", background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80", fontSize: "0.72rem", fontWeight: "bold" }}>
-              ● Shift Aktif
+            <span
+              style={{
+                padding: "4px 10px",
+                borderRadius: "100px",
+                background: isShiftActive ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)",
+                border: "1px solid " + (isShiftActive ? "rgba(74,222,128,0.3)" : "rgba(245,158,11,0.3)"),
+                color: isShiftActive ? "#4ade80" : "#F59E0B",
+                fontSize: "0.72rem",
+                fontWeight: "bold",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: isShiftActive ? "#4ade80" : "#F59E0B",
+                  display: "inline-block",
+                }}
+              />
+              {isShiftActive ? "Shift Aktif" : "Shift Belum Buka"}
             </span>
             <select
               value={selectedBranchId}

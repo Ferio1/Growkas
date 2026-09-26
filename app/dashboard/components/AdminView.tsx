@@ -476,7 +476,7 @@ export default function AdminView({
                     Rata-rata Order Value
                   </div>
                   <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#F5F0E8", marginBottom: "6px" }}>
-                    Rp {analytics.avgOrderValue.toLocaleString("id-ID")}
+                    Rp {(displayedCount > 0 ? Math.round(displayedRevenue / displayedCount) : 0).toLocaleString("id-ID")}
                   </div>
                   <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)" }}>
                     Per transaksi belanja

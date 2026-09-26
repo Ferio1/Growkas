@@ -261,11 +261,13 @@ Pada hari ini dilakukan penyelesaian menyeluruh (*mastering project*) terhadap r
   - Seluruh 18 master bahan baku (`ing-1` s/d `ing-18`: biji kopi arabica, fresh milk, sirup gula, matcha, cokelat, cup dingin, cup panas, daging ayam, daging sapi slice, beras wangi, telur, minyak goreng, bumbu rempah, kecap manis, kentang beku, pasta spaghetti, es batu kristal) direset stok fisiknya menjadi `stock: 0`.
   - Mengosongkan seluruh log pemotongan bahan baku (`deductionLogs: []`).
   - Tab Bahan Baku & HPP kini secara akurat memunculkan peringatan 18 bahan menipis di bawah batas minimum (stok 0), yang secara langsung memvalidasi fungsionalitas tombol dan modal `Input / Restok Bahan Baku Manual`.
-- **Pembersihan Omzet, Transaksi, dan Metrik Analytics ke Angka 0 (`posActions.ts`, `AdminView.tsx`)**:
+- **Pembersihan Omzet, Transaksi, dan Metrik Analytics ke Angka 0 (`posActions.ts`, `AdminView.tsx`, Supabase DB)**:
+  - **Pembersihan Database Supabase Remote**: Melakukan pembersihan menyeluruh (*purge*) pada tabel `transaction_items` (6 baris) dan `transactions` (46 baris data transaksi lawas senilai total Rp 7.763.000) menggunakan service role client sehingga tabel remote kini murni berisi 0 transaksi.
   - Mengeliminasi nilai fallback hardcoded (`5.930.000` omzet dan `176` transaksi) pada `getDashboardAnalytics()` di `posActions.ts` sehingga ketika database transaksi kosong, nilai kembali murni `totalRevenue: 0` dan `totalCount: 0`.
   - Menghapus pemaksaan nilai minimal `Math.max(1, ...)` pada pembagian bobot cabang.
   - Memperbaiki perhitungan persentase performa cabang pada benchmarking di `AdminView.tsx` dengan pengaman pembagian dengan nol (`analytics.totalRevenue > 0 ? Math.round(...) : 0`).
-  - Memperbarui kartu KPI Omzet dan Transaksi agar menampilkan `Rp 0` dan `0 transaksi` dengan status *"Belum ada transaksi (Rp 0)"* dan *"Siap menerima transaksi kasir"*.
+  - Memperbarui kartu KPI Omzet (`Rp 0`), Transaksi (`0 transaksi`), dan Rata-rata Order Value (`Rp 0`) dengan status *"Belum ada transaksi (Rp 0)"* dan *"Siap menerima transaksi kasir"*.
+  - Menjadikan badge status shift pada bar header atas (`DashboardLayout.tsx`) dinamis dengan polling status shift: menampilkan badge amber **`● Shift Belum Buka`** saat tidak ada shift aktif, dan otomatis berubah menjadi hijau **`● Shift Aktif`** saat kasir membuka shift.
   - Menambahkan *empty state placeholder* pada daftar "Produk Terlaris" di Tab 1 Analytics yang secara informatif menerangkan bahwa belum ada data penjualan dan ranking produk akan terbentuk otomatis begitu transaksi kasir pertama dimulai.
 - **Verifikasi Kompilasi & Deployment**:
   - Kompilasi `npm run build` Next.js 16 (Turbopack): **100% SUKSES** (`0 Type Errors`, 10 rute Next.js aktif).
