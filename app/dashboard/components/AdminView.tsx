@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { getBranches, BranchItem } from "@/app/actions/branchActions";
-import { getIngredientsAndCOGS, restockIngredient, IngredientItem } from "@/app/actions/ingredientActions";
+import { getIngredientsAndCOGS, restockIngredient, IngredientItem, DeductionLog } from "@/app/actions/ingredientActions";
 import BranchManagerModal from "./BranchManagerModal";
 import QRCodeGenerator from "./QRCodeGenerator";
 import AiMenuScannerModal from "./AiMenuScannerModal";
@@ -29,6 +29,7 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
   const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
   const [recipesAnalysis, setRecipesAnalysis] = useState<any[]>([]);
   const [lowStockAlerts, setLowStockAlerts] = useState<IngredientItem[]>([]);
+  const [recentDeductions, setRecentDeductions] = useState<DeductionLog[]>([]);
   const [selectedHppRecipe, setSelectedHppRecipe] = useState<HppRecipeData | null>(null);
   
   // Modals state
@@ -46,6 +47,9 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
       setIngredients(res.ingredients);
       setRecipesAnalysis(res.recipesAnalysis);
       setLowStockAlerts(res.lowStockAlerts);
+      if (res.recentDeductions) {
+        setRecentDeductions(res.recentDeductions);
+      }
     }
   };
 
@@ -58,12 +62,19 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
     }
     loadBranches();
     loadIngredients();
+
+    // Auto-polling setiap 3 detik untuk pembaruan instan pengurangan stok bahan baku dari pesanan Kasir POS / QR Meja
+    const interval = setInterval(() => {
+      loadIngredients();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleRestock = async (id: string, amount: number) => {
     const res = await restockIngredient(id, amount);
     if (res.success) {
-      loadIngredients();
+      await loadIngredients();
     }
   };
 
@@ -463,6 +474,134 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
             </div>
           </div>
 
+          {/* WIDGET LOG PEMAKAIAN BAHAN BAKU REAL-TIME */}
+          <div style={{
+            background: "linear-gradient(135deg, rgba(212,101,28,0.08) 0%, rgba(26,26,26,0.95) 100%)",
+            border: "1px solid rgba(212,101,28,0.3)",
+            borderRadius: "16px",
+            padding: "20px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.2)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#FFF" }}>
+                    ⚡ Log Pemakaian &amp; Pengurangan Bahan Baku Real-Time
+                  </h3>
+                  <span style={{
+                    fontSize: "0.68rem",
+                    fontWeight: "800",
+                    padding: "2px 8px",
+                    borderRadius: "20px",
+                    background: "rgba(74,222,128,0.15)",
+                    color: "#4ADE80",
+                    border: "1px solid rgba(74,222,128,0.3)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px"
+                  }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ADE80" }}></span>
+                    Auto-Sync (3s)
+                  </span>
+                </div>
+                <p style={{ fontSize: "0.78rem", color: "#AAA", margin: "4px 0 0" }}>
+                  Audit trail otomatis: Setiap transaksi dari Kasir POS atau QR Meja langsung memotong stok bahan mentah (HPP Bill of Materials).
+                </p>
+              </div>
+            </div>
+
+            {recentDeductions.length === 0 ? (
+              <div style={{
+                padding: "24px",
+                textAlign: "center",
+                background: "rgba(0,0,0,0.2)",
+                borderRadius: "12px",
+                border: "1px dashed rgba(255,255,255,0.1)",
+                color: "#888",
+                fontSize: "0.82rem"
+              }}>
+                📦 Belum ada transaksi baru yang memotong bahan baku. Lakukan order di Kasir POS atau QR Meja untuk melihat pemakaian bahan otomatis.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {recentDeductions.slice(0, 5).map((log) => (
+                  <div
+                    key={log.id}
+                    style={{
+                      background: "rgba(0,0,0,0.35)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: "12px",
+                      padding: "14px 16px",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{
+                          fontFamily: "monospace",
+                          fontWeight: "800",
+                          fontSize: "0.75rem",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          background: "rgba(212,101,28,0.2)",
+                          color: "#D4651C",
+                          border: "1px solid rgba(212,101,28,0.4)"
+                        }}>
+                          {log.invoice_number ? `#${log.invoice_number.replace("#", "")}` : "#ORDER"}
+                        </span>
+                        <span style={{ fontWeight: "800", color: "#FFF", fontSize: "0.9rem" }}>
+                          {log.product_name}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "0.75rem", color: "#888" }}>
+                        🕒 {log.timestamp}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                      {log.deductions.map((d, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            fontSize: "0.74rem",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            background: d.remaining <= 0
+                              ? "rgba(239,68,68,0.2)"
+                              : d.is_low_stock
+                              ? "rgba(245,158,11,0.15)"
+                              : "rgba(255,255,255,0.05)",
+                            border: d.remaining <= 0
+                              ? "1px solid rgba(239,68,68,0.4)"
+                              : d.is_low_stock
+                              ? "1px solid rgba(245,158,11,0.3)"
+                              : "1px solid rgba(255,255,255,0.08)",
+                            color: d.remaining <= 0
+                              ? "#FF6B6B"
+                              : d.is_low_stock
+                              ? "#FBBF24"
+                              : "#DDD",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px"
+                          }}
+                        >
+                          <span style={{ fontWeight: "800", color: "#EF4444" }}>
+                            -{d.amount.toLocaleString("id-ID")} {d.unit}
+                          </span>
+                          <span>{d.ingredient_name}</span>
+                          <span style={{ color: "#AAA", fontSize: "0.7rem" }}>
+                            (Sisa: {d.remaining.toLocaleString("id-ID")} {d.unit}
+                            {d.remaining <= 0 ? " 🔴 HABIS" : d.is_low_stock ? " ⚠️ MENIPIS" : ""})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* TABEL 1: MASTER INVENTARIS BAHAN BAKU */}
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
@@ -491,12 +630,13 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                 </thead>
                 <tbody>
                   {ingredients.map((ing) => {
+                    const isOut = ing.stock <= 0;
                     const isLow = ing.stock <= ing.min_stock;
                     return (
                       <tr key={ing.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                         <td style={{ padding: "12px", fontWeight: "700", color: "#FFF" }}>{ing.name}</td>
                         <td style={{ padding: "12px", color: "#AAA" }}>{ing.category.toUpperCase()}</td>
-                        <td style={{ padding: "12px", fontWeight: "800", color: isLow ? "#EF4444" : "#4ADE80" }}>
+                        <td style={{ padding: "12px", fontWeight: "800", color: isOut ? "#EF4444" : isLow ? "#F59E0B" : "#4ADE80" }}>
                           {ing.stock.toLocaleString("id-ID")} {ing.unit}
                         </td>
                         <td style={{ padding: "12px", color: "#888" }}>{ing.min_stock.toLocaleString("id-ID")} {ing.unit}</td>
@@ -507,15 +647,16 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                             fontWeight: "800",
                             padding: "3px 8px",
                             borderRadius: "6px",
-                            background: isLow ? "rgba(239,68,68,0.15)" : "rgba(74,222,128,0.15)",
-                            color: isLow ? "#EF4444" : "#4ADE80",
+                            background: isOut ? "rgba(239,68,68,0.25)" : isLow ? "rgba(245,158,11,0.2)" : "rgba(74,222,128,0.15)",
+                            color: isOut ? "#FF4D4D" : isLow ? "#F59E0B" : "#4ADE80",
+                            border: isOut ? "1px solid rgba(239,68,68,0.4)" : isLow ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(74,222,128,0.3)",
                           }}>
-                            {isLow ? "⚠️ Menipis" : "✅ Aman"}
+                            {isOut ? "🔴 STOK HABIS" : isLow ? "⚠️ Menipis" : "✅ Aman"}
                           </span>
                         </td>
                         <td style={{ padding: "12px", textAlign: "right" }}>
                           <button
-                            onClick={() => handleRestock(ing.id, ing.unit === "pcs" ? 50 : 1000)}
+                            onClick={() => handleRestock(ing.id, ing.unit === "pcs" || ing.unit === "porsi" ? 50 : 1000)}
                             style={{
                               padding: "5px 10px",
                               borderRadius: "6px",
@@ -527,7 +668,7 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                               cursor: "pointer",
                             }}
                           >
-                            + {ing.unit === "pcs" ? "50 pcs" : "1.000 " + ing.unit}
+                            + {ing.unit === "pcs" || ing.unit === "porsi" ? "50 " + ing.unit : "1.000 " + ing.unit}
                           </button>
                         </td>
                       </tr>

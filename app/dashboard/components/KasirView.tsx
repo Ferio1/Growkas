@@ -419,7 +419,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     setTimeout(() => setToastNotification(null), 5000);
 
     // Otomatis potong stok bahan baku mentah
-    await deductRawIngredientsForItems(payload.items);
+    await deductRawIngredientsForItems(payload.items, invoiceNum);
 
     // Otomatis catat ke shift kasir yang sedang aktif
     const shiftRes = await recordSaleToActiveShift(payload.payment_method, payload.total_amount);

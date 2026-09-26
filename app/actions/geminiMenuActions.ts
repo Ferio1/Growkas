@@ -90,14 +90,14 @@ ATURAN EKSTRAKSI:
       },
     };
 
-    // Urutan model cadangan jika salah satu model mengalami 404 / deprecation
+    // Urutan model cadangan jika model mengalami 503 (high demand) atau 404
     const candidateModels = [
       modelName,
-      "gemini-3.8-flash",
       "gemini-flash-latest",
+      "gemini-3.8-flash",
       "gemini-3.7-flash",
-      "gemini-3.5-flash",
-      "gemini-2.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-flash-lite-latest",
     ].filter((m, idx, arr) => Boolean(m) && arr.indexOf(m) === idx);
 
     let lastError = "";
@@ -122,17 +122,9 @@ ATURAN EKSTRAKSI:
         } else {
           const errJson = await response.json().catch(() => null);
           const errMsg = errJson?.error?.message || response.statusText;
-          lastError = `Google AI Studio Error (${response.status}): ${errMsg}`;
-
-          // Jika 404 (model sudah deprecated/tidak tersedia), coba model berikutnya
-          if (response.status === 404) {
-            continue;
-          } else {
-            return {
-              success: false,
-              error: lastError,
-            };
-          }
+          lastError = `Google AI Studio (${currentModel}) Error ${response.status}: ${errMsg}`;
+          // Jika gagal (503 high demand, 429 rate limit, atau 404 deprecated), coba model berikutnya
+          continue;
         }
       } catch (callErr: any) {
         lastError = callErr.message || String(callErr);

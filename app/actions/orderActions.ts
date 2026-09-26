@@ -62,7 +62,7 @@ export async function createTableOrder(
   // Jika bukan dari Kasir POS (yang sudah memotong stok & mencatat shift mandiri), proses otomatis
   if (!options?.skipShiftAndStockDeduction) {
     // Potong stok bahan baku mentah otomatis
-    await deductRawIngredientsForItems(newOrder.items);
+    await deductRawIngredientsForItems(newOrder.items, newOrder.invoice_number);
 
     // Jika pembayaran QRIS lunas, otomatis masukkan ke pembukuan shift kasir
     if (newOrder.payment_status === "paid") {
