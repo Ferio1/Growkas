@@ -120,6 +120,15 @@ export interface CashierShift {
   notes?: string;
 }
 
+export interface BranchItem {
+  id: string;
+  name: string;
+  city: string;
+  address?: string;
+  target_revenue: number;
+  created_at?: string;
+}
+
 export interface MasterStoreData {
   products: ProductItem[];
   categories: CategoryItem[];
@@ -130,7 +139,46 @@ export interface MasterStoreData {
   activeShift: CashierShift | null;
   shiftHistory: CashierShift[];
   transactions: any[];
+  branches?: BranchItem[];
 }
+
+export const INITIAL_BRANCHES: BranchItem[] = [
+  {
+    id: "br-1",
+    name: "Saray Coffee & Space",
+    city: "Yogyakarta",
+    address: "Jl. Kaliurang KM 5.5, Depok, Sleman",
+    target_revenue: 10000000,
+  },
+  {
+    id: "br-2",
+    name: "Outlet Jakarta Pusat",
+    city: "Jakarta Pusat",
+    address: "Jl. Menteng Raya No. 18",
+    target_revenue: 15000000,
+  },
+  {
+    id: "br-3",
+    name: "Outlet Bandung",
+    city: "Bandung",
+    address: "Jl. Riau No. 45",
+    target_revenue: 8000000,
+  },
+  {
+    id: "br-4",
+    name: "Outlet Surabaya",
+    city: "Surabaya",
+    address: "Jl. Pemuda No. 21",
+    target_revenue: 7000000,
+  },
+  {
+    id: "br-5",
+    name: "7co",
+    city: "Yogyakarta",
+    address: "Jl. Palagan Tentara Pelajar",
+    target_revenue: 10000000,
+  },
+];
 
 export const INITIAL_CATEGORIES: CategoryItem[] = [
   { id: "cat-1", name: "Kopi & Espresso" },
@@ -397,6 +445,7 @@ export function loadMasterStore(): MasterStoreData {
     },
     shiftHistory: [],
     transactions: [],
+    branches: INITIAL_BRANCHES,
   };
 
   saveMasterStore(initial);
@@ -416,6 +465,80 @@ export function saveMasterStore(store: MasterStoreData) {
   } catch (err) {
     console.warn("Storage write notice (in-memory active):", err);
   }
+}
+
+/**
+ * Deduplikasi daftar cabang agar tidak ada nama & kota yang kembar ganda.
+ */
+export function deduplicateBranches(branches: BranchItem[]): BranchItem[] {
+  const seen = new Set<string>();
+  const result: BranchItem[] = [];
+  for (const b of branches) {
+    const key = `${b.name.trim().toLowerCase()}__${b.city.trim().toLowerCase()}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(b);
+    }
+  }
+  return result;
+}
+
+/**
+ * Mengambil daftar cabang tersimpan dari master store secara persisten.
+ */
+export function getStoreBranches(): BranchItem[] {
+  const store = loadMasterStore();
+  if (!store.branches || store.branches.length === 0) {
+    store.branches = [...INITIAL_BRANCHES];
+    saveMasterStore(store);
+  } else {
+    const deduped = deduplicateBranches(store.branches);
+    if (deduped.length !== store.branches.length) {
+      store.branches = deduped;
+      saveMasterStore(store);
+    }
+  }
+  return store.branches;
+}
+
+/**
+ * Menambahkan atau memperbarui cabang di master store secara persisten.
+ */
+export function addStoreBranch(newBranch: BranchItem): BranchItem {
+  const store = loadMasterStore();
+  if (!store.branches || store.branches.length === 0) {
+    store.branches = [...INITIAL_BRANCHES];
+  }
+  const existingIdx = store.branches.findIndex(
+    (b) =>
+      b.name.trim().toLowerCase() === newBranch.name.trim().toLowerCase() &&
+      b.city.trim().toLowerCase() === newBranch.city.trim().toLowerCase()
+  );
+
+  if (existingIdx >= 0) {
+    store.branches[existingIdx] = {
+      ...store.branches[existingIdx],
+      ...newBranch,
+      id: store.branches[existingIdx].id,
+    };
+    saveMasterStore(store);
+    return store.branches[existingIdx];
+  }
+
+  store.branches.push(newBranch);
+  saveMasterStore(store);
+  return newBranch;
+}
+
+/**
+ * Menghapus cabang dari master store secara persisten.
+ */
+export function deleteStoreBranch(branchId: string): boolean {
+  const store = loadMasterStore();
+  if (!store.branches) return false;
+  store.branches = store.branches.filter((b) => b.id !== branchId);
+  saveMasterStore(store);
+  return true;
 }
 
 /**

@@ -2,7 +2,7 @@
 // app/dashboard/components/AdminView.tsx — Dashboard Konsolidasi Multi-Cabang & SaaS Management khusus Admin/Owner
 
 import { useState, useEffect } from "react";
-import { getBranches, BranchItem } from "@/app/actions/branchActions";
+import { getBranches, addBranch, deleteBranch, BranchItem } from "@/app/actions/branchActions";
 import {
   getIngredientsAndCOGS,
   restockIngredient,
@@ -26,12 +26,31 @@ interface AdminViewProps {
     activeBranches: number;
     branchPerformance: Array<{ name: string; revenue: number; count: number; growth: string }>;
   };
+  branches?: BranchItem[];
+  selectedBranchId?: string;
+  onSelectBranch?: (branchId: string) => void;
+  onBranchesUpdated?: (branches: BranchItem[]) => void;
 }
 
-export default function AdminView({ initialAnalytics }: AdminViewProps) {
+export default function AdminView({
+  initialAnalytics,
+  branches: propBranches,
+  selectedBranchId = "all",
+  onSelectBranch,
+  onBranchesUpdated,
+}: AdminViewProps) {
   const [analytics] = useState(initialAnalytics);
   const [activeTab, setActiveTab] = useState<"analytics" | "qrcode" | "ingredients">("analytics");
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>("all");
+  const [internalBranchFilter, setInternalBranchFilter] = useState<string>("all");
+
+  const currentBranchFilter = selectedBranchId !== undefined ? selectedBranchId : internalBranchFilter;
+
+  const handleSelectBranch = (id: string) => {
+    if (onSelectBranch) {
+      onSelectBranch(id);
+    }
+    setInternalBranchFilter(id);
+  };
 
   // Ingredients & COGS state
   const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
@@ -52,9 +71,8 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
   const [resetSuccessToast, setResetSuccessToast] = useState<string | null>(null);
 
   // Dynamic Branches State
-  const [branches, setBranches] = useState<BranchItem[]>([
-    { id: "br-1", name: "Saray Coffee & Space", city: "Yogyakarta", target_revenue: 10000000 },
-  ]);
+  const [localBranches, setLocalBranches] = useState<BranchItem[]>([]);
+  const branches = propBranches && propBranches.length > 0 ? propBranches : localBranches;
 
   const loadIngredients = async () => {
     const res = await getIngredientsAndCOGS();
@@ -93,7 +111,10 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
     async function loadBranches() {
       const res = await getBranches();
       if (res.branches && res.branches.length > 0) {
-        setBranches(res.branches);
+        setLocalBranches(res.branches);
+        if (onBranchesUpdated) {
+          onBranchesUpdated(res.branches);
+        }
       }
     }
     loadBranches();
@@ -115,7 +136,29 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
   };
 
   const handleBranchAdded = (newBranch: BranchItem) => {
-    setBranches((prev) => [...prev, newBranch]);
+    setLocalBranches((prev) => {
+      const updated = [...prev.filter((b) => b.id !== newBranch.id), newBranch];
+      if (onBranchesUpdated) {
+        onBranchesUpdated(updated);
+      }
+      return updated;
+    });
+  };
+
+  const handleBranchDeleted = async (branchId: string) => {
+    const res = await deleteBranch(branchId);
+    if (res.success) {
+      setLocalBranches((prev) => {
+        const updated = prev.filter((b) => b.id !== branchId);
+        if (onBranchesUpdated) {
+          onBranchesUpdated(updated);
+        }
+        return updated;
+      });
+      if (currentBranchFilter === branchId) {
+        handleSelectBranch("all");
+      }
+    }
   };
 
   return (
@@ -258,13 +301,13 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
           {/* Filter Branch Tabs */}
           <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
             <button
-              onClick={() => setSelectedBranchFilter("all")}
+              onClick={() => handleSelectBranch("all")}
               style={{
                 padding: "6px 14px",
                 borderRadius: "6px",
-                background: selectedBranchFilter === "all" ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.03)",
-                border: "1px solid " + (selectedBranchFilter === "all" ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.06)"),
-                color: selectedBranchFilter === "all" ? "#FFF" : "rgba(245,240,232,0.5)",
+                background: currentBranchFilter === "all" ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                border: "1px solid " + (currentBranchFilter === "all" ? "#D4651C" : "rgba(255,255,255,0.06)"),
+                color: currentBranchFilter === "all" ? "#D4651C" : "rgba(245,240,232,0.5)",
                 fontWeight: "700",
                 fontSize: "0.82rem",
                 cursor: "pointer",
@@ -276,13 +319,13 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
             {branches.map((b) => (
               <button
                 key={b.id}
-                onClick={() => setSelectedBranchFilter(b.id)}
+                onClick={() => handleSelectBranch(b.id)}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "6px",
-                  background: selectedBranchFilter === b.id ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
-                  border: "1px solid " + (selectedBranchFilter === b.id ? "#D4651C" : "rgba(255,255,255,0.06)"),
-                  color: selectedBranchFilter === b.id ? "#D4651C" : "rgba(245,240,232,0.5)",
+                  background: currentBranchFilter === b.id ? "rgba(212,101,28,0.2)" : "rgba(255,255,255,0.03)",
+                  border: "1px solid " + (currentBranchFilter === b.id ? "#D4651C" : "rgba(255,255,255,0.06)"),
+                  color: currentBranchFilter === b.id ? "#D4651C" : "rgba(245,240,232,0.5)",
                   fontWeight: "700",
                   fontSize: "0.82rem",
                   cursor: "pointer",
@@ -295,55 +338,78 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
           </div>
 
           {/* KPI SUMMARY CARDS */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
-              <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
-                Total Omzet Gabungan
-              </div>
-              <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#D4651C", marginBottom: "6px" }}>
-                Rp {analytics.totalRevenue.toLocaleString("id-ID")}
-              </div>
-              <div style={{ fontSize: "0.78rem", color: "#4ade80" }}>
-                ▲ +12% dibanding minggu lalu
-              </div>
-            </div>
+          {(() => {
+            const activeBranchObj = branches.find((b) => b.id === currentBranchFilter);
+            const activeBranchPerf = activeBranchObj
+              ? analytics.branchPerformance.find(
+                  (bp) =>
+                    bp.name.toLowerCase().includes(activeBranchObj.name.toLowerCase()) ||
+                    bp.name.toLowerCase().includes(activeBranchObj.city.toLowerCase())
+                )
+              : null;
 
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
-              <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
-                Total Transaksi
-              </div>
-              <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#F5F0E8", marginBottom: "6px" }}>
-                {analytics.totalCount} transaksi
-              </div>
-              <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)" }}>
-                Rata-rata 41 transaksi / hari
-              </div>
-            </div>
+            const displayedRevenue = currentBranchFilter === "all"
+              ? analytics.totalRevenue
+              : activeBranchPerf?.revenue || Math.round(analytics.totalRevenue / Math.max(branches.length, 1));
 
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
-              <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
-                Rata-rata Order Value
-              </div>
-              <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#F5F0E8", marginBottom: "6px" }}>
-                Rp {analytics.avgOrderValue.toLocaleString("id-ID")}
-              </div>
-              <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)" }}>
-                Per transaksi belanja
-              </div>
-            </div>
+            const displayedCount = currentBranchFilter === "all"
+              ? analytics.totalCount
+              : activeBranchPerf?.count || Math.max(1, Math.round(analytics.totalCount / Math.max(branches.length, 1)));
 
-            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
-              <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
-                Outlet Terdaftar
+            return (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
+                    {currentBranchFilter === "all" ? "Total Omzet Gabungan" : `Omzet — ${activeBranchObj?.name}`}
+                  </div>
+                  <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#D4651C", marginBottom: "6px" }}>
+                    Rp {displayedRevenue.toLocaleString("id-ID")}
+                  </div>
+                  <div style={{ fontSize: "0.78rem", color: "#4ade80" }}>
+                    {currentBranchFilter === "all"
+                      ? "▲ +12% dibanding minggu lalu"
+                      : `Target Bulanan: Rp ${(activeBranchObj?.target_revenue || 10000000).toLocaleString("id-ID")}`}
+                  </div>
+                </div>
+
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
+                    {currentBranchFilter === "all" ? "Total Transaksi" : `Transaksi — ${activeBranchObj?.name}`}
+                  </div>
+                  <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#F5F0E8", marginBottom: "6px" }}>
+                    {displayedCount} transaksi
+                  </div>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)" }}>
+                    {currentBranchFilter === "all" ? "Rata-rata 41 transaksi / hari" : "Tersinkron operasional kasir"}
+                  </div>
+                </div>
+
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
+                    Rata-rata Order Value
+                  </div>
+                  <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#F5F0E8", marginBottom: "6px" }}>
+                    Rp {analytics.avgOrderValue.toLocaleString("id-ID")}
+                  </div>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)" }}>
+                    Per transaksi belanja
+                  </div>
+                </div>
+
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
+                    Outlet Terdaftar
+                  </div>
+                  <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#F5F0E8", marginBottom: "6px" }}>
+                    {branches.length} Cabang
+                  </div>
+                  <div style={{ fontSize: "0.78rem", color: "#4ade80" }}>
+                    ● Tersinkron Real-time
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#F5F0E8", marginBottom: "6px" }}>
-                {branches.length} Cabang
-              </div>
-              <div style={{ fontSize: "0.78rem", color: "#4ade80" }}>
-                ● Tersinkron Real-time
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* PERBANDINGAN PERFORMA CABANG */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", width: "100%", boxSizing: "border-box" }}>
@@ -913,11 +979,13 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
         </div>
       )}
 
-      {/* MODAL TAMBAH OUTLET BARU */}
+      {/* MODAL TAMBAH & MANAJEMEN OUTLET */}
       {isAddBranchModalOpen && (
         <BranchManagerModal
+          branches={branches}
           onClose={() => setIsAddBranchModalOpen(false)}
           onBranchAdded={handleBranchAdded}
+          onBranchDeleted={handleBranchDeleted}
         />
       )}
 

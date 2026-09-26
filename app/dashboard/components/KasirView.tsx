@@ -16,9 +16,16 @@ interface KasirViewProps {
   initialProducts: ProductItem[];
   initialCategories: CategoryItem[];
   userSession: any;
+  activeBranchName?: string;
+  activeBranchId?: string;
 }
 
-export default function KasirView({ initialProducts, userSession }: KasirViewProps) {
+export default function KasirView({
+  initialProducts,
+  userSession,
+  activeBranchName = "Saray Coffee & Space (Yogyakarta)",
+  activeBranchId,
+}: KasirViewProps) {
   const [products, setProducts] = useState<ProductItem[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -360,7 +367,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
 
     const invoiceNum = "INV-" + Math.floor(100000 + Math.random() * 900000);
     const cashierName = userSession?.user?.name || "Kasir Shift 1";
-    const branchName = "Saray Coffee & Space (Yogyakarta)";
+    const branchName = activeBranchName || "Saray Coffee & Space (Yogyakarta)";
 
     const payload: TransactionPayload = {
       invoice_number: invoiceNum,

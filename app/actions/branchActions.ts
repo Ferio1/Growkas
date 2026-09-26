@@ -2,48 +2,43 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+  BranchItem,
+  getStoreBranches,
+  addStoreBranch,
+  deleteStoreBranch,
+} from "./storeManager";
 
-export interface BranchItem {
-  id: string;
-  name: string;
-  city: string;
-  address?: string;
-  target_revenue: number;
-  created_at?: string;
-}
+export type { BranchItem };
 
-// In-Memory store fallback jika Supabase table belum dibuat oleh pembeli web
-let MOCK_BRANCHES: BranchItem[] = [
-  {
-    id: "br-1",
-    name: "Saray Coffee & Space",
-    city: "Yogyakarta",
-    address: "Jl. Kaliurang KM 5.5, Depok, Sleman",
-    target_revenue: 10000000,
-  },
-];
-
-export async function getBranches() {
+export async function getBranches(): Promise<{ success: boolean; branches: BranchItem[] }> {
   try {
-    const supabase = await createClient();
-    const { data: branchesData, error } = await supabase.from("branches").select("*");
-
-    if (error || !branchesData || branchesData.length === 0) {
-      return { success: true, branches: MOCK_BRANCHES };
+    // 1. Coba baca dari master store persisten (filesystem + /tmp Vercel)
+    const storeBranches = getStoreBranches();
+    if (storeBranches && storeBranches.length > 0) {
+      return { success: true, branches: storeBranches };
     }
 
-    const branches: BranchItem[] = branchesData.map((b: any) => ({
-      id: b.id,
-      name: b.name,
-      city: b.city || "Indonesia",
-      address: b.address || "",
-      target_revenue: Number(b.target_revenue) || 10000000,
-      created_at: b.created_at,
-    }));
+    // 2. Coba Supabase jika ada table branches
+    try {
+      const supabase = await createClient();
+      const { data: branchesData } = await supabase.from("branches").select("*");
+      if (branchesData && branchesData.length > 0) {
+        const branches: BranchItem[] = branchesData.map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          city: b.city || "Indonesia",
+          address: b.address || "",
+          target_revenue: Number(b.target_revenue) || 10000000,
+          created_at: b.created_at,
+        }));
+        return { success: true, branches };
+      }
+    } catch {}
 
-    return { success: true, branches };
+    return { success: true, branches: storeBranches };
   } catch (err) {
-    return { success: true, branches: MOCK_BRANCHES };
+    return { success: false, branches: [] };
   }
 }
 
@@ -52,62 +47,50 @@ export async function addBranch(payload: {
   city: string;
   address?: string;
   target_revenue?: number;
-}) {
+}): Promise<{ success: boolean; branch?: BranchItem; message?: string }> {
   try {
-    const supabase = await createClient();
     const newBranch: BranchItem = {
       id: "br-" + Date.now(),
-      name: payload.name,
-      city: payload.city || "Indonesia",
-      address: payload.address || "",
-      target_revenue: payload.target_revenue || 10000000,
+      name: payload.name.trim(),
+      city: (payload.city || "Indonesia").trim(),
+      address: payload.address?.trim() || "",
+      target_revenue: Number(payload.target_revenue) || 10000000,
+      created_at: new Date().toISOString(),
     };
 
-    // Push to in-memory fallback
-    MOCK_BRANCHES.push(newBranch);
+    // Simpan ke Master Store persisten
+    const saved = addStoreBranch(newBranch);
 
-    // Insert to Supabase DB
-    const { data, error } = await supabase
-      .from("branches")
-      .insert({
-        name: payload.name,
-        city: payload.city,
-        address: payload.address,
-        target_revenue: payload.target_revenue || 10000000,
-      })
-      .select()
-      .single();
+    // Coba simpan ke Supabase jika tabelnya ada
+    try {
+      const supabase = await createClient();
+      await supabase.from("branches").insert({
+        name: newBranch.name,
+        city: newBranch.city,
+        address: newBranch.address,
+        target_revenue: newBranch.target_revenue,
+      });
+    } catch {}
 
     revalidatePath("/dashboard");
-
-    if (error) {
-      return { success: true, branch: newBranch, message: "Cabang ditambahkan (mode cepat)." };
-    }
-
-    return { success: true, branch: data || newBranch };
+    return { success: true, branch: saved };
   } catch (err: any) {
-    const newBranch: BranchItem = {
-      id: "br-" + Date.now(),
-      name: payload.name,
-      city: payload.city || "Indonesia",
-      address: payload.address || "",
-      target_revenue: payload.target_revenue || 10000000,
-    };
-    MOCK_BRANCHES.push(newBranch);
-    revalidatePath("/dashboard");
-    return { success: true, branch: newBranch };
+    return { success: false, message: err?.message || "Gagal menambah cabang" };
   }
 }
 
-export async function deleteBranch(branchId: string) {
+export async function deleteBranch(branchId: string): Promise<{ success: boolean }> {
   try {
-    MOCK_BRANCHES = MOCK_BRANCHES.filter((b) => b.id !== branchId);
-    const supabase = await createClient();
-    await supabase.from("branches").delete().eq("id", branchId);
+    deleteStoreBranch(branchId);
+
+    try {
+      const supabase = await createClient();
+      await supabase.from("branches").delete().eq("id", branchId);
+    } catch {}
+
     revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
-    revalidatePath("/dashboard");
-    return { success: true };
+    return { success: false };
   }
 }

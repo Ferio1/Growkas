@@ -8,6 +8,7 @@ import {
   loadMasterStore,
   saveMasterStore,
   INITIAL_CATEGORIES,
+  getStoreBranches,
 } from "./storeManager";
 
 export type { ProductItem, CategoryItem };
@@ -237,16 +238,23 @@ export async function getDashboardAnalytics() {
     }
   }
 
+  const branches = getStoreBranches();
+  const weights = [0.35, 0.25, 0.20, 0.12, 0.08];
+  const branchPerformance = branches.map((b, idx) => {
+    const weight = weights[idx] !== undefined ? weights[idx] : 1 / Math.max(branches.length, 1);
+    return {
+      name: `${b.name} (${b.city})`,
+      revenue: Math.round(totalRevenue * weight),
+      count: Math.max(1, Math.round(totalCount * weight)),
+      growth: idx === 0 ? "+18%" : idx === 1 ? "+14%" : idx === 2 ? "+8%" : "+5%",
+    };
+  });
+
   return {
     totalRevenue,
     totalCount,
     avgOrderValue: totalCount > 0 ? Math.round(totalRevenue / totalCount) : 0,
-    activeBranches: 4,
-    branchPerformance: [
-      { name: "Saray Coffee & Space (Yogyakarta)", revenue: Math.round(totalRevenue * 0.35), count: Math.round(totalCount * 0.35), growth: "+18%" },
-      { name: "Cabang Jakarta Pusat", revenue: Math.round(totalRevenue * 0.30), count: Math.round(totalCount * 0.30), growth: "+14%" },
-      { name: "Cabang Bandung", revenue: Math.round(totalRevenue * 0.20), count: Math.round(totalCount * 0.20), growth: "+8%" },
-      { name: "Cabang Surabaya", revenue: Math.round(totalRevenue * 0.15), count: Math.round(totalCount * 0.15), growth: "+5%" },
-    ],
+    activeBranches: branches.length,
+    branchPerformance,
   };
 }

@@ -5,11 +5,16 @@ import { useState, useEffect } from "react";
 import GrowkasLogo from "@/app/components/GrowkasLogo";
 import Link from "next/link";
 
+import { BranchItem } from "@/app/actions/storeManager";
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
   activeRole: "kasir" | "admin";
   onRoleChange: (role: "kasir" | "admin") => void;
   userSession: any;
+  branches?: BranchItem[];
+  selectedBranchId?: string;
+  onBranchChange?: (branchId: string) => void;
 }
 
 export default function DashboardLayout({
@@ -17,6 +22,9 @@ export default function DashboardLayout({
   activeRole,
   onRoleChange,
   userSession,
+  branches = [],
+  selectedBranchId = "all",
+  onBranchChange,
 }: DashboardLayoutProps) {
   const [clock, setClock] = useState("");
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
@@ -209,7 +217,8 @@ export default function DashboardLayout({
               ● Shift Aktif
             </span>
             <select
-              defaultValue="Saray Coffee & Space (Yogyakarta)"
+              value={selectedBranchId}
+              onChange={(e) => onBranchChange && onBranchChange(e.target.value)}
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.15)",
@@ -222,10 +231,22 @@ export default function DashboardLayout({
                 cursor: "pointer",
               }}
             >
-              <option value="Saray Coffee & Space (Yogyakarta)" style={{ background: "#161616" }}>📍 Saray Coffee &amp; Space (Yogyakarta)</option>
-              <option value="Outlet Jakarta Pusat" style={{ background: "#161616" }}>📍 Outlet Jakarta Pusat</option>
-              <option value="Outlet Bandung" style={{ background: "#161616" }}>📍 Outlet Bandung</option>
-              <option value="Outlet Surabaya" style={{ background: "#161616" }}>📍 Outlet Surabaya</option>
+              {activeRole === "admin" && (
+                <option value="all" style={{ background: "#161616" }}>
+                  🌐 Semua Outlet (Konsolidasi Multi-Cabang)
+                </option>
+              )}
+              {branches && branches.length > 0 ? (
+                branches.map((b) => (
+                  <option key={b.id} value={b.id} style={{ background: "#161616" }}>
+                    📍 {b.name} ({b.city})
+                  </option>
+                ))
+              ) : (
+                <option value="br-1" style={{ background: "#161616" }}>
+                  📍 Saray Coffee &amp; Space (Yogyakarta)
+                </option>
+              )}
             </select>
           </div>
 
