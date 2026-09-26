@@ -2,7 +2,7 @@
 // app/dashboard/components/KasirView.tsx — Tampilan POS khusus Kasir (Layout Non-Cutoff & Big Search)
 
 import { useState, useEffect } from "react";
-import { ProductItem, CategoryItem, CartItem, saveTransaction, TransactionPayload } from "@/app/actions/posActions";
+import { ProductItem, CategoryItem, CartItem, saveTransaction, TransactionPayload, getProductsAndCategories } from "@/app/actions/posActions";
 import ReceiptModal from "./ReceiptModal";
 import KitchenDisplayModal, { playKitchenChime } from "./KitchenDisplayModal";
 import ShiftManagerModal from "./ShiftManagerModal";
@@ -60,8 +60,15 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
     }
     initShiftAndOrders();
 
-    // Polling setiap 5 detik untuk order masuk dari HP pelanggan & sinkronisasi KDS
+    // Auto-polling setiap 3 detik untuk sinkronisasi real-time stok produk & antrean KDS
     const interval = setInterval(async () => {
+      // 1. Sinkronisasi stok produk real-time
+      const prodRes = await getProductsAndCategories();
+      if (prodRes.success && prodRes.products) {
+        setProducts(prodRes.products);
+      }
+
+      // 2. Sinkronisasi antrean dapur KDS
       const ordRes = await getTableOrders();
       if (ordRes.orders) {
         const activeOrders = ordRes.orders.filter((o) => o.status === "pending" || o.status === "processing");
@@ -82,7 +89,7 @@ export default function KasirView({ initialProducts, userSession }: KasirViewPro
           return count;
         });
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);

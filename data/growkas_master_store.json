@@ -1,4 +1,222 @@
 {
+  "products": [
+    {
+      "id": "236d47aa-6299-41d6-9955-5281a35984d7",
+      "name": "Saray Signature Palm Sugar",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 22000,
+      "stock": 60,
+      "barcode": "8991001001"
+    },
+    {
+      "id": "84dc3a71-56dc-45ba-abd1-4de32024cb48",
+      "name": "Americano / Long Black",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 20000,
+      "stock": 50,
+      "barcode": "8991001002"
+    },
+    {
+      "id": "27b0549f-610a-47e2-ac37-0f47827d9bdd",
+      "name": "Caffe Latte",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 24000,
+      "stock": 45,
+      "barcode": "8991001003"
+    },
+    {
+      "id": "d83c6b4e-392b-45be-b8b7-d75463ed8edd",
+      "name": "Spanish Latte",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 25000,
+      "stock": 40,
+      "barcode": "8991001004"
+    },
+    {
+      "id": "f845e432-7580-47f6-beea-8769a3b10626",
+      "name": "Salted Caramel Macchiato",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 27000,
+      "stock": 35,
+      "barcode": "8991001005"
+    },
+    {
+      "id": "6129da7f-f73e-4f07-a6c1-b144673b36c9",
+      "name": "Manual Brew V60 (Arabica Kaliurang)",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 26000,
+      "stock": 30,
+      "barcode": "8991001006"
+    },
+    {
+      "id": "a581d6ca-e166-4581-94d7-ea5bd82cad43",
+      "name": "Signature Matcha Latte",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 25000,
+      "stock": 50,
+      "barcode": "8991001007"
+    },
+    {
+      "id": "bf56c3b5-4be1-4b44-90ab-543013c1e734",
+      "name": "Artisanal Chocolate Ice/Hot",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 24000,
+      "stock": 45,
+      "barcode": "8991001008"
+    },
+    {
+      "id": "cb12513e-2870-4c50-95b5-168e1e6381c6",
+      "name": "Berry Blossom Mocktail",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 26000,
+      "stock": 40,
+      "barcode": "8991001009"
+    },
+    {
+      "id": "81e387b6-bf40-482c-bbf7-5c00ce3e0ddb",
+      "name": "Mango Passion Mocktail",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 25000,
+      "stock": 35,
+      "barcode": "8991001010"
+    },
+    {
+      "id": "788b2599-0b18-43bb-b335-7feb0184f8df",
+      "name": "Lychee Tea Refreshment",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 20000,
+      "stock": 70,
+      "barcode": "8991001011"
+    },
+    {
+      "id": "5ea286bd-ed97-4cab-98a3-95bce5d6e19f",
+      "name": "Rice Bowl Ayam Sambal Matah",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 28000,
+      "stock": 35,
+      "barcode": "8991001012"
+    },
+    {
+      "id": "a2201eba-c7e7-4d45-b77b-fd2c12273197",
+      "name": "Rice Bowl Beef Slice Teriyaki",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 33000,
+      "stock": 30,
+      "barcode": "8991001013"
+    },
+    {
+      "id": "0e8a32b8-556b-47fb-9bd0-48af84a8190e",
+      "name": "Rice Bowl Chicken Katsu Curry",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 30000,
+      "stock": 25,
+      "barcode": "8991001014"
+    },
+    {
+      "id": "9f3fbc9d-a0de-4308-97b6-bee24b58fafc",
+      "name": "Nasi Goreng Saray Special",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 27000,
+      "stock": 40,
+      "barcode": "8991001015"
+    },
+    {
+      "id": "c5f7c5c5-1ad9-4c91-a91b-7753bed4492f",
+      "name": "Spaghetti Carbonara Creamy",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 32000,
+      "stock": 25,
+      "barcode": "8991001016"
+    },
+    {
+      "id": "fbdced52-cd8c-49e4-8359-7a52f4813a33",
+      "name": "Croissant Almond Saray",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 27000,
+      "stock": 20,
+      "barcode": "8991001017"
+    },
+    {
+      "id": "641864bb-9092-405d-9de6-41b50ab38ea8",
+      "name": "Pain Au Chocolat",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 25000,
+      "stock": 22,
+      "barcode": "8991001018"
+    },
+    {
+      "id": "d85c12f2-0d5c-40ad-a79c-617cd63b7e59",
+      "name": "French Fries Shoestring",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 20000,
+      "stock": 50,
+      "barcode": "8991001019"
+    },
+    {
+      "id": "73bd3f80-4560-44b9-8cef-95196131fb3a",
+      "name": "Tahu Cabe Garam Saray",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 20000,
+      "stock": 45,
+      "barcode": "8991001020"
+    },
+    {
+      "id": "b52740a6-6cd4-4ac9-9805-53b33811c074",
+      "name": "Mix Platter (Fries, Sausage, Nugget)",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 30000,
+      "stock": 30,
+      "barcode": "8991001021"
+    },
+    {
+      "id": "518cdcde-10f3-4a1d-b252-55bab9db9917",
+      "name": "Cireng Bumbu Rujak",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 18000,
+      "stock": 40,
+      "barcode": "8991001022"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Kopi & Espresso"
+    },
+    {
+      "id": "cat-2",
+      "name": "Non-Coffee & Mocktail"
+    },
+    {
+      "id": "cat-3",
+      "name": "Makanan Utama"
+    },
+    {
+      "id": "cat-4",
+      "name": "Pastry & Snack"
+    }
+  ],
   "ingredients": [
     {
       "id": "ing-1",
@@ -13,7 +231,7 @@
       "id": "ing-2",
       "name": "Fresh Milk UHT Full Cream",
       "unit": "ml",
-      "stock": 11870,
+      "stock": 12000,
       "min_stock": 3000,
       "cost_per_unit": 20,
       "category": "susu_dairy"
@@ -22,7 +240,7 @@
       "id": "ing-3",
       "name": "Gula Aren Cair Organik",
       "unit": "ml",
-      "stock": 3475,
+      "stock": 3500,
       "min_stock": 800,
       "cost_per_unit": 35,
       "category": "sirup_gula"
@@ -58,7 +276,7 @@
       "id": "ing-7",
       "name": "Cup Dingin 16oz + Strawless Lid",
       "unit": "pcs",
-      "stock": 419,
+      "stock": 420,
       "min_stock": 100,
       "cost_per_unit": 650,
       "category": "kemasan"
@@ -76,7 +294,7 @@
       "id": "ing-9",
       "name": "Daging Ayam Fillet Marinasi",
       "unit": "gram",
-      "stock": 700,
+      "stock": 3200,
       "min_stock": 800,
       "cost_per_unit": 65,
       "category": "makanan"
@@ -94,7 +312,7 @@
       "id": "ing-11",
       "name": "Beras Wangi Organik (Nasi Matang)",
       "unit": "porsi",
-      "stock": 0,
+      "stock": 45,
       "min_stock": 15,
       "cost_per_unit": 2500,
       "category": "makanan"
@@ -103,7 +321,7 @@
       "id": "ing-12",
       "name": "Telur Ayam Negeri Fresh",
       "unit": "pcs",
-      "stock": 10,
+      "stock": 60,
       "min_stock": 20,
       "cost_per_unit": 2000,
       "category": "makanan"
@@ -112,7 +330,7 @@
       "id": "ing-13",
       "name": "Minyak Goreng Sawit",
       "unit": "ml",
-      "stock": 4500,
+      "stock": 5000,
       "min_stock": 1000,
       "cost_per_unit": 18,
       "category": "makanan"
@@ -121,7 +339,7 @@
       "id": "ing-14",
       "name": "Bumbu Rempah Nasi Goreng Saray",
       "unit": "gram",
-      "stock": 1250,
+      "stock": 2000,
       "min_stock": 500,
       "cost_per_unit": 40,
       "category": "makanan"
@@ -130,7 +348,7 @@
       "id": "ing-15",
       "name": "Kecap Manis & Saus Gurih",
       "unit": "ml",
-      "stock": 2000,
+      "stock": 2500,
       "min_stock": 500,
       "cost_per_unit": 25,
       "category": "makanan"
@@ -198,102 +416,6 @@
       ]
     },
     {
-      "product_name": "Rice Bowl Ayam Sambal Matah",
-      "selling_price": 28000,
-      "ingredients": [
-        {
-          "ingredient_id": "ing-11",
-          "ingredient_name": "Beras Wangi Organik",
-          "quantity": 1,
-          "unit": "porsi"
-        },
-        {
-          "ingredient_id": "ing-9",
-          "ingredient_name": "Daging Ayam Fillet",
-          "quantity": 120,
-          "unit": "gram"
-        },
-        {
-          "ingredient_id": "ing-13",
-          "ingredient_name": "Minyak Goreng Sawit",
-          "quantity": 15,
-          "unit": "ml"
-        }
-      ]
-    },
-    {
-      "product_name": "Rice Bowl Beef Slice Teriyaki",
-      "selling_price": 33000,
-      "ingredients": [
-        {
-          "ingredient_id": "ing-11",
-          "ingredient_name": "Beras Wangi Organik",
-          "quantity": 1,
-          "unit": "porsi"
-        },
-        {
-          "ingredient_id": "ing-10",
-          "ingredient_name": "Beef Shortplate",
-          "quantity": 100,
-          "unit": "gram"
-        },
-        {
-          "ingredient_id": "ing-15",
-          "ingredient_name": "Saus Teriyaki Gurih",
-          "quantity": 20,
-          "unit": "ml"
-        }
-      ]
-    },
-    {
-      "product_name": "Rice Bowl Chicken Katsu Curry",
-      "selling_price": 30000,
-      "ingredients": [
-        {
-          "ingredient_id": "ing-11",
-          "ingredient_name": "Beras Wangi Organik",
-          "quantity": 1,
-          "unit": "porsi"
-        },
-        {
-          "ingredient_id": "ing-9",
-          "ingredient_name": "Daging Ayam Fillet",
-          "quantity": 100,
-          "unit": "gram"
-        },
-        {
-          "ingredient_id": "ing-13",
-          "ingredient_name": "Minyak Goreng Sawit",
-          "quantity": 20,
-          "unit": "ml"
-        }
-      ]
-    },
-    {
-      "product_name": "Spaghetti Carbonara Creamy",
-      "selling_price": 32000,
-      "ingredients": [
-        {
-          "ingredient_id": "ing-17",
-          "ingredient_name": "Pasta Spaghetti",
-          "quantity": 100,
-          "unit": "gram"
-        },
-        {
-          "ingredient_id": "ing-2",
-          "ingredient_name": "Fresh Milk UHT",
-          "quantity": 100,
-          "unit": "ml"
-        },
-        {
-          "ingredient_id": "ing-12",
-          "ingredient_name": "Telur Ayam Negeri",
-          "quantity": 1,
-          "unit": "pcs"
-        }
-      ]
-    },
-    {
       "product_name": "Saray Signature Palm Sugar",
       "selling_price": 22000,
       "ingredients": [
@@ -354,7 +476,7 @@
         {
           "ingredient_id": "ing-2",
           "ingredient_name": "Fresh Milk UHT",
-          "quantity": 160,
+          "quantity": 150,
           "unit": "ml"
         },
         {
@@ -378,13 +500,13 @@
         {
           "ingredient_id": "ing-2",
           "ingredient_name": "Fresh Milk UHT",
-          "quantity": 140,
+          "quantity": 130,
           "unit": "ml"
         },
         {
           "ingredient_id": "ing-3",
-          "ingredient_name": "Gula Aren Cair",
-          "quantity": 20,
+          "ingredient_name": "Gula Aren / Condensed Milk",
+          "quantity": 25,
           "unit": "ml"
         },
         {
@@ -408,13 +530,13 @@
         {
           "ingredient_id": "ing-2",
           "ingredient_name": "Fresh Milk UHT",
-          "quantity": 140,
+          "quantity": 130,
           "unit": "ml"
         },
         {
           "ingredient_id": "ing-4",
           "ingredient_name": "Sirup Karamel Monin",
-          "quantity": 20,
+          "quantity": 25,
           "unit": "ml"
         },
         {
@@ -436,8 +558,8 @@
           "unit": "gram"
         },
         {
-          "ingredient_id": "ing-7",
-          "ingredient_name": "Cup Dingin / Server",
+          "ingredient_id": "ing-8",
+          "ingredient_name": "Cup Panas 8oz / Server",
           "quantity": 1,
           "unit": "pcs"
         }
@@ -492,38 +614,26 @@
       ]
     },
     {
-      "product_name": "Lychee Tea Refreshment",
-      "selling_price": 20000,
+      "product_name": "Rice Bowl Ayam Sambal Matah",
+      "selling_price": 28000,
       "ingredients": [
         {
-          "ingredient_id": "ing-3",
-          "ingredient_name": "Sirup Gula Aren/Leci",
-          "quantity": 25,
-          "unit": "ml"
+          "ingredient_id": "ing-11",
+          "ingredient_name": "Beras Wangi Organik",
+          "quantity": 1,
+          "unit": "porsi"
         },
         {
-          "ingredient_id": "ing-7",
-          "ingredient_name": "Cup Dingin 16oz",
-          "quantity": 1,
-          "unit": "pcs"
-        }
-      ]
-    },
-    {
-      "product_name": "Berry Blossom Mocktail",
-      "selling_price": 26000,
-      "ingredients": [
-        {
-          "ingredient_id": "ing-4",
-          "ingredient_name": "Sirup Mocktail",
-          "quantity": 30,
-          "unit": "ml"
+          "ingredient_id": "ing-9",
+          "ingredient_name": "Daging Ayam Fillet",
+          "quantity": 120,
+          "unit": "gram"
         },
         {
-          "ingredient_id": "ing-7",
-          "ingredient_name": "Cup Dingin 16oz",
-          "quantity": 1,
-          "unit": "pcs"
+          "ingredient_id": "ing-13",
+          "ingredient_name": "Minyak Goreng Sawit",
+          "quantity": 15,
+          "unit": "ml"
         }
       ]
     },
@@ -566,9 +676,9 @@
   ],
   "deductionLogs": [
     {
-      "id": "deduct-1790428088474",
-      "timestamp": "20.08.08",
-      "invoice_number": "INV-214752",
+      "id": "deduct-1790428888365",
+      "timestamp": "20.21.28",
+      "invoice_number": "INV-SIMULASI-001",
       "product_name": "1x Saray Signature Palm Sugar",
       "quantity": 1,
       "deductions": [
@@ -578,80 +688,46 @@
           "unit": "gram",
           "remaining": 4482,
           "is_low_stock": false
-        },
-        {
-          "ingredient_name": "Fresh Milk UHT Full Cream",
-          "amount": 130,
-          "unit": "ml",
-          "remaining": 11870,
-          "is_low_stock": false
-        },
-        {
-          "ingredient_name": "Gula Aren Cair Organik",
-          "amount": 25,
-          "unit": "ml",
-          "remaining": 3475,
-          "is_low_stock": false
-        },
-        {
-          "ingredient_name": "Cup Dingin 16oz + Strawless Lid",
-          "amount": 1,
-          "unit": "pcs",
-          "remaining": 419,
-          "is_low_stock": false
-        }
-      ]
-    },
-    {
-      "id": "deduct-init-inv684796",
-      "timestamp": "Baru saja",
-      "invoice_number": "INV-684796",
-      "product_name": "50x Nasi Goreng Saray Special",
-      "quantity": 50,
-      "deductions": [
-        {
-          "ingredient_name": "Beras Wangi Organik (Nasi Matang)",
-          "amount": 50,
-          "unit": "porsi",
-          "remaining": 0,
-          "is_low_stock": true
-        },
-        {
-          "ingredient_name": "Telur Ayam Negeri Fresh",
-          "amount": 50,
-          "unit": "pcs",
-          "remaining": 10,
-          "is_low_stock": true
-        },
-        {
-          "ingredient_name": "Daging Ayam Fillet Marinasi",
-          "amount": 2500,
-          "unit": "gram",
-          "remaining": 700,
-          "is_low_stock": true
-        },
-        {
-          "ingredient_name": "Minyak Goreng Sawit",
-          "amount": 500,
-          "unit": "ml",
-          "remaining": 4500,
-          "is_low_stock": false
-        },
-        {
-          "ingredient_name": "Bumbu Rempah Nasi Goreng Saray",
-          "amount": 750,
-          "unit": "gram",
-          "remaining": 1250,
-          "is_low_stock": false
-        },
-        {
-          "ingredient_name": "Kecap Manis & Saus Gurih",
-          "amount": 500,
-          "unit": "ml",
-          "remaining": 2000,
-          "is_low_stock": false
         }
       ]
     }
-  ]
+  ],
+  "tableOrders": [
+    {
+      "id": "ord-1790428888388",
+      "invoice_number": "INV-SIMULASI-001",
+      "table_number": "Meja 03",
+      "branch_name": "Saray Coffee & Space (Yogyakarta)",
+      "payment_method": "cash",
+      "payment_status": "paid",
+      "status": "pending",
+      "total_amount": 22000,
+      "created_at": "2026-09-26T13:21:28.388Z",
+      "items": [
+        {
+          "product_name": "Saray Signature Palm Sugar",
+          "quantity": 1,
+          "price": 22000,
+          "subtotal": 22000
+        }
+      ],
+      "source": "kasir_pos"
+    }
+  ],
+  "activeShift": {
+    "id": "shift-01",
+    "cashier_name": "Kasir Saray Yogyakarta",
+    "branch_name": "Saray Coffee & Space (Yogyakarta)",
+    "start_time": "2026-09-26T10:15:57.890Z",
+    "initial_cash": 200000,
+    "cash_sales": 320000,
+    "qris_sales": 450000,
+    "debit_sales": 0,
+    "total_sales": 770000,
+    "transaction_count": 14,
+    "expected_cash": 520000,
+    "status": "open"
+  },
+  "shiftHistory": [],
+  "transactions": []
 }
