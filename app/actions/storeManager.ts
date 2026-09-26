@@ -11,6 +11,8 @@ export interface ProductItem {
   stock: number;
   barcode?: string;
   image_url?: string;
+  branch_id?: string; // "br-1" (Saray) | "br-5" (7co) | "all"
+  branch_name?: string;
 }
 
 export interface CategoryItem {
@@ -60,6 +62,7 @@ export interface ProductRecipe {
   selling_price: number;
   ingredients: RecipeRequirement[];
   modifierConfig?: ModifierConfig;
+  branch_id?: string; // "br-1" (Saray) | "br-5" (7co) | "all"
 }
 
 export interface DeductionLog {
@@ -188,35 +191,62 @@ export const INITIAL_CATEGORIES: CategoryItem[] = [
 ];
 
 export const INITIAL_PRODUCTS: ProductItem[] = [
+  // --- OUTLET UTAMA: SARAY COFFEE & SPACE (YOGYAKARTA) ---
   // KOPI & ESPRESSO
-  { id: "p-1", name: "Saray Signature Palm Sugar", category_id: "cat-1", category_name: "Kopi & Espresso", price: 22000, stock: 60, barcode: "8991001001" },
-  { id: "p-2", name: "Americano / Long Black", category_id: "cat-1", category_name: "Kopi & Espresso", price: 20000, stock: 50, barcode: "8991001002" },
-  { id: "p-3", name: "Caffe Latte", category_id: "cat-1", category_name: "Kopi & Espresso", price: 24000, stock: 45, barcode: "8991001003" },
-  { id: "p-4", name: "Spanish Latte", category_id: "cat-1", category_name: "Kopi & Espresso", price: 25000, stock: 40, barcode: "8991001004" },
-  { id: "p-5", name: "Salted Caramel Macchiato", category_id: "cat-1", category_name: "Kopi & Espresso", price: 27000, stock: 35, barcode: "8991001005" },
-  { id: "p-6", name: "Manual Brew V60 (Arabica Kaliurang)", category_id: "cat-1", category_name: "Kopi & Espresso", price: 26000, stock: 30, barcode: "8991001006" },
+  { id: "p-1", name: "Saray Signature Palm Sugar", category_id: "cat-1", category_name: "Kopi & Espresso", price: 22000, stock: 60, barcode: "8991001001", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-2", name: "Americano / Long Black", category_id: "cat-1", category_name: "Kopi & Espresso", price: 20000, stock: 50, barcode: "8991001002", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-3", name: "Caffe Latte Saray", category_id: "cat-1", category_name: "Kopi & Espresso", price: 24000, stock: 45, barcode: "8991001003", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-4", name: "Spanish Latte Saray", category_id: "cat-1", category_name: "Kopi & Espresso", price: 25000, stock: 40, barcode: "8991001004", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-5", name: "Salted Caramel Macchiato", category_id: "cat-1", category_name: "Kopi & Espresso", price: 27000, stock: 35, barcode: "8991001005", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-6", name: "Manual Brew V60 (Arabica Kaliurang)", category_id: "cat-1", category_name: "Kopi & Espresso", price: 26000, stock: 30, barcode: "8991001006", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
 
   // NON-COFFEE & MOCKTAIL
-  { id: "p-7", name: "Signature Matcha Latte", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 25000, stock: 50, barcode: "8991001007" },
-  { id: "p-8", name: "Artisanal Chocolate Ice/Hot", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 24000, stock: 45, barcode: "8991001008" },
-  { id: "p-9", name: "Berry Blossom Mocktail", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 26000, stock: 40, barcode: "8991001009" },
-  { id: "p-10", name: "Mango Passion Mocktail", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 25000, stock: 35, barcode: "8991001010" },
-  { id: "p-11", name: "Lychee Tea Refreshment", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 20000, stock: 70, barcode: "8991001011" },
+  { id: "p-7", name: "Signature Matcha Latte", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 25000, stock: 50, barcode: "8991001007", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-8", name: "Artisanal Chocolate Ice/Hot", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 24000, stock: 45, barcode: "8991001008", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-9", name: "Berry Blossom Mocktail", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 26000, stock: 40, barcode: "8991001009", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-10", name: "Mango Passion Mocktail", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 25000, stock: 35, barcode: "8991001010", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-11", name: "Lychee Tea Refreshment", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 20000, stock: 70, barcode: "8991001011", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
 
   // MAKANAN UTAMA
-  { id: "p-12", name: "Rice Bowl Ayam Sambal Matah", category_id: "cat-3", category_name: "Makanan Utama", price: 28000, stock: 35, barcode: "8991001012" },
-  { id: "p-13", name: "Rice Bowl Beef Slice Teriyaki", category_id: "cat-3", category_name: "Makanan Utama", price: 33000, stock: 30, barcode: "8991001013" },
-  { id: "p-14", name: "Rice Bowl Chicken Katsu Curry", category_id: "cat-3", category_name: "Makanan Utama", price: 30000, stock: 25, barcode: "8991001014" },
-  { id: "p-15", name: "Nasi Goreng Saray Special", category_id: "cat-3", category_name: "Makanan Utama", price: 27000, stock: 40, barcode: "8991001015" },
-  { id: "p-16", name: "Spaghetti Carbonara Creamy", category_id: "cat-3", category_name: "Makanan Utama", price: 32000, stock: 25, barcode: "8991001016" },
+  { id: "p-12", name: "Rice Bowl Ayam Sambal Matah", category_id: "cat-3", category_name: "Makanan Utama", price: 28000, stock: 35, barcode: "8991001012", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-13", name: "Rice Bowl Beef Slice Teriyaki", category_id: "cat-3", category_name: "Makanan Utama", price: 33000, stock: 30, barcode: "8991001013", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-14", name: "Rice Bowl Chicken Katsu Curry", category_id: "cat-3", category_name: "Makanan Utama", price: 30000, stock: 25, barcode: "8991001014", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-15", name: "Nasi Goreng Saray Special", category_id: "cat-3", category_name: "Makanan Utama", price: 27000, stock: 40, barcode: "8991001015", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-16", name: "Spaghetti Carbonara Creamy", category_id: "cat-3", category_name: "Makanan Utama", price: 32000, stock: 25, barcode: "8991001016", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
 
   // PASTRY & SNACK
-  { id: "p-17", name: "Croissant Almond Saray", category_id: "cat-4", category_name: "Pastry & Snack", price: 27000, stock: 20, barcode: "8991001017" },
-  { id: "p-18", name: "Pain Au Chocolat", category_id: "cat-4", category_name: "Pastry & Snack", price: 25000, stock: 22, barcode: "8991001018" },
-  { id: "p-19", name: "French Fries Shoestring", category_id: "cat-4", category_name: "Pastry & Snack", price: 20000, stock: 50, barcode: "8991001019" },
-  { id: "p-20", name: "Tahu Cabe Garam Saray", category_id: "cat-4", category_name: "Pastry & Snack", price: 20000, stock: 45, barcode: "8991001020" },
-  { id: "p-21", name: "Mix Platter (Fries, Sausage, Nugget)", category_id: "cat-4", category_name: "Pastry & Snack", price: 30000, stock: 30, barcode: "8991001021" },
-  { id: "p-22", name: "Cireng Bumbu Rujak", category_id: "cat-4", category_name: "Pastry & Snack", price: 18000, stock: 40, barcode: "8991001022" },
+  { id: "p-17", name: "Croissant Almond Saray", category_id: "cat-4", category_name: "Pastry & Snack", price: 27000, stock: 20, barcode: "8991001017", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-18", name: "Pain Au Chocolat", category_id: "cat-4", category_name: "Pastry & Snack", price: 25000, stock: 22, barcode: "8991001018", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-19", name: "French Fries Shoestring", category_id: "cat-4", category_name: "Pastry & Snack", price: 20000, stock: 50, barcode: "8991001019", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-20", name: "Tahu Cabe Garam Saray", category_id: "cat-4", category_name: "Pastry & Snack", price: 20000, stock: 45, barcode: "8991001020", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-21", name: "Mix Platter (Fries, Sausage, Nugget)", category_id: "cat-4", category_name: "Pastry & Snack", price: 30000, stock: 30, barcode: "8991001021", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+  { id: "p-22", name: "Cireng Bumbu Rujak", category_id: "cat-4", category_name: "Pastry & Snack", price: 18000, stock: 40, barcode: "8991001022", branch_id: "br-1", branch_name: "Saray Coffee & Space" },
+
+  // --- OUTLET KHUSUS: 7co (YOGYAKARTA) SPECIALTY MENU ---
+  // KOPI & ESPRESSO 7co
+  { id: "p-701", name: "7co Signature Caramel Macchiato", category_id: "cat-1", category_name: "Kopi & Espresso", price: 28000, stock: 55, barcode: "8997001001", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-702", name: "7co Kopi Susu Creamy Brown Sugar", category_id: "cat-1", category_name: "Kopi & Espresso", price: 23000, stock: 70, barcode: "8997001002", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-703", name: "7co Sea Salt Latte", category_id: "cat-1", category_name: "Kopi & Espresso", price: 26000, stock: 45, barcode: "8997001003", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-704", name: "7co Espresso Double Shot", category_id: "cat-1", category_name: "Kopi & Espresso", price: 18000, stock: 60, barcode: "8997001004", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-705", name: "7co Vanilla Cold Brew", category_id: "cat-1", category_name: "Kopi & Espresso", price: 25000, stock: 40, barcode: "8997001005", branch_id: "br-5", branch_name: "7co" },
+
+  // NON-COFFEE 7co
+  { id: "p-706", name: "7co Roasted Hokkaido Milk Tea", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 24000, stock: 50, barcode: "8997001006", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-707", name: "7co Sparkling Yuzu Mint Mocktail", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 27000, stock: 40, barcode: "8997001007", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-708", name: "7co Dark Cocoa Belgian Ice", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 25000, stock: 45, barcode: "8997001008", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-709", name: "7co Peach Blossom Iced Tea", category_id: "cat-2", category_name: "Non-Coffee & Mocktail", price: 21000, stock: 65, barcode: "8997001009", branch_id: "br-5", branch_name: "7co" },
+
+  // MAKANAN UTAMA 7co (BURGERS & BOWLS)
+  { id: "p-710", name: "7co Smash Beef Burger Deluxe", category_id: "cat-3", category_name: "Makanan Utama", price: 36000, stock: 30, barcode: "8997001010", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-711", name: "7co Crispy Chicken Mentai Rice", category_id: "cat-3", category_name: "Makanan Utama", price: 32000, stock: 35, barcode: "8997001011", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-712", name: "7co Beef Bulgogi Rice Bowl", category_id: "cat-3", category_name: "Makanan Utama", price: 34000, stock: 30, barcode: "8997001012", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-713", name: "7co Aglio Olio Smoked Beef", category_id: "cat-3", category_name: "Makanan Utama", price: 30000, stock: 25, barcode: "8997001013", branch_id: "br-5", branch_name: "7co" },
+
+  // PASTRY & CROFFLE 7co
+  { id: "p-714", name: "7co Croffle Brown Sugar & Ice Cream", category_id: "cat-4", category_name: "Pastry & Snack", price: 26000, stock: 35, barcode: "8997001014", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-715", name: "7co Cinnamon Roll Glaze", category_id: "cat-4", category_name: "Pastry & Snack", price: 24000, stock: 30, barcode: "8997001015", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-716", name: "7co Truffle Cheese Fries", category_id: "cat-4", category_name: "Pastry & Snack", price: 25000, stock: 45, barcode: "8997001016", branch_id: "br-5", branch_name: "7co" },
+  { id: "p-717", name: "7co Mozzarella Sticks with Marinara", category_id: "cat-4", category_name: "Pastry & Snack", price: 26000, stock: 35, barcode: "8997001017", branch_id: "br-5", branch_name: "7co" },
 ];
 
 export const INITIAL_INGREDIENTS: IngredientItem[] = [
@@ -241,9 +271,11 @@ export const INITIAL_INGREDIENTS: IngredientItem[] = [
 ];
 
 export const INITIAL_RECIPES: ProductRecipe[] = [
+  // --- OUTLET UTAMA: SARAY COFFEE & SPACE (YOGYAKARTA) ---
   {
     product_name: "Nasi Goreng Saray Special",
     selling_price: 27000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-11", ingredient_name: "Beras Wangi Organik (Nasi)", quantity: 1, unit: "porsi" },
       { ingredient_id: "ing-12", ingredient_name: "Telur Ayam Negeri Fresh", quantity: 1, unit: "pcs" },
@@ -259,6 +291,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Saray Signature Palm Sugar",
     selling_price: 22000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
       { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 130, unit: "ml" },
@@ -274,6 +307,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Americano / Long Black",
     selling_price: 20000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
       { ingredient_id: "ing-7", ingredient_name: "Cup Dingin 16oz", quantity: 1, unit: "pcs" },
@@ -282,6 +316,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Caffe Latte",
     selling_price: 24000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
       { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 150, unit: "ml" },
@@ -291,6 +326,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Spanish Latte",
     selling_price: 25000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
       { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 130, unit: "ml" },
@@ -301,6 +337,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Salted Caramel Macchiato",
     selling_price: 27000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
       { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 130, unit: "ml" },
@@ -311,6 +348,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Manual Brew V60 (Arabica Kaliurang)",
     selling_price: 26000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 15, unit: "gram" },
       { ingredient_id: "ing-8", ingredient_name: "Cup Panas 8oz / Server", quantity: 1, unit: "pcs" },
@@ -319,6 +357,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Signature Matcha Latte",
     selling_price: 25000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-5", ingredient_name: "Bubuk Matcha", quantity: 15, unit: "gram" },
       { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 150, unit: "ml" },
@@ -328,6 +367,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Artisanal Chocolate Ice/Hot",
     selling_price: 24000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-6", ingredient_name: "Bubuk Cokelat", quantity: 20, unit: "gram" },
       { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 140, unit: "ml" },
@@ -337,6 +377,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Rice Bowl Ayam Sambal Matah",
     selling_price: 28000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-11", ingredient_name: "Beras Wangi Organik", quantity: 1, unit: "porsi" },
       { ingredient_id: "ing-9", ingredient_name: "Daging Ayam Fillet", quantity: 120, unit: "gram" },
@@ -346,6 +387,7 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "French Fries Shoestring",
     selling_price: 20000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-16", ingredient_name: "Kentang Beku", quantity: 150, unit: "gram" },
       { ingredient_id: "ing-13", ingredient_name: "Minyak Goreng Sawit", quantity: 30, unit: "ml" },
@@ -354,9 +396,96 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   {
     product_name: "Tahu Cabe Garam Saray",
     selling_price: 20000,
+    branch_id: "br-1",
     ingredients: [
       { ingredient_id: "ing-13", ingredient_name: "Minyak Goreng Sawit", quantity: 25, unit: "ml" },
       { ingredient_id: "ing-14", ingredient_name: "Bumbu Rempah Cabe Garam", quantity: 10, unit: "gram" },
+    ],
+  },
+
+  // --- OUTLET KHUSUS: 7co (YOGYAKARTA) SPECIALTY RECIPES ---
+  {
+    product_name: "7co Signature Caramel Macchiato",
+    selling_price: 28000,
+    branch_id: "br-5",
+    ingredients: [
+      { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
+      { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 130, unit: "ml" },
+      { ingredient_id: "ing-4", ingredient_name: "Sirup Karamel Monin", quantity: 25, unit: "ml" },
+      { ingredient_id: "ing-18", ingredient_name: "Es Batu Kristal", quantity: 120, unit: "gram" },
+      { ingredient_id: "ing-7", ingredient_name: "Cup Dingin 16oz", quantity: 1, unit: "pcs" },
+    ],
+    modifierConfig: {
+      sugarRules: { normalPercent: 100, lessPercent: 50, noPercent: 0, extraPercent: 150 },
+      iceRules: { normalPercent: 100, lessMilkCompensationPercent: 10, noMilkCompensationPercent: 20, extraIcePercent: 130 },
+    },
+  },
+  {
+    product_name: "7co Kopi Susu Creamy Brown Sugar",
+    selling_price: 23000,
+    branch_id: "br-5",
+    ingredients: [
+      { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
+      { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 140, unit: "ml" },
+      { ingredient_id: "ing-3", ingredient_name: "Gula Aren Cair", quantity: 25, unit: "ml" },
+      { ingredient_id: "ing-18", ingredient_name: "Es Batu Kristal", quantity: 120, unit: "gram" },
+      { ingredient_id: "ing-7", ingredient_name: "Cup Dingin 16oz", quantity: 1, unit: "pcs" },
+    ],
+    modifierConfig: {
+      sugarRules: { normalPercent: 100, lessPercent: 50, noPercent: 0, extraPercent: 150 },
+      iceRules: { normalPercent: 100, lessMilkCompensationPercent: 10, noMilkCompensationPercent: 20, extraIcePercent: 130 },
+    },
+  },
+  {
+    product_name: "7co Sea Salt Latte",
+    selling_price: 26000,
+    branch_id: "br-5",
+    ingredients: [
+      { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
+      { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 140, unit: "ml" },
+      { ingredient_id: "ing-18", ingredient_name: "Es Batu Kristal", quantity: 110, unit: "gram" },
+      { ingredient_id: "ing-7", ingredient_name: "Cup Dingin 16oz", quantity: 1, unit: "pcs" },
+    ],
+  },
+  {
+    product_name: "7co Dark Cocoa Belgian Ice",
+    selling_price: 25000,
+    branch_id: "br-5",
+    ingredients: [
+      { ingredient_id: "ing-6", ingredient_name: "Bubuk Cokelat Artisanal", quantity: 25, unit: "gram" },
+      { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 140, unit: "ml" },
+      { ingredient_id: "ing-3", ingredient_name: "Gula Aren Cair", quantity: 15, unit: "ml" },
+      { ingredient_id: "ing-18", ingredient_name: "Es Batu Kristal", quantity: 120, unit: "gram" },
+      { ingredient_id: "ing-7", ingredient_name: "Cup Dingin 16oz", quantity: 1, unit: "pcs" },
+    ],
+  },
+  {
+    product_name: "7co Smash Beef Burger Deluxe",
+    selling_price: 36000,
+    branch_id: "br-5",
+    ingredients: [
+      { ingredient_id: "ing-10", ingredient_name: "Daging Sapi Slice Shortplate", quantity: 100, unit: "gram" },
+      { ingredient_id: "ing-12", ingredient_name: "Telur Ayam Negeri Fresh", quantity: 1, unit: "pcs" },
+      { ingredient_id: "ing-13", ingredient_name: "Minyak Goreng Sawit", quantity: 15, unit: "ml" },
+      { ingredient_id: "ing-15", ingredient_name: "Kecap Manis & Saus Gurih", quantity: 15, unit: "ml" },
+    ],
+  },
+  {
+    product_name: "7co Truffle Cheese Fries",
+    selling_price: 25000,
+    branch_id: "br-5",
+    ingredients: [
+      { ingredient_id: "ing-16", ingredient_name: "Kentang Beku Shoestring Cut", quantity: 180, unit: "gram" },
+      { ingredient_id: "ing-13", ingredient_name: "Minyak Goreng Sawit", quantity: 30, unit: "ml" },
+    ],
+  },
+  {
+    product_name: "7co Croffle Brown Sugar & Ice Cream",
+    selling_price: 26000,
+    branch_id: "br-5",
+    ingredients: [
+      { ingredient_id: "ing-3", ingredient_name: "Gula Aren Cair Organik", quantity: 20, unit: "ml" },
+      { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT Full Cream", quantity: 30, unit: "ml" },
     ],
   },
 ];
@@ -379,6 +508,64 @@ function getMasterStorePath(): string {
   return path.join(dataDir, "growkas_master_store.json");
 }
 
+export function ensureMultiBranchIntegrity(store: MasterStoreData): boolean {
+  let changed = false;
+
+  // 1. Pastikan cabang ada & terdeduplikasi
+  if (!store.branches || store.branches.length === 0) {
+    store.branches = [...INITIAL_BRANCHES];
+    changed = true;
+  } else {
+    const deduped = deduplicateBranches(store.branches);
+    if (deduped.length !== store.branches.length) {
+      store.branches = deduped;
+      changed = true;
+    }
+  }
+
+  // 2. Pastikan setiap produk memiliki branch_id & branch_name
+  for (const p of store.products) {
+    if (!p.branch_id) {
+      p.branch_id = p.name.toLowerCase().includes("7co") ? "br-5" : "br-1";
+      p.branch_name = p.branch_id === "br-5" ? "7co" : "Saray Coffee & Space";
+      changed = true;
+    }
+  }
+
+  // 3. Pastikan seluruh produk 7co ada
+  const existingProductNames = new Set(store.products.map((p) => p.name.trim().toLowerCase()));
+  for (const initP of INITIAL_PRODUCTS) {
+    if (!existingProductNames.has(initP.name.trim().toLowerCase())) {
+      store.products.push({ ...initP });
+      existingProductNames.add(initP.name.trim().toLowerCase());
+      changed = true;
+    }
+  }
+
+  // 4. Pastikan resep ada & memiliki branch_id
+  if (!Array.isArray(store.recipes) || store.recipes.length === 0) {
+    store.recipes = [...INITIAL_RECIPES];
+    changed = true;
+  } else {
+    for (const r of store.recipes) {
+      if (!r.branch_id) {
+        r.branch_id = r.product_name.toLowerCase().includes("7co") ? "br-5" : "br-1";
+        changed = true;
+      }
+    }
+    const existingRecipeNames = new Set(store.recipes.map((r) => r.product_name.trim().toLowerCase()));
+    for (const initR of INITIAL_RECIPES) {
+      if (!existingRecipeNames.has(initR.product_name.trim().toLowerCase())) {
+        store.recipes.push({ ...initR });
+        existingRecipeNames.add(initR.product_name.trim().toLowerCase());
+        changed = true;
+      }
+    }
+  }
+
+  return changed;
+}
+
 let inMemoryCache: MasterStoreData | null = null;
 
 export function loadMasterStore(): MasterStoreData {
@@ -389,6 +576,10 @@ export function loadMasterStore(): MasterStoreData {
       const raw = fs.readFileSync(storePath, "utf-8");
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.ingredients)) {
+        const changed = ensureMultiBranchIntegrity(parsed);
+        if (changed) {
+          saveMasterStore(parsed);
+        }
         inMemoryCache = parsed;
         return parsed;
       }
@@ -398,6 +589,7 @@ export function loadMasterStore(): MasterStoreData {
   }
 
   if (inMemoryCache) {
+    ensureMultiBranchIntegrity(inMemoryCache);
     return inMemoryCache;
   }
 
@@ -412,6 +604,7 @@ export function loadMasterStore(): MasterStoreData {
         const raw = fs.readFileSync(/*turbopackIgnore: true*/ bPath, "utf-8");
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.ingredients)) {
+          ensureMultiBranchIntegrity(parsed);
           inMemoryCache = parsed;
           // Tulis salinan ke /tmp untuk mutasi berikutnya di Vercel
           saveMasterStore(parsed);

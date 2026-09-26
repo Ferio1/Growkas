@@ -576,20 +576,52 @@ export default function AdminView({
             </div>
 
             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "24px" }}>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "4px" }}>
-                Produk Terlaris
-              </h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                <h2 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0 }}>
+                  Produk Terlaris
+                </h2>
+                <span style={{
+                  fontSize: "0.72rem",
+                  padding: "3px 8px",
+                  borderRadius: "6px",
+                  background: (currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                    ? "rgba(168,85,247,0.2)"
+                    : "rgba(212,101,28,0.2)",
+                  color: (currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                    ? "#C084FC"
+                    : "#D4651C",
+                  fontWeight: "700",
+                }}>
+                  {(currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                    ? "⚡ Outlet 7co"
+                    : currentBranchFilter === "all"
+                    ? "🌐 Konsolidasi"
+                    : "☕ Saray Coffee"}
+                </span>
+              </div>
               <p style={{ color: "rgba(245,240,232,0.5)", fontSize: "0.82rem", marginBottom: "20px" }}>
-                Menu dengan volume penjualan tertinggi di seluruh cabang.
+                {(currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                  ? "Menu specialty dengan volume penjualan tertinggi di outlet 7co (Yogyakarta)."
+                  : currentBranchFilter === "all"
+                  ? "Menu dengan volume penjualan tertinggi di seluruh cabang."
+                  : "Menu dengan volume penjualan tertinggi di Saray Coffee & Space (Yogyakarta)."}
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {[
-                  { name: "Saray Signature Palm Sugar", category: "Kopi & Espresso", sold: 128, revenue: 2816000 },
-                  { name: "Rice Bowl Ayam Sambal Matah", category: "Makanan Utama", sold: 94, revenue: 2632000 },
-                  { name: "Signature Matcha Latte", category: "Non-Coffee & Mocktail", sold: 76, revenue: 1900000 },
-                  { name: "Croissant Almond Saray", category: "Pastry & Snack", sold: 62, revenue: 1674000 },
-                ].map((p, idx) => (
+                {((currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                  ? [
+                      { name: "7co Signature Caramel Macchiato", category: "Kopi & Espresso", sold: 112, revenue: 3136000 },
+                      { name: "7co Smash Beef Burger Deluxe", category: "Makanan Utama", sold: 85, revenue: 3060000 },
+                      { name: "7co Kopi Susu Creamy Brown Sugar", category: "Kopi & Espresso", sold: 78, revenue: 1794000 },
+                      { name: "7co Croffle Brown Sugar & Ice Cream", category: "Pastry & Snack", sold: 64, revenue: 1664000 },
+                    ]
+                  : [
+                      { name: "Saray Signature Palm Sugar", category: "Kopi & Espresso", sold: 128, revenue: 2816000 },
+                      { name: "Rice Bowl Ayam Sambal Matah", category: "Makanan Utama", sold: 94, revenue: 2632000 },
+                      { name: "Signature Matcha Latte", category: "Non-Coffee & Mocktail", sold: 76, revenue: 1900000 },
+                      { name: "Croissant Almond Saray", category: "Pastry & Snack", sold: 62, revenue: 1674000 },
+                    ]
+                ).map((p, idx) => (
                   <div key={p.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <div>
                       <div style={{ fontSize: "0.88rem", fontWeight: "700" }}>{idx + 1}. {p.name}</div>
@@ -994,13 +1026,36 @@ export default function AdminView({
 
           {/* TABEL 2: ANALISIS HPP RESEP MENU (BILL OF MATERIALS) */}
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "20px" }}>
-            <div style={{ marginBottom: "16px" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0 }}>
-                💡 Analisis Resep Menu &amp; HPP (Harga Pokok Penjualan)
-              </h3>
-              <p style={{ fontSize: "0.78rem", color: "#888", margin: "2px 0 0" }}>
-                Dihitung dari total biaya bahan baku mentah per porsi untuk mengetahui margin profit bersih pemilik usaha.
-              </p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+              <div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0 }}>
+                  💡 Analisis Resep Menu &amp; HPP (Harga Pokok Penjualan)
+                </h3>
+                <p style={{ fontSize: "0.78rem", color: "#888", margin: "2px 0 0" }}>
+                  Dihitung dari total biaya bahan baku mentah per porsi untuk mengetahui margin profit bersih pemilik usaha.
+                </p>
+              </div>
+              <span style={{
+                fontSize: "0.76rem",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                background: (currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                  ? "rgba(168,85,247,0.2)"
+                  : "rgba(212,101,28,0.2)",
+                color: (currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                  ? "#C084FC"
+                  : "#FB923C",
+                fontWeight: "700",
+                border: (currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                  ? "1px solid rgba(168,85,247,0.4)"
+                  : "1px solid rgba(212,101,28,0.4)"
+              }}>
+                {(currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                  ? "⚡ Filter: Resep Menu 7co"
+                  : currentBranchFilter === "all"
+                  ? "🌐 Filter: Semua Resep Cabang"
+                  : "☕ Filter: Resep Saray Coffee"}
+              </span>
             </div>
 
             <div style={{ overflowX: "auto" }}>
@@ -1017,9 +1072,33 @@ export default function AdminView({
                   </tr>
                 </thead>
                 <tbody>
-                  {recipesAnalysis.map((item, idx) => (
+                  {recipesAnalysis
+                    .filter((item) => {
+                      if (!currentBranchFilter || currentBranchFilter === "all") return true;
+                      const is7coFilter = currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co");
+                      const itemIs7co = item.branch_id === "br-5" || item.product_name.toLowerCase().includes("7co");
+                      return is7coFilter ? itemIs7co : !itemIs7co;
+                    })
+                    .map((item, idx) => {
+                      const is7coRecipe = item.branch_id === "br-5" || item.product_name.toLowerCase().includes("7co");
+                      return (
                     <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <td style={{ padding: "12px", fontWeight: "800", color: "#FFF" }}>{item.product_name}</td>
+                      <td style={{ padding: "12px", fontWeight: "800", color: "#FFF" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span>{item.product_name}</span>
+                          <span style={{
+                            fontSize: "0.68rem",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontWeight: "800",
+                            background: is7coRecipe ? "rgba(168,85,247,0.2)" : "rgba(212,101,28,0.2)",
+                            color: is7coRecipe ? "#C084FC" : "#FB923C",
+                            border: is7coRecipe ? "1px solid rgba(168,85,247,0.4)" : "1px solid rgba(212,101,28,0.4)",
+                          }}>
+                            {is7coRecipe ? "⚡ 7co" : "☕ Saray"}
+                          </span>
+                        </div>
+                      </td>
                       <td style={{ padding: "12px", fontWeight: "700" }}>Rp {item.selling_price.toLocaleString("id-ID")}</td>
                       <td style={{ padding: "12px", fontSize: "0.78rem", color: "#AAA" }}>
                         {item.ingredients.map((ing: any) => `${ing.ingredient_name} (${ing.quantity} ${ing.unit})`).join(" • ")}
@@ -1088,7 +1167,8 @@ export default function AdminView({
                         </div>
                       </td>
                     </tr>
-                  ))}
+                      );
+                    })}
                 </tbody>
               </table>
             </div>

@@ -152,7 +152,21 @@ export default function KasirView({
     return "snack";
   };
 
+  const is7coOutlet =
+    activeBranchId === "br-5" ||
+    (activeBranchName && activeBranchName.toLowerCase().includes("7co"));
+
   const filteredProducts = products.filter((p) => {
+    // 1. Filter Cabang & Brand (Saray vs 7co)
+    if (activeBranchId && activeBranchId !== "all") {
+      const isProduct7co = p.branch_id === "br-5" || p.name.toLowerCase().includes("7co");
+      if (is7coOutlet) {
+        if (!isProduct7co) return false;
+      } else {
+        if (isProduct7co) return false;
+      }
+    }
+
     const q = searchQuery.trim().toLowerCase();
     const matchSearch =
       q === "" ||
@@ -568,6 +582,48 @@ export default function KasirView({
                 : "Buka Shift Kasir"}
             </span>
           </button>
+        </div>
+
+        {/* BANNER INDIKATOR BRAND & OUTLET KHUSUS (SARAY VS 7CO) */}
+        <div style={{
+          background: is7coOutlet
+            ? "linear-gradient(90deg, rgba(168,85,247,0.18) 0%, rgba(212,101,28,0.12) 100%)"
+            : "linear-gradient(90deg, rgba(212,101,28,0.18) 0%, rgba(245,158,11,0.08) 100%)",
+          border: is7coOutlet ? "1px solid rgba(168,85,247,0.4)" : "1px solid rgba(212,101,28,0.35)",
+          borderRadius: "10px",
+          padding: "8px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "1.1rem" }}>{is7coOutlet ? "⚡" : "☕"}</span>
+            <div>
+              <span style={{
+                fontSize: "0.82rem",
+                fontWeight: "800",
+                color: is7coOutlet ? "#C084FC" : "#D4651C",
+                letterSpacing: "0.5px",
+                textTransform: "uppercase"
+              }}>
+                {is7coOutlet ? "Katalog Khusus: 7co (Yogyakarta)" : "Katalog Khusus: Saray Coffee & Space"}
+              </span>
+              <span style={{ fontSize: "0.74rem", color: "rgba(245,240,232,0.6)", marginLeft: "8px" }}>
+                {is7coOutlet ? "Specialty Macchiato, Smash Burgers & Croffles" : "Artisan Roastery, Rice Bowls & Pastries"}
+              </span>
+            </div>
+          </div>
+          <span style={{
+            fontSize: "0.72rem",
+            padding: "2px 8px",
+            borderRadius: "6px",
+            background: is7coOutlet ? "rgba(168,85,247,0.25)" : "rgba(212,101,28,0.25)",
+            color: is7coOutlet ? "#E9D5FF" : "#FDBA74",
+            fontWeight: "700"
+          }}>
+            {filteredProducts.length} Menu Aktif
+          </span>
         </div>
 
         {/* BARIS 1: SEARCH BAR PROMINEN & BESAR (FULL-WIDTH) */}

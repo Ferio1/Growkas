@@ -100,6 +100,7 @@ export async function calculateRecipeCOGS(recipe: ProductRecipe) {
   return {
     product_name: recipe.product_name,
     selling_price: recipe.selling_price,
+    branch_id: recipe.branch_id || (recipe.product_name.toLowerCase().includes("7co") ? "br-5" : "br-1"),
     total_cogs: totalCost,
     profit_margin: profitMargin,
     profit_percent: profitPercent,

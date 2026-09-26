@@ -7,7 +7,9 @@
       "category_name": "Kopi & Espresso",
       "price": 22000,
       "stock": 60,
-      "barcode": "8991001001"
+      "barcode": "8991001001",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "84dc3a71-56dc-45ba-abd1-4de32024cb48",
@@ -16,7 +18,9 @@
       "category_name": "Kopi & Espresso",
       "price": 20000,
       "stock": 50,
-      "barcode": "8991001002"
+      "barcode": "8991001002",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "27b0549f-610a-47e2-ac37-0f47827d9bdd",
@@ -25,7 +29,9 @@
       "category_name": "Kopi & Espresso",
       "price": 24000,
       "stock": 45,
-      "barcode": "8991001003"
+      "barcode": "8991001003",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "d83c6b4e-392b-45be-b8b7-d75463ed8edd",
@@ -34,7 +40,9 @@
       "category_name": "Kopi & Espresso",
       "price": 25000,
       "stock": 40,
-      "barcode": "8991001004"
+      "barcode": "8991001004",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "f845e432-7580-47f6-beea-8769a3b10626",
@@ -43,7 +51,9 @@
       "category_name": "Kopi & Espresso",
       "price": 27000,
       "stock": 35,
-      "barcode": "8991001005"
+      "barcode": "8991001005",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "6129da7f-f73e-4f07-a6c1-b144673b36c9",
@@ -52,7 +62,9 @@
       "category_name": "Kopi & Espresso",
       "price": 26000,
       "stock": 30,
-      "barcode": "8991001006"
+      "barcode": "8991001006",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "a581d6ca-e166-4581-94d7-ea5bd82cad43",
@@ -61,7 +73,9 @@
       "category_name": "Non-Coffee & Mocktail",
       "price": 25000,
       "stock": 50,
-      "barcode": "8991001007"
+      "barcode": "8991001007",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "bf56c3b5-4be1-4b44-90ab-543013c1e734",
@@ -70,7 +84,9 @@
       "category_name": "Non-Coffee & Mocktail",
       "price": 24000,
       "stock": 45,
-      "barcode": "8991001008"
+      "barcode": "8991001008",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "cb12513e-2870-4c50-95b5-168e1e6381c6",
@@ -79,7 +95,9 @@
       "category_name": "Non-Coffee & Mocktail",
       "price": 26000,
       "stock": 40,
-      "barcode": "8991001009"
+      "barcode": "8991001009",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "81e387b6-bf40-482c-bbf7-5c00ce3e0ddb",
@@ -88,7 +106,9 @@
       "category_name": "Non-Coffee & Mocktail",
       "price": 25000,
       "stock": 35,
-      "barcode": "8991001010"
+      "barcode": "8991001010",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "788b2599-0b18-43bb-b335-7feb0184f8df",
@@ -97,7 +117,9 @@
       "category_name": "Non-Coffee & Mocktail",
       "price": 20000,
       "stock": 70,
-      "barcode": "8991001011"
+      "barcode": "8991001011",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "5ea286bd-ed97-4cab-98a3-95bce5d6e19f",
@@ -106,7 +128,9 @@
       "category_name": "Makanan Utama",
       "price": 28000,
       "stock": 35,
-      "barcode": "8991001012"
+      "barcode": "8991001012",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "a2201eba-c7e7-4d45-b77b-fd2c12273197",
@@ -115,7 +139,9 @@
       "category_name": "Makanan Utama",
       "price": 33000,
       "stock": 30,
-      "barcode": "8991001013"
+      "barcode": "8991001013",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "0e8a32b8-556b-47fb-9bd0-48af84a8190e",
@@ -124,7 +150,9 @@
       "category_name": "Makanan Utama",
       "price": 30000,
       "stock": 25,
-      "barcode": "8991001014"
+      "barcode": "8991001014",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "9f3fbc9d-a0de-4308-97b6-bee24b58fafc",
@@ -133,7 +161,9 @@
       "category_name": "Makanan Utama",
       "price": 27000,
       "stock": 40,
-      "barcode": "8991001015"
+      "barcode": "8991001015",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "c5f7c5c5-1ad9-4c91-a91b-7753bed4492f",
@@ -142,7 +172,9 @@
       "category_name": "Makanan Utama",
       "price": 32000,
       "stock": 25,
-      "barcode": "8991001016"
+      "barcode": "8991001016",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "fbdced52-cd8c-49e4-8359-7a52f4813a33",
@@ -151,7 +183,9 @@
       "category_name": "Pastry & Snack",
       "price": 27000,
       "stock": 20,
-      "barcode": "8991001017"
+      "barcode": "8991001017",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "641864bb-9092-405d-9de6-41b50ab38ea8",
@@ -160,7 +194,9 @@
       "category_name": "Pastry & Snack",
       "price": 25000,
       "stock": 22,
-      "barcode": "8991001018"
+      "barcode": "8991001018",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "d85c12f2-0d5c-40ad-a79c-617cd63b7e59",
@@ -169,7 +205,9 @@
       "category_name": "Pastry & Snack",
       "price": 20000,
       "stock": 50,
-      "barcode": "8991001019"
+      "barcode": "8991001019",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "73bd3f80-4560-44b9-8cef-95196131fb3a",
@@ -178,7 +216,9 @@
       "category_name": "Pastry & Snack",
       "price": 20000,
       "stock": 45,
-      "barcode": "8991001020"
+      "barcode": "8991001020",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "b52740a6-6cd4-4ac9-9805-53b33811c074",
@@ -187,7 +227,9 @@
       "category_name": "Pastry & Snack",
       "price": 30000,
       "stock": 30,
-      "barcode": "8991001021"
+      "barcode": "8991001021",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     },
     {
       "id": "518cdcde-10f3-4a1d-b252-55bab9db9917",
@@ -196,7 +238,218 @@
       "category_name": "Pastry & Snack",
       "price": 18000,
       "stock": 40,
-      "barcode": "8991001022"
+      "barcode": "8991001022",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
+    },
+    {
+      "id": "p-701",
+      "name": "7co Signature Caramel Macchiato",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 28000,
+      "stock": 55,
+      "barcode": "8997001001",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-702",
+      "name": "7co Kopi Susu Creamy Brown Sugar",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 23000,
+      "stock": 70,
+      "barcode": "8997001002",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-703",
+      "name": "7co Sea Salt Latte",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 26000,
+      "stock": 45,
+      "barcode": "8997001003",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-704",
+      "name": "7co Espresso Double Shot",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 18000,
+      "stock": 60,
+      "barcode": "8997001004",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-705",
+      "name": "7co Vanilla Cold Brew",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 25000,
+      "stock": 40,
+      "barcode": "8997001005",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-706",
+      "name": "7co Roasted Hokkaido Milk Tea",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 24000,
+      "stock": 50,
+      "barcode": "8997001006",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-707",
+      "name": "7co Sparkling Yuzu Mint Mocktail",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 27000,
+      "stock": 40,
+      "barcode": "8997001007",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-708",
+      "name": "7co Dark Cocoa Belgian Ice",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 25000,
+      "stock": 45,
+      "barcode": "8997001008",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-709",
+      "name": "7co Peach Blossom Iced Tea",
+      "category_id": "cat-2",
+      "category_name": "Non-Coffee & Mocktail",
+      "price": 21000,
+      "stock": 65,
+      "barcode": "8997001009",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-710",
+      "name": "7co Smash Beef Burger Deluxe",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 36000,
+      "stock": 30,
+      "barcode": "8997001010",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-711",
+      "name": "7co Crispy Chicken Mentai Rice",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 32000,
+      "stock": 35,
+      "barcode": "8997001011",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-712",
+      "name": "7co Beef Bulgogi Rice Bowl",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 34000,
+      "stock": 30,
+      "barcode": "8997001012",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-713",
+      "name": "7co Aglio Olio Smoked Beef",
+      "category_id": "cat-3",
+      "category_name": "Makanan Utama",
+      "price": 30000,
+      "stock": 25,
+      "barcode": "8997001013",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-714",
+      "name": "7co Croffle Brown Sugar & Ice Cream",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 26000,
+      "stock": 35,
+      "barcode": "8997001014",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-715",
+      "name": "7co Cinnamon Roll Glaze",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 24000,
+      "stock": 30,
+      "barcode": "8997001015",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-716",
+      "name": "7co Truffle Cheese Fries",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 25000,
+      "stock": 45,
+      "barcode": "8997001016",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-717",
+      "name": "7co Mozzarella Sticks with Marinara",
+      "category_id": "cat-4",
+      "category_name": "Pastry & Snack",
+      "price": 26000,
+      "stock": 35,
+      "barcode": "8997001017",
+      "branch_id": "br-5",
+      "branch_name": "7co"
+    },
+    {
+      "id": "p-3",
+      "name": "Caffe Latte Saray",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 24000,
+      "stock": 45,
+      "barcode": "8991001003",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
+    },
+    {
+      "id": "p-4",
+      "name": "Spanish Latte Saray",
+      "category_id": "cat-1",
+      "category_name": "Kopi & Espresso",
+      "price": 25000,
+      "stock": 40,
+      "barcode": "8991001004",
+      "branch_id": "br-1",
+      "branch_name": "Saray Coffee & Space"
     }
   ],
   "categories": [
@@ -413,7 +666,8 @@
           "quantity": 10,
           "unit": "ml"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Saray Signature Palm Sugar",
@@ -443,7 +697,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Americano / Long Black",
@@ -461,7 +716,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Caffe Latte",
@@ -485,7 +741,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Spanish Latte",
@@ -515,7 +772,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Salted Caramel Macchiato",
@@ -545,7 +803,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Manual Brew V60 (Arabica Kaliurang)",
@@ -563,7 +822,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Signature Matcha Latte",
@@ -587,7 +847,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Artisanal Chocolate Ice/Hot",
@@ -611,7 +872,8 @@
           "quantity": 1,
           "unit": "pcs"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Rice Bowl Ayam Sambal Matah",
@@ -635,7 +897,8 @@
           "quantity": 15,
           "unit": "ml"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "French Fries Shoestring",
@@ -653,7 +916,8 @@
           "quantity": 30,
           "unit": "ml"
         }
-      ]
+      ],
+      "branch_id": "br-1"
     },
     {
       "product_name": "Tahu Cabe Garam Saray",
@@ -670,6 +934,246 @@
           "ingredient_name": "Bumbu Rempah Cabe Garam",
           "quantity": 10,
           "unit": "gram"
+        }
+      ],
+      "branch_id": "br-1"
+    },
+    {
+      "product_name": "7co Signature Caramel Macchiato",
+      "selling_price": 28000,
+      "branch_id": "br-5",
+      "ingredients": [
+        {
+          "ingredient_id": "ing-1",
+          "ingredient_name": "Biji Kopi Arabica",
+          "quantity": 18,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-2",
+          "ingredient_name": "Fresh Milk UHT",
+          "quantity": 130,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-4",
+          "ingredient_name": "Sirup Karamel Monin",
+          "quantity": 25,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-18",
+          "ingredient_name": "Es Batu Kristal",
+          "quantity": 120,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-7",
+          "ingredient_name": "Cup Dingin 16oz",
+          "quantity": 1,
+          "unit": "pcs"
+        }
+      ],
+      "modifierConfig": {
+        "sugarRules": {
+          "normalPercent": 100,
+          "lessPercent": 50,
+          "noPercent": 0,
+          "extraPercent": 150
+        },
+        "iceRules": {
+          "normalPercent": 100,
+          "lessMilkCompensationPercent": 10,
+          "noMilkCompensationPercent": 20,
+          "extraIcePercent": 130
+        }
+      }
+    },
+    {
+      "product_name": "7co Kopi Susu Creamy Brown Sugar",
+      "selling_price": 23000,
+      "branch_id": "br-5",
+      "ingredients": [
+        {
+          "ingredient_id": "ing-1",
+          "ingredient_name": "Biji Kopi Arabica",
+          "quantity": 18,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-2",
+          "ingredient_name": "Fresh Milk UHT",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-3",
+          "ingredient_name": "Gula Aren Cair",
+          "quantity": 25,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-18",
+          "ingredient_name": "Es Batu Kristal",
+          "quantity": 120,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-7",
+          "ingredient_name": "Cup Dingin 16oz",
+          "quantity": 1,
+          "unit": "pcs"
+        }
+      ],
+      "modifierConfig": {
+        "sugarRules": {
+          "normalPercent": 100,
+          "lessPercent": 50,
+          "noPercent": 0,
+          "extraPercent": 150
+        },
+        "iceRules": {
+          "normalPercent": 100,
+          "lessMilkCompensationPercent": 10,
+          "noMilkCompensationPercent": 20,
+          "extraIcePercent": 130
+        }
+      }
+    },
+    {
+      "product_name": "7co Sea Salt Latte",
+      "selling_price": 26000,
+      "branch_id": "br-5",
+      "ingredients": [
+        {
+          "ingredient_id": "ing-1",
+          "ingredient_name": "Biji Kopi Arabica",
+          "quantity": 18,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-2",
+          "ingredient_name": "Fresh Milk UHT",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-18",
+          "ingredient_name": "Es Batu Kristal",
+          "quantity": 110,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-7",
+          "ingredient_name": "Cup Dingin 16oz",
+          "quantity": 1,
+          "unit": "pcs"
+        }
+      ]
+    },
+    {
+      "product_name": "7co Dark Cocoa Belgian Ice",
+      "selling_price": 25000,
+      "branch_id": "br-5",
+      "ingredients": [
+        {
+          "ingredient_id": "ing-6",
+          "ingredient_name": "Bubuk Cokelat Artisanal",
+          "quantity": 25,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-2",
+          "ingredient_name": "Fresh Milk UHT",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-3",
+          "ingredient_name": "Gula Aren Cair",
+          "quantity": 15,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-18",
+          "ingredient_name": "Es Batu Kristal",
+          "quantity": 120,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-7",
+          "ingredient_name": "Cup Dingin 16oz",
+          "quantity": 1,
+          "unit": "pcs"
+        }
+      ]
+    },
+    {
+      "product_name": "7co Smash Beef Burger Deluxe",
+      "selling_price": 36000,
+      "branch_id": "br-5",
+      "ingredients": [
+        {
+          "ingredient_id": "ing-10",
+          "ingredient_name": "Daging Sapi Slice Shortplate",
+          "quantity": 100,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-12",
+          "ingredient_name": "Telur Ayam Negeri Fresh",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "ingredient_id": "ing-13",
+          "ingredient_name": "Minyak Goreng Sawit",
+          "quantity": 15,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-15",
+          "ingredient_name": "Kecap Manis & Saus Gurih",
+          "quantity": 15,
+          "unit": "ml"
+        }
+      ]
+    },
+    {
+      "product_name": "7co Truffle Cheese Fries",
+      "selling_price": 25000,
+      "branch_id": "br-5",
+      "ingredients": [
+        {
+          "ingredient_id": "ing-16",
+          "ingredient_name": "Kentang Beku Shoestring Cut",
+          "quantity": 180,
+          "unit": "gram"
+        },
+        {
+          "ingredient_id": "ing-13",
+          "ingredient_name": "Minyak Goreng Sawit",
+          "quantity": 30,
+          "unit": "ml"
+        }
+      ]
+    },
+    {
+      "product_name": "7co Croffle Brown Sugar & Ice Cream",
+      "selling_price": 26000,
+      "branch_id": "br-5",
+      "ingredients": [
+        {
+          "ingredient_id": "ing-3",
+          "ingredient_name": "Gula Aren Cair Organik",
+          "quantity": 20,
+          "unit": "ml"
+        },
+        {
+          "ingredient_id": "ing-2",
+          "ingredient_name": "Fresh Milk UHT Full Cream",
+          "quantity": 30,
+          "unit": "ml"
         }
       ]
     }
