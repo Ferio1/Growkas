@@ -14,8 +14,7 @@ export const config = {
      * - _next/static, _next/image (aset Next.js)
      * - favicon.ico
      * - api/auth/*   (NextAuth — jangan diblokir!)
-     * - dashboard/*  (sementara dibuka untuk demo prototipe)
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/auth|dashboard).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/auth).*)",
   ],
 };

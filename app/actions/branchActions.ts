@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { assertRole } from "@/lib/authGuard";
 import {
   BranchItem,
   getStoreBranches,
@@ -48,6 +49,7 @@ export async function addBranch(payload: {
   address?: string;
   target_revenue?: number;
 }): Promise<{ success: boolean; branch?: BranchItem; message?: string }> {
+  await assertRole(["admin"]);
   try {
     const newBranch: BranchItem = {
       id: "br-" + Date.now(),
@@ -80,6 +82,7 @@ export async function addBranch(payload: {
 }
 
 export async function deleteBranch(branchId: string): Promise<{ success: boolean }> {
+  await assertRole(["admin"]);
   try {
     deleteStoreBranch(branchId);
 

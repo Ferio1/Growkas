@@ -68,8 +68,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
 
-    authorized({ auth, request }) {
-      // Izinkan akses navigasi halaman (halaman login & dashboard menghandle session secara aman)
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const pathname = nextUrl.pathname;
+
+      // Proteksi rute internal (dashboard, kitchen) — redirect ke /login jika belum auth
+      if (pathname.startsWith("/dashboard") || pathname.startsWith("/kitchen")) {
+        return isLoggedIn;
+      }
+
+      // Rute publik diizinkan tanpa login (/, /login, /order, /reset-password, /api/auth, dll)
       return true;
     },
   },

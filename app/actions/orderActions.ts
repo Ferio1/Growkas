@@ -9,6 +9,7 @@ import {
   loadMasterStore,
   saveMasterStore,
 } from "./storeManager";
+import { assertRole } from "@/lib/authGuard";
 
 export type { TableOrder, TableOrderItem };
 
@@ -97,6 +98,7 @@ export async function deleteTableOrder(orderId: string): Promise<{ success: bool
 
 // 5. Bersihkan Seluruh Antrean KDS (Reset Antrean)
 export async function clearAllTableOrders(): Promise<{ success: boolean }> {
+  await assertRole(["admin"]);
   const store = loadMasterStore();
   store.tableOrders = [];
   saveMasterStore(store);

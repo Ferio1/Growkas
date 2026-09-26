@@ -10,6 +10,7 @@ import {
   INITIAL_CATEGORIES,
   getStoreBranches,
 } from "./storeManager";
+import { assertAuthenticated } from "@/lib/authGuard";
 
 export type { ProductItem, CategoryItem };
 
@@ -90,6 +91,7 @@ export async function getProductsAndCategories() {
 
 // 2. Simpan Transaksi Kasir POS (Potong Stok Persisten di Supabase & Local Store)
 export async function saveTransaction(payload: TransactionPayload) {
+  await assertAuthenticated();
   const store = loadMasterStore();
 
   // 1. Potong stok pada store lokal persisten

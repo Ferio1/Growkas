@@ -10,6 +10,7 @@ import {
   saveMasterStore,
   resetMasterDatabaseToCleanState,
 } from "./storeManager";
+import { assertRole } from "@/lib/authGuard";
 
 export type { IngredientItem, RecipeRequirement, ProductRecipe, ModifierConfig, DeductionLog };
 
@@ -174,6 +175,7 @@ export async function updateIngredientStockManual(
   minStock?: number,
   costPerUnit?: number
 ) {
+  await assertRole(["admin"]);
   const store = loadMasterStore();
   const ing = store.ingredients.find((i) => i.id === ingredientId);
   if (!ing) {
