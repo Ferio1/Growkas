@@ -6,19 +6,18 @@ export async function registerWithSupabase(formData: {
   email: string;
   password: string;
   fullName: string;
-  role: string;
 }) {
   try {
     const supabase = await createClient();
 
-    // 1. Daftar ke Supabase Auth
+    // 1. Daftar ke Supabase Auth — Role selalu dikunci ke "kasir" server-side
     const { data, error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
         data: {
           full_name: formData.fullName,
-          role: formData.role,
+          role: "kasir",
         },
       },
     });
@@ -27,13 +26,13 @@ export async function registerWithSupabase(formData: {
       return { success: false, error: error.message };
     }
 
-    // 2. Simpan ke tabel profiles jika user berhasil dibuat
+    // 2. Simpan ke tabel profiles jika user berhasil dibuat — Role selalu dikunci ke "kasir"
     if (data.user) {
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: data.user.id,
         email: formData.email,
         full_name: formData.fullName,
-        role: formData.role,
+        role: "kasir",
       });
 
       if (profileError) {

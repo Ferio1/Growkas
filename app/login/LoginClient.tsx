@@ -272,7 +272,6 @@ export default function LoginClient({ errorMessage, callbackUrl }: LoginClientPr
           email,
           password,
           fullName,
-          role,
         });
 
         if (!res.success) {
