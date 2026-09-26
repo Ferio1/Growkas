@@ -4,12 +4,14 @@ import {
   IngredientItem,
   RecipeRequirement,
   ProductRecipe,
+  ModifierConfig,
   DeductionLog,
   loadMasterStore,
   saveMasterStore,
+  resetMasterDatabaseToCleanState,
 } from "./storeManager";
 
-export type { IngredientItem, RecipeRequirement, ProductRecipe, DeductionLog };
+export type { IngredientItem, RecipeRequirement, ProductRecipe, ModifierConfig, DeductionLog };
 
 // Helper cerdas mencocokkan atau membuat resep BOM jika produk baru
 function resolveRecipe(productName: string, price: number, allRecipes: ProductRecipe[]): ProductRecipe {
@@ -127,7 +129,7 @@ export async function getIngredientsAndCOGS() {
   };
 }
 
-// 3. Tambah / Restok Bahan Baku
+// 3. Tambah / Restok Bahan Baku Cepat (+50 / +1000)
 export async function restockIngredient(ingredientId: string, additionalStock: number) {
   const store = loadMasterStore();
   const ing = store.ingredients.find((i) => i.id === ingredientId);
@@ -139,14 +141,80 @@ export async function restockIngredient(ingredientId: string, additionalStock: n
   return { success: false, error: "Bahan baku tidak ditemukan" };
 }
 
+// 4. Tambah Bahan Baku Baru Secara Manual
+export async function addNewIngredient(data: {
+  name: string;
+  unit: "gram" | "ml" | "pcs" | "porsi";
+  stock: number;
+  min_stock: number;
+  cost_per_unit: number;
+  category: "kopi" | "susu_dairy" | "sirup_gula" | "kemasan" | "makanan";
+}) {
+  const store = loadMasterStore();
+  const newId = "ing-" + (store.ingredients.length + 1) + "-" + Date.now().toString().slice(-4);
+  const newIng: IngredientItem = {
+    id: newId,
+    name: data.name.trim(),
+    unit: data.unit,
+    stock: Math.max(0, Number(data.stock) || 0),
+    min_stock: Math.max(0, Number(data.min_stock) || 0),
+    cost_per_unit: Math.max(0, Number(data.cost_per_unit) || 0),
+    category: data.category,
+  };
+  store.ingredients.push(newIng);
+  saveMasterStore(store);
+  return { success: true, ingredient: newIng };
+}
+
+// 5. Update / Set Stok Fisik Bahan Baku Manual (Stock Opname)
+export async function updateIngredientStockManual(
+  ingredientId: string,
+  newStock: number,
+  minStock?: number,
+  costPerUnit?: number
+) {
+  const store = loadMasterStore();
+  const ing = store.ingredients.find((i) => i.id === ingredientId);
+  if (!ing) {
+    return { success: false, error: "Bahan baku tidak ditemukan" };
+  }
+  ing.stock = Math.max(0, Number(newStock) || 0);
+  if (minStock !== undefined && !isNaN(Number(minStock))) ing.min_stock = Math.max(0, Number(minStock));
+  if (costPerUnit !== undefined && !isNaN(Number(costPerUnit))) ing.cost_per_unit = Math.max(0, Number(costPerUnit));
+  saveMasterStore(store);
+  return { success: true, updatedIngredient: ing };
+}
+
+// 6. Simpan / Update Konfigurasi Resep Menu & Takaran Modifier (BOM Manager)
+export async function saveRecipeConfiguration(recipeData: ProductRecipe) {
+  const store = loadMasterStore();
+  const existingIdx = store.recipes.findIndex(
+    (r) => r.product_name.toLowerCase().trim() === recipeData.product_name.toLowerCase().trim()
+  );
+  if (existingIdx >= 0) {
+    store.recipes[existingIdx] = recipeData;
+  } else {
+    store.recipes.push(recipeData);
+  }
+  saveMasterStore(store);
+  return { success: true, recipe: recipeData };
+}
+
+// 7. Reset Seluruh Database Bersih (Kosongkan riwayat order, shift, dan opsi reset stok ke nol)
+export async function resetDatabaseCleanAction(options?: { resetIngredientsToZero?: boolean }) {
+  const cleanStore = resetMasterDatabaseToCleanState(options);
+  return { success: true, store: cleanStore };
+}
+
 /**
  * Kalkulasi Cerdas Penyesuaian Takaran Bahan Berdasarkan Kustomisasi / Modifier Pelanggan
- * (e.g. Less Sugar, No Sugar, Extra Sugar, No Ice, Level Pedas, Extra Shot, Ekstra Telur)
+ * Menggunakan aturan persentase yang disetel pada resep menu (modifierConfig) atau fallback dinamis.
  */
 function calculateModifierAdjustment(
   ing: IngredientItem,
   baseQty: number,
-  modifiersSummary?: string
+  modifiersSummary?: string,
+  modifierConfig?: ModifierConfig
 ): { adjustedQty: number; modifierNote?: string } {
   if (!modifiersSummary) {
     return { adjustedQty: baseQty };
@@ -161,37 +229,64 @@ function calculateModifierAdjustment(
 
   // A. LEVEL GULA & SIRUP
   if (ingCat === "sirup_gula" || ingName.includes("gula") || ingName.includes("syrup") || ingName.includes("sirup")) {
+    const sugarCfg = modifierConfig?.sugarRules;
     if (mod.includes("no sugar") || mod.includes("0% sugar") || mod.includes("tanpa gula") || mod.includes("sugar: none") || mod.includes("0%")) {
-      multiplier = 0;
-      notes.push("No Sugar (0%)");
+      const pct = sugarCfg?.noPercent !== undefined ? sugarCfg.noPercent : 0;
+      multiplier = pct / 100;
+      notes.push(`No Sugar (${pct}%)`);
     } else if (mod.includes("less sugar") || mod.includes("50% sugar") || mod.includes("sedikit gula") || mod.includes("50%")) {
-      multiplier = 0.5;
-      notes.push("Less Sugar (50%)");
-    } else if (mod.includes("extra sugar") || mod.includes("150% sugar") || mod.includes("lebih manis") || mod.includes("150%")) {
-      multiplier = 1.5;
-      notes.push("Extra Sugar (150%)");
+      const pct = sugarCfg?.lessPercent !== undefined ? sugarCfg.lessPercent : 50;
+      multiplier = pct / 100;
+      notes.push(`Less Sugar (${pct}%)`);
+    } else if (mod.includes("extra sugar") || mod.includes("150% sugar") || mod.includes("lebih manis") || mod.includes("tambah sugar") || mod.includes("150%")) {
+      const pct = sugarCfg?.extraPercent !== undefined ? sugarCfg.extraPercent : 150;
+      multiplier = pct / 100;
+      notes.push(`Extra Sugar (${pct}%)`);
     }
   }
 
-  // B. LEVEL ES (Kompensasi Volume Susu / Liquid Base)
+  // B. LEVEL ES (Kompensasi Cairan Susu & Takaran Es Batu)
+  const iceCfg = modifierConfig?.iceRules;
+
+  // 1. Kompensasi Susu / Cairan
   if (ingCat === "susu_dairy" || ingName.includes("milk") || ingName.includes("susu")) {
     if (mod.includes("no ice") || mod.includes("tanpa es")) {
-      multiplier = 1.2;
-      notes.push("No Ice (+20% Susu)");
+      const comp = iceCfg?.noMilkCompensationPercent !== undefined ? iceCfg.noMilkCompensationPercent : 20;
+      multiplier = 1 + comp / 100;
+      notes.push(`No Ice (+${comp}% Susu)`);
     } else if (mod.includes("less ice") || mod.includes("sedikit es")) {
-      multiplier = 1.1;
-      notes.push("Less Ice (+10% Susu)");
+      const comp = iceCfg?.lessMilkCompensationPercent !== undefined ? iceCfg.lessMilkCompensationPercent : 10;
+      multiplier = 1 + comp / 100;
+      notes.push(`Less Ice (+${comp}% Susu)`);
+    }
+  }
+
+  // 2. Takaran Es Batu Mentah
+  if (ingName.includes("es batu") || ingName.includes("ice")) {
+    if (mod.includes("no ice") || mod.includes("tanpa es")) {
+      multiplier = 0;
+      notes.push("No Ice (0g Es Batu)");
+    } else if (mod.includes("less ice") || mod.includes("sedikit es")) {
+      multiplier = 0.5;
+      notes.push("Less Ice (-50% Es Batu)");
+    } else if (mod.includes("tambah ice") || mod.includes("extra ice") || mod.includes("banyak es")) {
+      const extraIce = iceCfg?.extraIcePercent !== undefined ? iceCfg.extraIcePercent : 130;
+      multiplier = extraIce / 100;
+      notes.push(`Tambah Ice (${extraIce}% Es Batu)`);
     }
   }
 
   // C. LEVEL PEDAS (Bumbu Cabai & Rempah)
   if (ingName.includes("rempah") || ingName.includes("bumbu") || ingName.includes("sambal") || ingName.includes("cabai") || ingName.includes("cabe")) {
+    const spicyCfg = modifierConfig?.spicyRules;
     if (mod.includes("tidak pedas") || mod.includes("tidak pedes") || mod.includes("level 0")) {
-      multiplier = 0.4;
-      notes.push("Tidak Pedas (-60% Rempah Cabai)");
+      const mildPct = spicyCfg?.mildPercent !== undefined ? spicyCfg.mildPercent : 40;
+      multiplier = mildPct / 100;
+      notes.push(`Tidak Pedas (${mildPct}% Bumbu)`);
     } else if (mod.includes("pedas mantap") || mod.includes("extra pedas") || (mod.includes("pedas:") && mod.includes("mantap"))) {
-      multiplier = 1.6;
-      notes.push("Pedas Mantap (+60% Rempah Cabai)");
+      const spicyPct = spicyCfg?.extraSpicyPercent !== undefined ? spicyCfg.extraSpicyPercent : 160;
+      multiplier = spicyPct / 100;
+      notes.push(`Pedas Mantap (${spicyPct}% Rempah)`);
     }
   }
 
@@ -227,7 +322,7 @@ function calculateModifierAdjustment(
   };
 }
 
-// 4. Pemotongan Otomatis Bahan Baku saat Transaksi Berhasil (Real-Time Deduction Engine with Modifier Awareness)
+// 8. Pemotongan Otomatis Bahan Baku saat Transaksi Berhasil (Real-Time Deduction Engine with Modifier Awareness)
 export async function deductRawIngredientsForItems(
   items: { product_name: string; quantity: number; modifiers_summary?: string }[],
   invoiceNumber?: string
@@ -254,7 +349,8 @@ export async function deductRawIngredientsForItems(
         const { adjustedQty, modifierNote } = calculateModifierAdjustment(
           ing,
           req.quantity,
-          item.modifiers_summary
+          item.modifiers_summary,
+          recipe.modifierConfig
         );
 
         const amountToDeduct = Math.round(adjustedQty * item.quantity * 10) / 10;

@@ -35,10 +35,31 @@ export interface RecipeRequirement {
   unit: string;
 }
 
+export interface ModifierConfig {
+  sugarRules?: {
+    normalPercent?: number; // 100%
+    lessPercent?: number; // default 50%
+    noPercent?: number; // default 0%
+    extraPercent?: number; // default 150%
+  };
+  iceRules?: {
+    normalPercent?: number; // 100%
+    lessMilkCompensationPercent?: number; // default 10%
+    noMilkCompensationPercent?: number; // default 20%
+    extraIcePercent?: number; // default 130%
+  };
+  spicyRules?: {
+    mildPercent?: number; // default 40%
+    mediumPercent?: number; // default 100%
+    extraSpicyPercent?: number; // default 160%
+  };
+}
+
 export interface ProductRecipe {
   product_name: string;
   selling_price: number;
   ingredients: RecipeRequirement[];
+  modifierConfig?: ModifierConfig;
 }
 
 export interface DeductionLog {
@@ -168,6 +189,7 @@ export const INITIAL_INGREDIENTS: IngredientItem[] = [
   { id: "ing-15", name: "Kecap Manis & Saus Gurih", unit: "ml", stock: 2500, min_stock: 500, cost_per_unit: 25, category: "makanan" },
   { id: "ing-16", name: "Kentang Beku Shoestring Cut", unit: "gram", stock: 5000, min_stock: 1000, cost_per_unit: 45, category: "makanan" },
   { id: "ing-17", name: "Pasta Spaghetti Kering", unit: "gram", stock: 3000, min_stock: 500, cost_per_unit: 35, category: "makanan" },
+  { id: "ing-18", name: "Es Batu Kristal Tube", unit: "gram", stock: 15000, min_stock: 3000, cost_per_unit: 4, category: "kemasan" },
 ];
 
 export const INITIAL_RECIPES: ProductRecipe[] = [
@@ -182,6 +204,9 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
       { ingredient_id: "ing-14", ingredient_name: "Bumbu Rempah Nasi Goreng", quantity: 15, unit: "gram" },
       { ingredient_id: "ing-15", ingredient_name: "Kecap Manis & Saus", quantity: 10, unit: "ml" },
     ],
+    modifierConfig: {
+      spicyRules: { mildPercent: 40, mediumPercent: 100, extraSpicyPercent: 160 },
+    },
   },
   {
     product_name: "Saray Signature Palm Sugar",
@@ -190,8 +215,13 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
       { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
       { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 130, unit: "ml" },
       { ingredient_id: "ing-3", ingredient_name: "Gula Aren Cair", quantity: 25, unit: "ml" },
+      { ingredient_id: "ing-18", ingredient_name: "Es Batu Kristal", quantity: 120, unit: "gram" },
       { ingredient_id: "ing-7", ingredient_name: "Cup Dingin 16oz", quantity: 1, unit: "pcs" },
     ],
+    modifierConfig: {
+      sugarRules: { normalPercent: 100, lessPercent: 50, noPercent: 0, extraPercent: 150 },
+      iceRules: { normalPercent: 100, lessMilkCompensationPercent: 10, noMilkCompensationPercent: 20, extraIcePercent: 130 },
+    },
   },
   {
     product_name: "Americano / Long Black",
@@ -349,36 +379,20 @@ export function loadMasterStore(): MasterStoreData {
     categories: INITIAL_CATEGORIES,
     ingredients: INITIAL_INGREDIENTS,
     recipes: INITIAL_RECIPES,
-    deductionLogs: [
-      {
-        id: "deduct-init-inv684796",
-        timestamp: "Baru saja",
-        invoice_number: "INV-684796",
-        product_name: "50x Nasi Goreng Saray Special",
-        quantity: 50,
-        deductions: [
-          { ingredient_name: "Beras Wangi Organik (Nasi Matang)", amount: 50, unit: "porsi", remaining: 0, is_low_stock: true },
-          { ingredient_name: "Telur Ayam Negeri Fresh", amount: 50, unit: "pcs", remaining: 10, is_low_stock: true },
-          { ingredient_name: "Daging Ayam Fillet Marinasi", amount: 2500, unit: "gram", remaining: 700, is_low_stock: true },
-          { ingredient_name: "Minyak Goreng Sawit", amount: 500, unit: "ml", remaining: 4500, is_low_stock: false },
-          { ingredient_name: "Bumbu Rempah Nasi Goreng Saray", amount: 750, unit: "gram", remaining: 1250, is_low_stock: false },
-          { ingredient_name: "Kecap Manis & Saus Gurih", amount: 500, unit: "ml", remaining: 2000, is_low_stock: false },
-        ],
-      },
-    ],
+    deductionLogs: [],
     tableOrders: [],
     activeShift: {
       id: "shift-01",
       cashier_name: "Kasir Saray Yogyakarta",
       branch_name: "Saray Coffee & Space (Yogyakarta)",
-      start_time: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+      start_time: new Date().toISOString(),
       initial_cash: 200000,
-      cash_sales: 320000,
-      qris_sales: 450000,
+      cash_sales: 0,
+      qris_sales: 0,
       debit_sales: 0,
-      total_sales: 770000,
-      transaction_count: 14,
-      expected_cash: 520000,
+      total_sales: 0,
+      transaction_count: 0,
+      expected_cash: 200000,
       status: "open",
     },
     shiftHistory: [],
@@ -402,4 +416,39 @@ export function saveMasterStore(store: MasterStoreData) {
   } catch (err) {
     console.warn("Storage write notice (in-memory active):", err);
   }
+}
+
+/**
+ * Mengosongkan data transaksi, antrean pesanan KDS, log pemotongan bahan HPP,
+ * dan secara opsional mereset stok seluruh bahan baku ke nol untuk pengujian bersih dari awal.
+ */
+export function resetMasterDatabaseToCleanState(options?: { resetIngredientsToZero?: boolean }): MasterStoreData {
+  const store = loadMasterStore();
+  store.transactions = [];
+  store.tableOrders = [];
+  store.deductionLogs = [];
+  store.shiftHistory = [];
+  store.activeShift = {
+    id: "shift-" + Date.now(),
+    cashier_name: "Kasir Saray Yogyakarta",
+    branch_name: "Saray Coffee & Space (Yogyakarta)",
+    start_time: new Date().toISOString(),
+    initial_cash: 200000,
+    cash_sales: 0,
+    qris_sales: 0,
+    debit_sales: 0,
+    total_sales: 0,
+    transaction_count: 0,
+    expected_cash: 200000,
+    status: "open",
+  };
+
+  if (options?.resetIngredientsToZero) {
+    store.ingredients.forEach((ing) => {
+      ing.stock = 0;
+    });
+  }
+
+  saveMasterStore(store);
+  return store;
 }

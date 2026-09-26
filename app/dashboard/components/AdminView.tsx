@@ -3,11 +3,19 @@
 
 import { useState, useEffect } from "react";
 import { getBranches, BranchItem } from "@/app/actions/branchActions";
-import { getIngredientsAndCOGS, restockIngredient, IngredientItem, DeductionLog } from "@/app/actions/ingredientActions";
+import {
+  getIngredientsAndCOGS,
+  restockIngredient,
+  IngredientItem,
+  DeductionLog,
+  resetDatabaseCleanAction,
+} from "@/app/actions/ingredientActions";
 import BranchManagerModal from "./BranchManagerModal";
 import QRCodeGenerator from "./QRCodeGenerator";
 import AiMenuScannerModal from "./AiMenuScannerModal";
 import HppDetailModal, { HppRecipeData } from "./HppDetailModal";
+import IngredientFormModal from "./IngredientFormModal";
+import RecipeModifierEditorModal from "./RecipeModifierEditorModal";
 import { playLowStockWarningTone } from "@/app/utils/audioUtils";
 
 interface AdminViewProps {
@@ -35,6 +43,13 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
   // Modals state
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isAddBranchModalOpen, setIsAddBranchModalOpen] = useState(false);
+  const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false);
+  const [ingredientToEdit, setIngredientToEdit] = useState<IngredientItem | null>(null);
+  const [selectedRecipeForModifier, setSelectedRecipeForModifier] = useState<any | null>(null);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [resetZeroIngredients, setResetZeroIngredients] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetSuccessToast, setResetSuccessToast] = useState<string | null>(null);
 
   // Dynamic Branches State
   const [branches, setBranches] = useState<BranchItem[]>([
@@ -50,6 +65,27 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
       if (res.recentDeductions) {
         setRecentDeductions(res.recentDeductions);
       }
+    }
+  };
+
+  const handleExecuteResetDatabase = async () => {
+    setIsResetting(true);
+    try {
+      const res = await resetDatabaseCleanAction({ resetIngredientsToZero: resetZeroIngredients });
+      if (res.success) {
+        await loadIngredients();
+        setIsResetConfirmOpen(false);
+        setResetSuccessToast(
+          resetZeroIngredients
+            ? "Database bersih berhasil direset! Seluruh stok bahan baku kini bernilai 0 siap diinput manual."
+            : "Database bersih berhasil direset! Riwayat order & transaksi telah dikosongkan."
+        );
+        setTimeout(() => setResetSuccessToast(null), 4500);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -627,7 +663,7 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
 
           {/* TABEL 1: MASTER INVENTARIS BAHAN BAKU */}
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
               <div>
                 <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0 }}>
                   📦 Master Inventaris Bahan Baku Mentah
@@ -635,6 +671,51 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                 <p style={{ fontSize: "0.78rem", color: "#888", margin: "2px 0 0" }}>
                   Stok otomatis berkurang secara real-time setiap kali menu F&amp;B terjual di kasir atau via QR Meja.
                 </p>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIngredientToEdit(null);
+                    setIsIngredientModalOpen(true);
+                  }}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    background: "#D4651C",
+                    border: "none",
+                    color: "#FFF",
+                    fontSize: "0.82rem",
+                    fontWeight: "800",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span>➕</span> Input Bahan Baku Baru
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsResetConfirmOpen(true)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    background: "rgba(239, 68, 68, 0.15)",
+                    border: "1px solid rgba(239, 68, 68, 0.4)",
+                    color: "#FF6B6B",
+                    fontSize: "0.82rem",
+                    fontWeight: "800",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span>🗑️</span> Reset Database Bersih
+                </button>
               </div>
             </div>
 
@@ -648,7 +729,7 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                     <th style={{ padding: "10px 12px" }}>Min. Stok</th>
                     <th style={{ padding: "10px 12px" }}>Harga Beli / Satuan</th>
                     <th style={{ padding: "10px 12px" }}>Status</th>
-                    <th style={{ padding: "10px 12px", textAlign: "right" }}>Aksi Restok</th>
+                    <th style={{ padding: "10px 12px", textAlign: "right" }}>Aksi Stok</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -677,22 +758,47 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                             {isOut ? "🔴 STOK HABIS" : isLow ? "⚠️ Menipis" : "✅ Aman"}
                           </span>
                         </td>
-                        <td style={{ padding: "12px", textAlign: "right" }}>
-                          <button
-                            onClick={() => handleRestock(ing.id, ing.unit === "pcs" || ing.unit === "porsi" ? 50 : 1000)}
-                            style={{
-                              padding: "5px 10px",
-                              borderRadius: "6px",
-                              background: "rgba(212,101,28,0.15)",
-                              color: "#D4651C",
-                              border: "1px solid rgba(212,101,28,0.3)",
-                              fontSize: "0.75rem",
-                              fontWeight: "700",
-                              cursor: "pointer",
-                            }}
-                          >
-                            + {ing.unit === "pcs" || ing.unit === "porsi" ? "50 " + ing.unit : "1.000 " + ing.unit}
-                          </button>
+                        <td style={{ padding: "12px", textAlign: "right", whiteSpace: "nowrap" }}>
+                          <div style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIngredientToEdit(ing);
+                                setIsIngredientModalOpen(true);
+                              }}
+                              title="Set / Edit Stok Fisik Manual"
+                              style={{
+                                padding: "5px 10px",
+                                borderRadius: "6px",
+                                background: "rgba(255, 255, 255, 0.08)",
+                                color: "#FFF",
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                fontSize: "0.75rem",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <span>✏️</span> Set Stok
+                            </button>
+                            <button
+                              onClick={() => handleRestock(ing.id, ing.unit === "pcs" || ing.unit === "porsi" ? 50 : 1000)}
+                              style={{
+                                padding: "5px 10px",
+                                borderRadius: "6px",
+                                background: "rgba(212,101,28,0.15)",
+                                color: "#D4651C",
+                                border: "1px solid rgba(212,101,28,0.3)",
+                                fontSize: "0.75rem",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                              }}
+                            >
+                              + {ing.unit === "pcs" || ing.unit === "porsi" ? "50 " + ing.unit : "1.000 " + ing.unit}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -752,27 +858,50 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
                           {item.profit_percent}%
                         </span>
                       </td>
-                      <td style={{ padding: "12px", textAlign: "right" }}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedHppRecipe(item)}
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: "8px",
-                            background: "rgba(212,101,28,0.15)",
-                            border: "1px solid rgba(212,101,28,0.35)",
-                            color: "#D4651C",
-                            fontSize: "0.78rem",
-                            fontWeight: "800",
-                            cursor: "pointer",
-                            whiteSpace: "nowrap",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <span>🔍</span> Pop-up HPP
-                        </button>
+                      <td style={{ padding: "12px", textAlign: "right", whiteSpace: "nowrap" }}>
+                        <div style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRecipeForModifier(item)}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              background: "rgba(56, 189, 248, 0.15)",
+                              border: "1px solid rgba(56, 189, 248, 0.35)",
+                              color: "#38BDF8",
+                              fontSize: "0.78rem",
+                              fontWeight: "800",
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <span>⚙️</span> Atur Resep &amp; Modifier
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedHppRecipe(item)}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              background: "rgba(212,101,28,0.15)",
+                              border: "1px solid rgba(212,101,28,0.35)",
+                              color: "#D4651C",
+                              fontSize: "0.78rem",
+                              fontWeight: "800",
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <span>🔍</span> Pop-up HPP
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -809,6 +938,151 @@ export default function AdminView({ initialAnalytics }: AdminViewProps) {
           onClose={() => setSelectedHppRecipe(null)}
           onRestockUpdated={loadIngredients}
         />
+      )}
+
+      {/* MODAL INPUT & EDIT STOK BAHAN BAKU MANUAL */}
+      {isIngredientModalOpen && (
+        <IngredientFormModal
+          ingredientToEdit={ingredientToEdit}
+          onClose={() => {
+            setIsIngredientModalOpen(false);
+            setIngredientToEdit(null);
+          }}
+          onSuccess={loadIngredients}
+        />
+      )}
+
+      {/* MODAL ATUR RESEP & TAKARAN MODIFIER (SUGAR, ICE, SPICY) */}
+      {selectedRecipeForModifier && (
+        <RecipeModifierEditorModal
+          recipe={selectedRecipeForModifier}
+          allIngredients={ingredients}
+          onClose={() => setSelectedRecipeForModifier(null)}
+          onSuccess={loadIngredients}
+        />
+      )}
+
+      {/* DIALOG KONFIRMASI RESET DATABASE BERSIH */}
+      {isResetConfirmOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.85)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              background: "#181818",
+              border: "1px solid rgba(239, 68, 68, 0.4)",
+              borderRadius: "18px",
+              maxWidth: "480px",
+              width: "100%",
+              padding: "24px",
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.9)",
+              color: "#FFF",
+              fontFamily: "system-ui, sans-serif",
+            }}
+          >
+            <div style={{ fontSize: "2rem", marginBottom: "8px" }}>⚠️</div>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: "900", margin: "0 0 8px", color: "#FF6B6B" }}>
+              Konfirmasi Reset Database Bersih
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "#BBB", lineHeight: 1.5, margin: "0 0 16px" }}>
+              Tindakan ini akan mengosongkan seluruh riwayat pesanan (transactions), antrean dapur (KDS), dan log pemotongan bahan baku (#INV) ke kondisi bersih (kosongan).
+            </p>
+
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                background: "rgba(255, 255, 255, 0.05)",
+                padding: "12px",
+                borderRadius: "10px",
+                marginBottom: "20px",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={resetZeroIngredients}
+                onChange={(e) => setResetZeroIngredients(e.target.checked)}
+                style={{ width: "18px", height: "18px", accentColor: "#D4651C" }}
+              />
+              <span style={{ fontSize: "0.82rem", color: "#EEE", fontWeight: "600" }}>
+                Kosongkan juga seluruh stok fisik bahan baku menjadi 0 (untuk input stok fisik manual dari nol)
+              </span>
+            </label>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setIsResetConfirmOpen(false)}
+                disabled={isResetting}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "8px",
+                  background: "rgba(255, 255, 255, 0.08)",
+                  border: "none",
+                  color: "#FFF",
+                  fontSize: "0.82rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteResetDatabase}
+                disabled={isResetting}
+                style={{
+                  padding: "9px 20px",
+                  borderRadius: "8px",
+                  background: "#EF4444",
+                  border: "none",
+                  color: "#FFF",
+                  fontSize: "0.85rem",
+                  fontWeight: "800",
+                  cursor: isResetting ? "not-allowed" : "pointer",
+                }}
+              >
+                {isResetting ? "Mereset..." : "Ya, Kosongkan Sekarang"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFIKASI SUKSES RESET */}
+      {resetSuccessToast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            background: "rgba(74, 222, 128, 0.95)",
+            color: "#064E3B",
+            padding: "14px 20px",
+            borderRadius: "12px",
+            fontWeight: "800",
+            fontSize: "0.85rem",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
+            zIndex: 10001,
+          }}
+        >
+          ✓ {resetSuccessToast}
+        </div>
       )}
 
     </div>

@@ -674,93 +674,22 @@
       ]
     }
   ],
-  "deductionLogs": [
-    {
-      "id": "deduct-init-inv684796",
-      "timestamp": "Baru saja",
-      "invoice_number": "INV-684796",
-      "product_name": "50x Nasi Goreng Saray Special",
-      "quantity": 50,
-      "deductions": [
-        {
-          "ingredient_name": "Beras Wangi Organik (Nasi Matang)",
-          "amount": 50,
-          "unit": "porsi",
-          "remaining": 0,
-          "is_low_stock": true
-        },
-        {
-          "ingredient_name": "Telur Ayam Negeri Fresh",
-          "amount": 50,
-          "unit": "pcs",
-          "remaining": 10,
-          "is_low_stock": true
-        },
-        {
-          "ingredient_name": "Daging Ayam Fillet Marinasi",
-          "amount": 2500,
-          "unit": "gram",
-          "remaining": 700,
-          "is_low_stock": true
-        },
-        {
-          "ingredient_name": "Minyak Goreng Sawit",
-          "amount": 500,
-          "unit": "ml",
-          "remaining": 4500,
-          "is_low_stock": false
-        },
-        {
-          "ingredient_name": "Bumbu Rempah Nasi Goreng Saray",
-          "amount": 750,
-          "unit": "gram",
-          "remaining": 1250,
-          "is_low_stock": false
-        },
-        {
-          "ingredient_name": "Kecap Manis & Saus Gurih",
-          "amount": 500,
-          "unit": "ml",
-          "remaining": 2000,
-          "is_low_stock": false
-        }
-      ]
-    }
-  ],
+  "deductionLogs": [],
   "tableOrders": [],
   "activeShift": {
     "id": "shift-01",
     "cashier_name": "Kasir Saray Yogyakarta",
     "branch_name": "Saray Coffee & Space (Yogyakarta)",
-    "start_time": "2026-09-26T10:28:56.155Z",
+    "start_time": "2026-09-26T14:38:00.000Z",
     "initial_cash": 200000,
-    "cash_sales": 320000,
-    "qris_sales": 450000,
+    "cash_sales": 0,
+    "qris_sales": 0,
     "debit_sales": 0,
-    "total_sales": 770000,
-    "transaction_count": 14,
-    "expected_cash": 520000,
+    "total_sales": 0,
+    "transaction_count": 0,
+    "expected_cash": 200000,
     "status": "open"
   },
-  "shiftHistory": [
-    {
-      "id": "shift-01",
-      "cashier_name": "Kasir Saray Yogyakarta",
-      "branch_name": "Saray Coffee & Space (Yogyakarta)",
-      "start_time": "2026-09-26T10:15:57.890Z",
-      "initial_cash": 200000,
-      "cash_sales": 320000,
-      "qris_sales": 450000,
-      "debit_sales": 0,
-      "total_sales": 770000,
-      "transaction_count": 14,
-      "expected_cash": 520000,
-      "status": "closed",
-      "end_time": "2026-09-26T13:26:32.475Z",
-      "actual_cash": 520000,
-      "discrepancy": 0,
-      "notes": ""
-    }
-  ],
+  "shiftHistory": [],
   "transactions": []
 }
