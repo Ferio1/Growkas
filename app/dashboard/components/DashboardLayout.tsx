@@ -77,10 +77,10 @@ export default function DashboardLayout({
 
   const userName = currentUser?.name
     || userSession?.user?.name
-    || (activeRole === "kasir" ? "Kasir Saray Yogyakarta" : "Admin Manager Saray");
+    || (activeRole === "kasir" ? "Kasir 7co Yogyakarta" : "Admin Manager 7co");
   const userEmail = currentUser?.email
     || userSession?.user?.email
-    || (activeRole === "kasir" ? "kasir@growkas.com" : "admin@growkas.com");
+    || (activeRole === "kasir" ? "kasir@7co.com" : "admin@7co.com");
 
   return (
     <div className="growkas-layout-wrapper" style={{ display: "flex", height: "100vh", maxHeight: "100vh", overflow: "hidden", background: "#0A0A0A", color: "#F5F0E8", fontFamily: "system-ui, sans-serif" }}>
@@ -231,7 +231,7 @@ export default function DashboardLayout({
                 cursor: "pointer",
               }}
             >
-              {activeRole === "admin" && (
+              {activeRole === "admin" && branches && branches.length > 1 && (
                 <option value="all" style={{ background: "#161616" }}>
                   🌐 Semua Outlet (Konsolidasi Multi-Cabang)
                 </option>
@@ -243,8 +243,8 @@ export default function DashboardLayout({
                   </option>
                 ))
               ) : (
-                <option value="br-1" style={{ background: "#161616" }}>
-                  📍 Saray Coffee &amp; Space (Yogyakarta)
+                <option value="br-5" style={{ background: "#161616" }}>
+                  📍 7co (Yogyakarta)
                 </option>
               )}
             </select>

@@ -367,7 +367,7 @@ export default function AdminView({
                 >
                   🏪 {b.name} ({b.city})
                 </button>
-                {b.id !== "br-1" && (
+                {branches.length > 1 && b.id !== "br-5" && (
                   <button
                     type="button"
                     title={`Hapus cabang ${b.name}`}
@@ -396,7 +396,7 @@ export default function AdminView({
             ))}
 
             {/* Tombol Hapus Cepat Cabang Aktif Terpilih */}
-            {currentBranchFilter !== "all" && currentBranchFilter !== "br-1" && (
+            {branches.length > 1 && currentBranchFilter !== "all" && currentBranchFilter !== "br-5" && (
               (() => {
                 const curB = branches.find((b) => b.id === currentBranchFilter);
                 if (!curB) return null;
@@ -541,7 +541,7 @@ export default function AdminView({
                               ({b.count} transaksi)
                             </span>
                           </div>
-                          {matchedBranch && matchedBranch.id !== "br-1" && (
+                          {matchedBranch && branches.length > 1 && matchedBranch.id !== "br-5" && (
                             <button
                               type="button"
                               title={`Hapus cabang ${matchedBranch.name}`}

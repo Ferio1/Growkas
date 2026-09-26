@@ -24,12 +24,13 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [role, setRole] = useState<"kasir" | "admin">(userRole);
   const [branches, setBranches] = useState<BranchItem[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("br-5");
 
   const loadBranches = async () => {
     const res = await getBranches();
     if (res.branches && res.branches.length > 0) {
       setBranches(res.branches);
+      setSelectedBranchId(res.branches[0].id);
     }
   };
 
@@ -41,7 +42,7 @@ export default function DashboardClient({
   const activeBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
   const activeBranchName = activeBranch
     ? `${activeBranch.name} (${activeBranch.city})`
-    : "Saray Coffee & Space (Yogyakarta)";
+    : "7co (Yogyakarta)";
 
   return (
     <DashboardLayout
@@ -58,7 +59,7 @@ export default function DashboardClient({
           initialCategories={initialCategories}
           userSession={userSession}
           activeBranchName={activeBranchName}
-          activeBranchId={activeBranch?.id || "br-1"}
+          activeBranchId={activeBranch?.id || "br-5"}
         />
       ) : (
         <AdminView

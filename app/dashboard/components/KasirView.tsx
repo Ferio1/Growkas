@@ -23,8 +23,8 @@ interface KasirViewProps {
 export default function KasirView({
   initialProducts,
   userSession,
-  activeBranchName = "Saray Coffee & Space (Yogyakarta)",
-  activeBranchId,
+  activeBranchName = "7co (Yogyakarta)",
+  activeBranchId = "br-5",
 }: KasirViewProps) {
   const [products, setProducts] = useState<ProductItem[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
