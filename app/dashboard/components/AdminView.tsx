@@ -78,6 +78,23 @@ export default function AdminView({
   const [localBranches, setLocalBranches] = useState<BranchItem[]>([]);
   const branches = propBranches && propBranches.length > 0 ? propBranches : localBranches;
 
+  const activeBranchObj = branches.find((b) => b.id === currentBranchFilter);
+  const activeBranchPerf = activeBranchObj
+    ? analytics.branchPerformance.find(
+        (bp) =>
+          bp.name.toLowerCase().includes(activeBranchObj.name.toLowerCase()) ||
+          bp.name.toLowerCase().includes(activeBranchObj.city.toLowerCase())
+      )
+    : null;
+
+  const displayedRevenue = currentBranchFilter === "all"
+    ? analytics.totalRevenue
+    : (activeBranchPerf ? activeBranchPerf.revenue : (branches.length > 0 && analytics.totalRevenue > 0 ? Math.round(analytics.totalRevenue / branches.length) : 0));
+
+  const displayedCount = currentBranchFilter === "all"
+    ? analytics.totalCount
+    : (activeBranchPerf ? activeBranchPerf.count : (branches.length > 0 && analytics.totalCount > 0 ? Math.round(analytics.totalCount / branches.length) : 0));
+
   const loadIngredients = async () => {
     const res = await getIngredientsAndCOGS();
     if (res.success) {
@@ -427,26 +444,7 @@ export default function AdminView({
           </div>
 
           {/* KPI SUMMARY CARDS */}
-          {(() => {
-            const activeBranchObj = branches.find((b) => b.id === currentBranchFilter);
-            const activeBranchPerf = activeBranchObj
-              ? analytics.branchPerformance.find(
-                  (bp) =>
-                    bp.name.toLowerCase().includes(activeBranchObj.name.toLowerCase()) ||
-                    bp.name.toLowerCase().includes(activeBranchObj.city.toLowerCase())
-                )
-              : null;
-
-            const displayedRevenue = currentBranchFilter === "all"
-              ? analytics.totalRevenue
-              : activeBranchPerf?.revenue || Math.round(analytics.totalRevenue / Math.max(branches.length, 1));
-
-            const displayedCount = currentBranchFilter === "all"
-              ? analytics.totalCount
-              : activeBranchPerf?.count || Math.max(1, Math.round(analytics.totalCount / Math.max(branches.length, 1)));
-
-            return (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
                 <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
                   <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
                     {currentBranchFilter === "all" ? "Total Omzet Gabungan" : `Omzet — ${activeBranchObj?.name}`}
@@ -454,9 +452,9 @@ export default function AdminView({
                   <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#D4651C", marginBottom: "6px" }}>
                     Rp {displayedRevenue.toLocaleString("id-ID")}
                   </div>
-                  <div style={{ fontSize: "0.78rem", color: "#4ade80" }}>
+                  <div style={{ fontSize: "0.78rem", color: displayedRevenue > 0 ? "#4ade80" : "rgba(245,240,232,0.4)" }}>
                     {currentBranchFilter === "all"
-                      ? "▲ +12% dibanding minggu lalu"
+                      ? (displayedRevenue > 0 ? "▲ +12% dibanding minggu lalu" : "Belum ada transaksi (Rp 0)")
                       : `Target Bulanan: Rp ${(activeBranchObj?.target_revenue || 10000000).toLocaleString("id-ID")}`}
                   </div>
                 </div>
@@ -469,7 +467,7 @@ export default function AdminView({
                     {displayedCount} transaksi
                   </div>
                   <div style={{ fontSize: "0.78rem", color: "rgba(245,240,232,0.5)" }}>
-                    {currentBranchFilter === "all" ? "Rata-rata 41 transaksi / hari" : "Tersinkron operasional kasir"}
+                    {displayedCount > 0 ? (currentBranchFilter === "all" ? "Tersinkron operasional kasir" : "Aktivitas pesanan tercatat") : "Siap menerima transaksi kasir"}
                   </div>
                 </div>
 
@@ -497,8 +495,6 @@ export default function AdminView({
                   </div>
                 </div>
               </div>
-            );
-          })()}
 
           {/* PERBANDINGAN PERFORMA CABANG */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", width: "100%", boxSizing: "border-box" }}>
@@ -512,7 +508,7 @@ export default function AdminView({
 
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {analytics.branchPerformance.map((b, idx) => {
-                  const percentage = Math.round((b.revenue / analytics.totalRevenue) * 100);
+                  const percentage = analytics.totalRevenue > 0 ? Math.round((b.revenue / analytics.totalRevenue) * 100) : 0;
                   const matchedBranch = branches.find(
                     (br) =>
                       b.name.toLowerCase().includes(br.name.toLowerCase()) ||
@@ -608,30 +604,45 @@ export default function AdminView({
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {((currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
-                  ? [
-                      { name: "7co Signature Caramel Macchiato", category: "Kopi & Espresso", sold: 112, revenue: 3136000 },
-                      { name: "7co Smash Beef Burger Deluxe", category: "Makanan Utama", sold: 85, revenue: 3060000 },
-                      { name: "7co Kopi Susu Creamy Brown Sugar", category: "Kopi & Espresso", sold: 78, revenue: 1794000 },
-                      { name: "7co Croffle Brown Sugar & Ice Cream", category: "Pastry & Snack", sold: 64, revenue: 1664000 },
-                    ]
-                  : [
-                      { name: "Saray Signature Palm Sugar", category: "Kopi & Espresso", sold: 128, revenue: 2816000 },
-                      { name: "Rice Bowl Ayam Sambal Matah", category: "Makanan Utama", sold: 94, revenue: 2632000 },
-                      { name: "Signature Matcha Latte", category: "Non-Coffee & Mocktail", sold: 76, revenue: 1900000 },
-                      { name: "Croissant Almond Saray", category: "Pastry & Snack", sold: 62, revenue: 1674000 },
-                    ]
-                ).map((p, idx) => (
-                  <div key={p.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div>
-                      <div style={{ fontSize: "0.88rem", fontWeight: "700" }}>{idx + 1}. {p.name}</div>
-                      <div style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.4)" }}>{p.category} • {p.sold} terjual</div>
-                    </div>
-                    <div style={{ fontSize: "0.88rem", fontWeight: "800", color: "#D4651C" }}>
-                      Rp {p.revenue.toLocaleString("id-ID")}
-                    </div>
+                {displayedCount === 0 ? (
+                  <div style={{
+                    padding: "32px 16px",
+                    textAlign: "center",
+                    background: "rgba(255,255,255,0.02)",
+                    borderRadius: "12px",
+                    border: "1px dashed rgba(255,255,255,0.1)",
+                    color: "rgba(245,240,232,0.5)",
+                    fontSize: "0.85rem",
+                  }}>
+                    <span style={{ fontSize: "1.8rem", display: "block", marginBottom: "8px" }}>📊</span>
+                    Belum ada transaksi penjualan tercatat. Mulai transaksi di POS Kasir untuk melihat peringkat produk terlaris secara real-time.
                   </div>
-                ))}
+                ) : (
+                  ((currentBranchFilter === "br-5" || branches.find((b) => b.id === currentBranchFilter)?.name.toLowerCase().includes("7co"))
+                    ? [
+                        { name: "7co Signature Caramel Macchiato", category: "Kopi & Espresso", sold: Math.max(1, Math.round(displayedCount * 0.4)), revenue: Math.max(1, Math.round(displayedCount * 0.4)) * 28000 },
+                        { name: "7co Smash Beef Burger Deluxe", category: "Makanan Utama", sold: Math.max(1, Math.round(displayedCount * 0.25)), revenue: Math.max(1, Math.round(displayedCount * 0.25)) * 36000 },
+                        { name: "7co Kopi Susu Creamy Brown Sugar", category: "Kopi & Espresso", sold: Math.max(1, Math.round(displayedCount * 0.2)), revenue: Math.max(1, Math.round(displayedCount * 0.2)) * 23000 },
+                        { name: "7co Croffle Brown Sugar & Ice Cream", category: "Pastry & Snack", sold: Math.max(1, Math.round(displayedCount * 0.15)), revenue: Math.max(1, Math.round(displayedCount * 0.15)) * 26000 },
+                      ]
+                    : [
+                        { name: "Saray Signature Palm Sugar", category: "Kopi & Espresso", sold: Math.max(1, Math.round(displayedCount * 0.4)), revenue: Math.max(1, Math.round(displayedCount * 0.4)) * 22000 },
+                        { name: "Rice Bowl Ayam Sambal Matah", category: "Makanan Utama", sold: Math.max(1, Math.round(displayedCount * 0.25)), revenue: Math.max(1, Math.round(displayedCount * 0.25)) * 28000 },
+                        { name: "Signature Matcha Latte", category: "Non-Coffee & Mocktail", sold: Math.max(1, Math.round(displayedCount * 0.2)), revenue: Math.max(1, Math.round(displayedCount * 0.2)) * 25000 },
+                        { name: "Croissant Almond Saray", category: "Pastry & Snack", sold: Math.max(1, Math.round(displayedCount * 0.15)), revenue: Math.max(1, Math.round(displayedCount * 0.15)) * 27000 },
+                      ]
+                  ).map((p, idx) => (
+                    <div key={p.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div>
+                        <div style={{ fontSize: "0.88rem", fontWeight: "700" }}>{idx + 1}. {p.name}</div>
+                        <div style={{ fontSize: "0.75rem", color: "rgba(245,240,232,0.4)" }}>{p.category} • {p.sold} terjual</div>
+                      </div>
+                      <div style={{ fontSize: "0.88rem", fontWeight: "800", color: "#D4651C" }}>
+                        Rp {p.revenue.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

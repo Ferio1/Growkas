@@ -18,7 +18,7 @@ export async function getActiveShift(): Promise<{ success: boolean; shift: Cashi
 export async function openShift(
   cashierName: string,
   initialCash: number,
-  branchName = "Saray Coffee & Space (Yogyakarta)"
+  branchName = "7co (Yogyakarta)"
 ): Promise<{ success: boolean; shift: CashierShift }> {
   const store = loadMasterStore();
   const newShift: CashierShift = {
@@ -53,15 +53,15 @@ export async function recordSaleToActiveShift(
     store.activeShift = {
       id: "shift-" + Date.now(),
       cashier_name: "Kasir Bertugas",
-      branch_name: "Saray Coffee & Space (Yogyakarta)",
+      branch_name: "7co (Yogyakarta)",
       start_time: new Date().toISOString(),
-      initial_cash: 200000,
+      initial_cash: 0,
       cash_sales: 0,
       qris_sales: 0,
       debit_sales: 0,
       total_sales: 0,
       transaction_count: 0,
-      expected_cash: 200000,
+      expected_cash: 0,
       status: "open",
     };
   }

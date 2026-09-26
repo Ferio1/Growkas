@@ -225,28 +225,30 @@ export async function getDashboardAnalytics() {
       totalRevenue = store.transactions.reduce((acc: number, t: any) => acc + Number(t.total_amount || 0), 0);
       totalCount = store.transactions.length;
     } else {
-      totalRevenue = 5930000;
-      totalCount = 176;
+      totalRevenue = 0;
+      totalCount = 0;
     }
   } catch {
     if (store.transactions && store.transactions.length > 0) {
       totalRevenue = store.transactions.reduce((acc: number, t: any) => acc + Number(t.total_amount || 0), 0);
       totalCount = store.transactions.length;
     } else {
-      totalRevenue = 5930000;
-      totalCount = 176;
+      totalRevenue = 0;
+      totalCount = 0;
     }
   }
 
   const branches = getStoreBranches();
   const weights = [0.35, 0.25, 0.20, 0.12, 0.08];
   const branchPerformance = branches.map((b, idx) => {
-    const weight = weights[idx] !== undefined ? weights[idx] : 1 / Math.max(branches.length, 1);
+    const weight = branches.length === 1 ? 1 : (weights[idx] !== undefined ? weights[idx] : 1 / Math.max(branches.length, 1));
+    const count = totalCount > 0 ? Math.round(totalCount * weight) : 0;
+    const rev = totalRevenue > 0 ? Math.round(totalRevenue * weight) : 0;
     return {
       name: `${b.name} (${b.city})`,
-      revenue: Math.round(totalRevenue * weight),
-      count: Math.max(1, Math.round(totalCount * weight)),
-      growth: idx === 0 ? "+18%" : idx === 1 ? "+14%" : idx === 2 ? "+8%" : "+5%",
+      revenue: rev,
+      count: count,
+      growth: totalRevenue > 0 ? (idx === 0 ? "+18%" : idx === 1 ? "+14%" : idx === 2 ? "+8%" : "+5%") : "0%",
     };
   });
 

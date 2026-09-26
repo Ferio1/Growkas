@@ -21,7 +21,7 @@ export default function ShiftManagerModal({
   const isShiftActive = currentShift && currentShift.status === "open";
 
   // State Buka Shift
-  const [initialCashInput, setInitialCashInput] = useState<string>("200000");
+  const [initialCashInput, setInitialCashInput] = useState<string>("0");
 
   // State Tutup Shift
   const [actualCashInput, setActualCashInput] = useState<string>(
@@ -392,6 +392,28 @@ export default function ShiftManagerModal({
                     boxSizing: "border-box",
                   }}
                 />
+                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                  {[0, 100000, 200000, 500000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setInitialCashInput(amt.toString())}
+                      style={{
+                        flex: 1,
+                        padding: "6px 4px",
+                        borderRadius: "6px",
+                        background: Number(initialCashInput) === amt ? "rgba(212,101,28,0.25)" : "rgba(255,255,255,0.06)",
+                        border: "1px solid " + (Number(initialCashInput) === amt ? "#D4651C" : "rgba(255,255,255,0.12)"),
+                        color: Number(initialCashInput) === amt ? "#D4651C" : "rgba(245,240,232,0.8)",
+                        fontSize: "0.75rem",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {amt === 0 ? "Rp 0" : `Rp ${(amt / 1000).toLocaleString("id-ID")}k`}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button

@@ -191,24 +191,24 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
 ];
 
 export const INITIAL_INGREDIENTS: IngredientItem[] = [
-  { id: "ing-1", name: "Biji Kopi Arabica Kaliurang", unit: "gram", stock: 4500, min_stock: 1000, cost_per_unit: 200, category: "kopi" },
-  { id: "ing-2", name: "Fresh Milk UHT Full Cream", unit: "ml", stock: 12000, min_stock: 3000, cost_per_unit: 20, category: "susu_dairy" },
-  { id: "ing-3", name: "Gula Aren Cair Organik", unit: "ml", stock: 3500, min_stock: 800, cost_per_unit: 35, category: "sirup_gula" },
-  { id: "ing-4", name: "Sirup Karamel Monin", unit: "ml", stock: 2200, min_stock: 500, cost_per_unit: 60, category: "sirup_gula" },
-  { id: "ing-5", name: "Bubuk Matcha Kyoto Premium", unit: "gram", stock: 1500, min_stock: 300, cost_per_unit: 300, category: "kopi" },
-  { id: "ing-6", name: "Bubuk Cokelat Artisanal", unit: "gram", stock: 2000, min_stock: 500, cost_per_unit: 250, category: "kopi" },
-  { id: "ing-7", name: "Cup Dingin 16oz + Strawless Lid", unit: "pcs", stock: 420, min_stock: 100, cost_per_unit: 650, category: "kemasan" },
-  { id: "ing-8", name: "Cup Panas 8oz + Paper Lid", unit: "pcs", stock: 250, min_stock: 50, cost_per_unit: 750, category: "kemasan" },
-  { id: "ing-9", name: "Daging Ayam Fillet Marinasi", unit: "gram", stock: 3200, min_stock: 800, cost_per_unit: 65, category: "makanan" },
-  { id: "ing-10", name: "Daging Sapi Slice Shortplate", unit: "gram", stock: 2400, min_stock: 600, cost_per_unit: 130, category: "makanan" },
-  { id: "ing-11", name: "Beras Wangi Organik (Nasi Matang)", unit: "porsi", stock: 45, min_stock: 15, cost_per_unit: 2500, category: "makanan" },
-  { id: "ing-12", name: "Telur Ayam Negeri Fresh", unit: "pcs", stock: 60, min_stock: 20, cost_per_unit: 2000, category: "makanan" },
-  { id: "ing-13", name: "Minyak Goreng Sawit", unit: "ml", stock: 5000, min_stock: 1000, cost_per_unit: 18, category: "makanan" },
-  { id: "ing-14", name: "Bumbu Rempah Nasi Goreng Saray", unit: "gram", stock: 2000, min_stock: 500, cost_per_unit: 40, category: "makanan" },
-  { id: "ing-15", name: "Kecap Manis & Saus Gurih", unit: "ml", stock: 2500, min_stock: 500, cost_per_unit: 25, category: "makanan" },
-  { id: "ing-16", name: "Kentang Beku Shoestring Cut", unit: "gram", stock: 5000, min_stock: 1000, cost_per_unit: 45, category: "makanan" },
-  { id: "ing-17", name: "Pasta Spaghetti Kering", unit: "gram", stock: 3000, min_stock: 500, cost_per_unit: 35, category: "makanan" },
-  { id: "ing-18", name: "Es Batu Kristal Tube", unit: "gram", stock: 15000, min_stock: 3000, cost_per_unit: 4, category: "kemasan" },
+  { id: "ing-1", name: "Biji Kopi Arabica Kaliurang", unit: "gram", stock: 0, min_stock: 1000, cost_per_unit: 200, category: "kopi" },
+  { id: "ing-2", name: "Fresh Milk UHT Full Cream", unit: "ml", stock: 0, min_stock: 3000, cost_per_unit: 20, category: "susu_dairy" },
+  { id: "ing-3", name: "Gula Aren Cair Organik", unit: "ml", stock: 0, min_stock: 800, cost_per_unit: 35, category: "sirup_gula" },
+  { id: "ing-4", name: "Sirup Karamel Monin", unit: "ml", stock: 0, min_stock: 500, cost_per_unit: 60, category: "sirup_gula" },
+  { id: "ing-5", name: "Bubuk Matcha Kyoto Premium", unit: "gram", stock: 0, min_stock: 300, cost_per_unit: 300, category: "kopi" },
+  { id: "ing-6", name: "Bubuk Cokelat Artisanal", unit: "gram", stock: 0, min_stock: 500, cost_per_unit: 250, category: "kopi" },
+  { id: "ing-7", name: "Cup Dingin 16oz + Strawless Lid", unit: "pcs", stock: 0, min_stock: 100, cost_per_unit: 650, category: "kemasan" },
+  { id: "ing-8", name: "Cup Panas 8oz + Paper Lid", unit: "pcs", stock: 0, min_stock: 50, cost_per_unit: 750, category: "kemasan" },
+  { id: "ing-9", name: "Daging Ayam Fillet Marinasi", unit: "gram", stock: 0, min_stock: 800, cost_per_unit: 65, category: "makanan" },
+  { id: "ing-10", name: "Daging Sapi Slice Shortplate", unit: "gram", stock: 0, min_stock: 600, cost_per_unit: 130, category: "makanan" },
+  { id: "ing-11", name: "Beras Wangi Organik (Nasi Matang)", unit: "porsi", stock: 0, min_stock: 15, cost_per_unit: 2500, category: "makanan" },
+  { id: "ing-12", name: "Telur Ayam Negeri Fresh", unit: "pcs", stock: 0, min_stock: 20, cost_per_unit: 2000, category: "makanan" },
+  { id: "ing-13", name: "Minyak Goreng Sawit", unit: "ml", stock: 0, min_stock: 1000, cost_per_unit: 18, category: "makanan" },
+  { id: "ing-14", name: "Bumbu Rempah Nasi Goreng Saray", unit: "gram", stock: 0, min_stock: 500, cost_per_unit: 40, category: "makanan" },
+  { id: "ing-15", name: "Kecap Manis & Saus Gurih", unit: "ml", stock: 0, min_stock: 500, cost_per_unit: 25, category: "makanan" },
+  { id: "ing-16", name: "Kentang Beku Shoestring Cut", unit: "gram", stock: 0, min_stock: 1000, cost_per_unit: 45, category: "makanan" },
+  { id: "ing-17", name: "Pasta Spaghetti Kering", unit: "gram", stock: 0, min_stock: 500, cost_per_unit: 35, category: "makanan" },
+  { id: "ing-18", name: "Es Batu Kristal Tube", unit: "gram", stock: 0, min_stock: 3000, cost_per_unit: 4, category: "kemasan" },
 ];
 
 export const INITIAL_RECIPES: ProductRecipe[] = [
@@ -417,20 +417,7 @@ export function loadMasterStore(): MasterStoreData {
     recipes: INITIAL_RECIPES,
     deductionLogs: [],
     tableOrders: [],
-    activeShift: {
-      id: "shift-01",
-      cashier_name: "Kasir 7co Yogyakarta",
-      branch_name: "7co (Yogyakarta)",
-      start_time: new Date().toISOString(),
-      initial_cash: 200000,
-      cash_sales: 0,
-      qris_sales: 0,
-      debit_sales: 0,
-      total_sales: 0,
-      transaction_count: 0,
-      expected_cash: 200000,
-      status: "open",
-    },
+    activeShift: null,
     shiftHistory: [],
     transactions: [],
     branches: INITIAL_BRANCHES,
@@ -539,26 +526,11 @@ export function resetMasterDatabaseToCleanState(options?: { resetIngredientsToZe
   store.tableOrders = [];
   store.deductionLogs = [];
   store.shiftHistory = [];
-  store.activeShift = {
-    id: "shift-" + Date.now(),
-    cashier_name: "Kasir 7co Yogyakarta",
-    branch_name: "7co (Yogyakarta)",
-    start_time: new Date().toISOString(),
-    initial_cash: 200000,
-    cash_sales: 0,
-    qris_sales: 0,
-    debit_sales: 0,
-    total_sales: 0,
-    transaction_count: 0,
-    expected_cash: 200000,
-    status: "open",
-  };
+  store.activeShift = null;
 
-  if (options?.resetIngredientsToZero) {
-    store.ingredients.forEach((ing) => {
-      ing.stock = 0;
-    });
-  }
+  store.ingredients.forEach((ing) => {
+    ing.stock = 0;
+  });
 
   saveMasterStore(store);
   return store;

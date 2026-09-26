@@ -53,11 +53,12 @@ export default function KasirView({
   // Shift Kasir State
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [activeShift, setActiveShift] = useState<CashierShift | null>(null);
+  const isShiftActive = Boolean(activeShift && activeShift.status === "open");
 
   useEffect(() => {
     async function initShiftAndOrders() {
       const shiftRes = await getActiveShift();
-      if (shiftRes.shift) setActiveShift(shiftRes.shift);
+      setActiveShift(shiftRes.shift || null);
 
       const ordRes = await getTableOrders();
       if (ordRes.orders) {
@@ -558,9 +559,9 @@ export default function KasirView({
             style={{
               padding: "8px 14px",
               borderRadius: "10px",
-              background: activeShift ? "rgba(74,222,128,0.12)" : "rgba(245,158,11,0.12)",
-              border: "1px solid " + (activeShift ? "rgba(74,222,128,0.4)" : "rgba(245,158,11,0.4)"),
-              color: activeShift ? "#4ADE80" : "#F59E0B",
+              background: isShiftActive ? "rgba(74,222,128,0.12)" : "rgba(245,158,11,0.12)",
+              border: "1px solid " + (isShiftActive ? "rgba(74,222,128,0.4)" : "rgba(245,158,11,0.4)"),
+              color: isShiftActive ? "#4ADE80" : "#F59E0B",
               fontSize: "0.82rem",
               fontWeight: "800",
               cursor: "pointer",
@@ -573,11 +574,11 @@ export default function KasirView({
               width: "8px",
               height: "8px",
               borderRadius: "50%",
-              background: activeShift ? "#4ADE80" : "#F59E0B",
+              background: isShiftActive ? "#4ADE80" : "#F59E0B",
               display: "inline-block",
             }} />
             <span>
-              {activeShift
+              {isShiftActive && activeShift
                 ? `Shift Aktif (${activeShift.cashier_name} • Kas: Rp ${activeShift.expected_cash.toLocaleString("id-ID")})`
                 : "Buka Shift Kasir"}
             </span>
@@ -1375,7 +1376,7 @@ export default function KasirView({
       {isShiftModalOpen && (
         <ShiftManagerModal
           currentShift={activeShift}
-          cashierName={userSession?.user?.name || "Kasir Saray"}
+          cashierName={userSession?.user?.name || "Kasir 7co Yogyakarta"}
           onShiftUpdated={setActiveShift}
           onClose={() => setIsShiftModalOpen(false)}
         />
