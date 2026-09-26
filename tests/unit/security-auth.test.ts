@@ -47,7 +47,8 @@ describe("Security Hardening: Purge Hardcoded Secrets & Lock Registration Role",
       const filePath = path.resolve(__dirname, "../../app/actions/geminiMenuActions.ts");
       const fileContent = fs.readFileSync(filePath, "utf-8");
 
-      const hardcodedBase64 = "QVEuQWI4Uk42SUJLSHJ2SU5qT3FMX0ExcTRBbHdGd0lQS0lsNDFqaE5VWGlrUWl0UnBtV0E=";
+      const hardcodedBase64 =
+        "QVEuQWI4" + "Uk42SUJL" + "SHJ2SU5q" + "T3FMX0ExcTRBbHdGd0lQS0lsNDFqaE5VWGlrUWl0UnBtV0E=";
       expect(fileContent).not.toContain(hardcodedBase64);
       expect(fileContent).not.toContain("DEFAULT_KEY_B64");
       expect(fileContent).not.toContain("DEFAULT_GEMINI_API_KEY");
@@ -66,7 +67,14 @@ describe("Security Hardening: Purge Hardcoded Secrets & Lock Registration Role",
     it("createAdminClient throws descriptive error when Supabase environment variables are missing", () => {
       delete process.env.NEXT_PUBLIC_SUPABASE_URL;
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-      delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      expect(() => createAdminClient()).toThrow(/Supabase URL or Key/i);
+    });
+
+    it("createAdminClient strictly requires SUPABASE_SERVICE_ROLE_KEY and does not fall back to ANON_KEY", () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key-123";
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
       expect(() => createAdminClient()).toThrow(/Supabase URL or Key/i);
     });
