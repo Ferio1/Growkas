@@ -1,14 +1,17 @@
 -- ============================================================
--- SCHEMA DATABASE UTAMA GROWKAS (Supabase PostgreSQL)
--- Copy dan jalankan skrip ini di SQL Editor di Dashboard Supabase:
--- https://supabase.com/dashboard/project/pijpptetccvgmwyjvsse/sql
+-- GROWKAS PRODUCTION HARDENING MIGRATION
+-- Migration Date: 2026-09-27
+-- Description:
+--   1. Create relational tables: branches, ingredients, recipes,
+--      recipe_ingredients, cashier_shifts, table_orders, table_order_items
+--   2. Implement atomic stock decrement RPC procedure (row-locking)
+--   3. Drop permissive RLS policies and apply hardened, strict RLS
+--   4. Create performance indexes for foreign keys, statuses, and dates
 -- ============================================================
 
 -- ------------------------------------------------------------
--- 0. EKSTENSI & HELPER FUNCTIONS
+-- 1. HELPER FUNCTIONS FOR ROLE-BASED ACCESS CONTROL (RLS)
 -- ------------------------------------------------------------
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -25,28 +28,10 @@ $$;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, anon;
 
 -- ------------------------------------------------------------
--- 1. PROFIL PENGGUNA (PROFILES)
+-- 2. RELATIONAL TABLES CREATION
 -- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    email TEXT NOT NULL,
-    full_name TEXT,
-    role TEXT DEFAULT 'kasir',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
 
--- ------------------------------------------------------------
--- 2. KATEGORI PRODUK (CATEGORIES)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- ------------------------------------------------------------
--- 3. CABANG OUTLET (BRANCHES)
--- ------------------------------------------------------------
+-- Cabang (Branches)
 CREATE TABLE IF NOT EXISTS public.branches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -56,25 +41,7 @@ CREATE TABLE IF NOT EXISTS public.branches (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- ------------------------------------------------------------
--- 4. PRODUK (PRODUCTS)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.products (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
-    price NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    cost NUMERIC(12, 2) DEFAULT 0.00,
-    stock INTEGER NOT NULL DEFAULT 0,
-    barcode TEXT UNIQUE,
-    image_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- ------------------------------------------------------------
--- 5. BAHAN BAKU (INGREDIENTS)
--- ------------------------------------------------------------
+-- Bahan Baku (Ingredients)
 CREATE TABLE IF NOT EXISTS public.ingredients (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -87,9 +54,7 @@ CREATE TABLE IF NOT EXISTS public.ingredients (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- ------------------------------------------------------------
--- 6. RESEP PRODUK (RECIPES)
--- ------------------------------------------------------------
+-- Resep Produk (Recipes)
 CREATE TABLE IF NOT EXISTS public.recipes (
     id TEXT PRIMARY KEY,
     product_name TEXT NOT NULL,
@@ -99,9 +64,7 @@ CREATE TABLE IF NOT EXISTS public.recipes (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- ------------------------------------------------------------
--- 7. KOMPOSISI RESEP (RECIPE INGREDIENTS)
--- ------------------------------------------------------------
+-- Komposisi Resep (Recipe Ingredients)
 CREATE TABLE IF NOT EXISTS public.recipe_ingredients (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     recipe_id TEXT NOT NULL REFERENCES public.recipes(id) ON DELETE CASCADE,
@@ -111,9 +74,7 @@ CREATE TABLE IF NOT EXISTS public.recipe_ingredients (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- ------------------------------------------------------------
--- 8. SESI KASIR / SHIFT (CASHIER SHIFTS)
--- ------------------------------------------------------------
+-- Sesi Kasir / Shift (Cashier Shifts)
 CREATE TABLE IF NOT EXISTS public.cashier_shifts (
     id TEXT PRIMARY KEY,
     cashier_name TEXT NOT NULL,
@@ -128,38 +89,7 @@ CREATE TABLE IF NOT EXISTS public.cashier_shifts (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- ------------------------------------------------------------
--- 9. TRANSAKSI PENJUALAN KASIR (TRANSACTIONS)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.transactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    invoice_number TEXT NOT NULL UNIQUE,
-    total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    payment_method TEXT NOT NULL DEFAULT 'cash', -- 'cash', 'qris', 'debit', 'credit'
-    paid_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    change_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    cashier_name TEXT,
-    status TEXT NOT NULL DEFAULT 'completed', -- 'completed', 'pending', 'cancelled'
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- ------------------------------------------------------------
--- 10. ITEM TRANSAKSI PENJUALAN (TRANSACTION ITEMS)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.transaction_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    transaction_id UUID NOT NULL REFERENCES public.transactions(id) ON DELETE CASCADE,
-    product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
-    product_name TEXT NOT NULL,
-    price NUMERIC(12, 2) NOT NULL,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    subtotal NUMERIC(12, 2) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- ------------------------------------------------------------
--- 11. PESANAN MEJA / QR SELF ORDER (TABLE ORDERS)
--- ------------------------------------------------------------
+-- Pesanan Meja / QR Self Order (Table Orders)
 CREATE TABLE IF NOT EXISTS public.table_orders (
     id TEXT PRIMARY KEY,
     invoice_number TEXT NOT NULL,
@@ -172,9 +102,7 @@ CREATE TABLE IF NOT EXISTS public.table_orders (
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- ------------------------------------------------------------
--- 12. ITEM PESANAN MEJA (TABLE ORDER ITEMS)
--- ------------------------------------------------------------
+-- Detail Item Pesanan Meja (Table Order Items)
 CREATE TABLE IF NOT EXISTS public.table_order_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id TEXT NOT NULL REFERENCES public.table_orders(id) ON DELETE CASCADE,
@@ -187,7 +115,7 @@ CREATE TABLE IF NOT EXISTS public.table_order_items (
 );
 
 -- ------------------------------------------------------------
--- 13. STORED PROCEDURE: PENGURANGAN STOK ATOMIK (RPC)
+-- 3. STORED PROCEDURE: ATOMIC PRODUCT STOCK DECREMENT
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.deduct_product_stock_atomic(
     p_id UUID,
@@ -208,7 +136,7 @@ BEGIN
         );
     END IF;
 
-    -- Row-level lock (FOR UPDATE) mencegah race condition
+    -- Row-level lock (FOR UPDATE) ensures atomic concurrency control
     SELECT stock INTO v_current_stock
     FROM public.products
     WHERE id = p_id
@@ -246,8 +174,9 @@ $$;
 GRANT EXECUTE ON FUNCTION public.deduct_product_stock_atomic(UUID, INTEGER) TO authenticated, service_role;
 
 -- ------------------------------------------------------------
--- 14. PERFORMANCE INDEXES
+-- 4. PERFORMANCE INDEXES
 -- ------------------------------------------------------------
+-- Foreign keys
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON public.products(category_id);
 CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction_id ON public.transaction_items(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_transaction_items_product_id ON public.transaction_items(product_id);
@@ -257,6 +186,7 @@ CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id ON public.recipe_ing
 CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_ingredient_id ON public.recipe_ingredients(ingredient_id);
 CREATE INDEX IF NOT EXISTS idx_table_order_items_order_id ON public.table_order_items(order_id);
 
+-- Lookup, Status & Sorting
 CREATE INDEX IF NOT EXISTS idx_branches_name ON public.branches(name);
 CREATE INDEX IF NOT EXISTS idx_ingredients_category ON public.ingredients(category);
 CREATE INDEX IF NOT EXISTS idx_recipes_product_name ON public.recipes(product_name);
@@ -274,8 +204,10 @@ CREATE INDEX IF NOT EXISTS idx_transactions_status ON public.transactions(status
 CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON public.transactions(created_at DESC);
 
 -- ------------------------------------------------------------
--- 15. ROW LEVEL SECURITY (RLS) HARDENING
+-- 5. ROW LEVEL SECURITY (RLS) HARDENING
 -- ------------------------------------------------------------
+
+-- Enable RLS across all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -289,31 +221,107 @@ ALTER TABLE public.cashier_shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.table_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.table_order_items ENABLE ROW LEVEL SECURITY;
 
--- 15.1 PROFILES POLICIES
--- Pengguna hanya dapat membaca profil milik sendiri, admin membaca semua
+-- Drop legacy permissive policies
+DROP POLICY IF EXISTS "Allow public read profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow public insert profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow public read categories" ON public.categories;
+DROP POLICY IF EXISTS "Allow public read products" ON public.products;
+DROP POLICY IF EXISTS "Allow public read transactions" ON public.transactions;
+DROP POLICY IF EXISTS "Allow public insert transactions" ON public.transactions;
+DROP POLICY IF EXISTS "Allow public insert transaction_items" ON public.transaction_items;
+
+-- Drop previous hardened policies if re-running
+DROP POLICY IF EXISTS "profiles_select_own_or_admin" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_delete_admin" ON public.profiles;
+
+DROP POLICY IF EXISTS "categories_select_public" ON public.categories;
+DROP POLICY IF EXISTS "categories_insert_admin" ON public.categories;
+DROP POLICY IF EXISTS "categories_update_admin" ON public.categories;
+DROP POLICY IF EXISTS "categories_delete_admin" ON public.categories;
+
+DROP POLICY IF EXISTS "products_select_public" ON public.products;
+DROP POLICY IF EXISTS "products_insert_admin" ON public.products;
+DROP POLICY IF EXISTS "products_update_admin" ON public.products;
+DROP POLICY IF EXISTS "products_delete_admin" ON public.products;
+
+DROP POLICY IF EXISTS "branches_select_staff" ON public.branches;
+DROP POLICY IF EXISTS "branches_insert_staff" ON public.branches;
+DROP POLICY IF EXISTS "branches_update_staff" ON public.branches;
+DROP POLICY IF EXISTS "branches_delete_staff" ON public.branches;
+
+DROP POLICY IF EXISTS "ingredients_select_staff" ON public.ingredients;
+DROP POLICY IF EXISTS "ingredients_insert_staff" ON public.ingredients;
+DROP POLICY IF EXISTS "ingredients_update_staff" ON public.ingredients;
+DROP POLICY IF EXISTS "ingredients_delete_staff" ON public.ingredients;
+
+DROP POLICY IF EXISTS "recipes_select_staff" ON public.recipes;
+DROP POLICY IF EXISTS "recipes_insert_staff" ON public.recipes;
+DROP POLICY IF EXISTS "recipes_update_staff" ON public.recipes;
+DROP POLICY IF EXISTS "recipes_delete_staff" ON public.recipes;
+
+DROP POLICY IF EXISTS "recipe_ingredients_select_staff" ON public.recipe_ingredients;
+DROP POLICY IF EXISTS "recipe_ingredients_insert_staff" ON public.recipe_ingredients;
+DROP POLICY IF EXISTS "recipe_ingredients_update_staff" ON public.recipe_ingredients;
+DROP POLICY IF EXISTS "recipe_ingredients_delete_staff" ON public.recipe_ingredients;
+
+DROP POLICY IF EXISTS "cashier_shifts_select_staff" ON public.cashier_shifts;
+DROP POLICY IF EXISTS "cashier_shifts_insert_staff" ON public.cashier_shifts;
+DROP POLICY IF EXISTS "cashier_shifts_update_staff" ON public.cashier_shifts;
+DROP POLICY IF EXISTS "cashier_shifts_delete_staff" ON public.cashier_shifts;
+
+DROP POLICY IF EXISTS "transactions_select_staff" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_insert_staff" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_update_staff" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_delete_admin" ON public.transactions;
+
+DROP POLICY IF EXISTS "transaction_items_select_staff" ON public.transaction_items;
+DROP POLICY IF EXISTS "transaction_items_insert_staff" ON public.transaction_items;
+DROP POLICY IF EXISTS "transaction_items_update_staff" ON public.transaction_items;
+DROP POLICY IF EXISTS "transaction_items_delete_admin" ON public.transaction_items;
+
+DROP POLICY IF EXISTS "table_orders_insert_anon_pending" ON public.table_orders;
+DROP POLICY IF EXISTS "table_orders_insert_staff" ON public.table_orders;
+DROP POLICY IF EXISTS "table_orders_select_staff" ON public.table_orders;
+DROP POLICY IF EXISTS "table_orders_update_staff" ON public.table_orders;
+DROP POLICY IF EXISTS "table_orders_delete_staff" ON public.table_orders;
+
+DROP POLICY IF EXISTS "table_order_items_insert_anon_pending" ON public.table_order_items;
+DROP POLICY IF EXISTS "table_order_items_insert_staff" ON public.table_order_items;
+DROP POLICY IF EXISTS "table_order_items_select_staff" ON public.table_order_items;
+DROP POLICY IF EXISTS "table_order_items_update_staff" ON public.table_order_items;
+DROP POLICY IF EXISTS "table_order_items_delete_staff" ON public.table_order_items;
+
+-- 5.1 PROFILES POLICIES
+-- Users can only read their own profile, admins can read all
 CREATE POLICY "profiles_select_own_or_admin" ON public.profiles
     FOR SELECT TO authenticated
     USING (auth.uid() = id OR public.is_admin());
 
+-- Users can only insert their own profile matching auth.uid()
 CREATE POLICY "profiles_insert_own" ON public.profiles
     FOR INSERT TO authenticated
     WITH CHECK (auth.uid() = id);
 
+-- Users can only update their own profile, admins can update any
 CREATE POLICY "profiles_update_own" ON public.profiles
     FOR UPDATE TO authenticated
     USING (auth.uid() = id OR public.is_admin())
     WITH CHECK (auth.uid() = id OR public.is_admin());
 
+-- Only admins can delete profiles
 CREATE POLICY "profiles_delete_admin" ON public.profiles
     FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 15.2 CATEGORIES POLICIES
--- Publik dapat melihat daftar kategori
+-- 5.2 CATEGORIES POLICIES
+-- Public can view categories
 CREATE POLICY "categories_select_public" ON public.categories
     FOR SELECT
     USING (true);
 
+-- Only admins can create/update/delete categories
 CREATE POLICY "categories_insert_admin" ON public.categories
     FOR INSERT TO authenticated
     WITH CHECK (public.is_admin());
@@ -327,12 +335,13 @@ CREATE POLICY "categories_delete_admin" ON public.categories
     FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 15.3 PRODUCTS POLICIES
--- Publik dapat melihat katalog produk
+-- 5.3 PRODUCTS POLICIES
+-- Public can view products
 CREATE POLICY "products_select_public" ON public.products
     FOR SELECT
     USING (true);
 
+-- Only admins can create/update/delete products
 CREATE POLICY "products_insert_admin" ON public.products
     FOR INSERT TO authenticated
     WITH CHECK (public.is_admin());
@@ -346,7 +355,8 @@ CREATE POLICY "products_delete_admin" ON public.products
     FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 15.4 BRANCHES POLICIES
+-- 5.4 BRANCHES POLICIES
+-- Authenticated staff can view, insert, update, and delete branches
 CREATE POLICY "branches_select_staff" ON public.branches
     FOR SELECT TO authenticated
     USING (true);
@@ -364,7 +374,8 @@ CREATE POLICY "branches_delete_staff" ON public.branches
     FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 15.5 INGREDIENTS POLICIES
+-- 5.5 INGREDIENTS POLICIES
+-- Authenticated staff can view, insert, update, and delete ingredients
 CREATE POLICY "ingredients_select_staff" ON public.ingredients
     FOR SELECT TO authenticated
     USING (true);
@@ -382,7 +393,8 @@ CREATE POLICY "ingredients_delete_staff" ON public.ingredients
     FOR DELETE TO authenticated
     USING (true);
 
--- 15.6 RECIPES POLICIES
+-- 5.6 RECIPES POLICIES
+-- Authenticated staff can view, insert, update, and delete recipes
 CREATE POLICY "recipes_select_staff" ON public.recipes
     FOR SELECT TO authenticated
     USING (true);
@@ -400,7 +412,8 @@ CREATE POLICY "recipes_delete_staff" ON public.recipes
     FOR DELETE TO authenticated
     USING (true);
 
--- 15.7 RECIPE INGREDIENTS POLICIES
+-- 5.7 RECIPE INGREDIENTS POLICIES
+-- Authenticated staff can view, insert, update, and delete recipe ingredients
 CREATE POLICY "recipe_ingredients_select_staff" ON public.recipe_ingredients
     FOR SELECT TO authenticated
     USING (true);
@@ -418,7 +431,8 @@ CREATE POLICY "recipe_ingredients_delete_staff" ON public.recipe_ingredients
     FOR DELETE TO authenticated
     USING (true);
 
--- 15.8 CASHIER SHIFTS POLICIES
+-- 5.8 CASHIER SHIFTS POLICIES
+-- Restricted to authenticated staff
 CREATE POLICY "cashier_shifts_select_staff" ON public.cashier_shifts
     FOR SELECT TO authenticated
     USING (true);
@@ -436,7 +450,8 @@ CREATE POLICY "cashier_shifts_delete_staff" ON public.cashier_shifts
     FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 15.9 TRANSACTIONS & ITEMS POLICIES
+-- 5.9 TRANSACTIONS & ITEMS POLICIES
+-- Restricted to authenticated staff
 CREATE POLICY "transactions_select_staff" ON public.transactions
     FOR SELECT TO authenticated
     USING (true);
@@ -471,8 +486,8 @@ CREATE POLICY "transaction_items_delete_admin" ON public.transaction_items
     FOR DELETE TO authenticated
     USING (public.is_admin());
 
--- 15.10 TABLE ORDERS POLICIES
--- Anon publik hanya boleh memasukkan pesanan meja berstatus pending & unpaid
+-- 5.10 TABLE ORDERS POLICIES
+-- Public anon can ONLY insert new orders with status = 'pending' and payment_status = 'unpaid'
 CREATE POLICY "table_orders_insert_anon_pending" ON public.table_orders
     FOR INSERT TO anon
     WITH CHECK (status = 'pending' AND payment_status = 'unpaid');
@@ -494,8 +509,8 @@ CREATE POLICY "table_orders_delete_staff" ON public.table_orders
     FOR DELETE TO authenticated
     USING (true);
 
--- 15.11 TABLE ORDER ITEMS POLICIES
--- Anon publik hanya boleh memasukkan item untuk order yang pending & unpaid
+-- 5.11 TABLE ORDER ITEMS POLICIES
+-- Public anon can ONLY insert items linked to an existing pending and unpaid order
 CREATE POLICY "table_order_items_insert_anon_pending" ON public.table_order_items
     FOR INSERT TO anon
     WITH CHECK (
@@ -523,16 +538,3 @@ CREATE POLICY "table_order_items_update_staff" ON public.table_order_items
 CREATE POLICY "table_order_items_delete_staff" ON public.table_order_items
     FOR DELETE TO authenticated
     USING (true);
-
--- ------------------------------------------------------------
--- 16. DATA AWAL (SEED SAMPLE DATA)
--- ------------------------------------------------------------
-INSERT INTO public.categories (name) VALUES 
-('Makanan'), ('Minuman'), ('Sembako')
-ON CONFLICT (name) DO NOTHING;
-
-INSERT INTO public.products (name, price, stock, barcode) VALUES
-('Kopi Kenangan Mantan', 18000, 50, '8991001001'),
-('Roti Tawar Bandung', 15000, 30, '8991001002'),
-('Minyak Goreng 1L', 14500, 100, '8991001003')
-ON CONFLICT (barcode) DO NOTHING;
