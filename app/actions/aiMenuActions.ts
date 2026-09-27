@@ -2,6 +2,7 @@
 // app/actions/aiMenuActions.ts — Server Action untuk AI Vision & OCR Extraction dari Foto Menu Buku/Papan Menu
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 export interface ExtractedMenuItem {
@@ -246,26 +247,70 @@ export async function batchAddProducts(items: ExtractedMenuItem[]) {
       return { success: false, error: "Pilih minimal 1 produk untuk disimpan!" };
     }
 
-    const supabase = await createClient();
+    let supabase: any;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
 
-    const insertPayload = selectedItems.map((item) => ({
-      name: item.name,
-      price: item.price,
-      stock: item.stock || 50,
-      category: item.category || "Umum",
-    }));
+    // 1. Ambil daftar kategori yang ada di Supabase untuk pemetaan category_id (UUID)
+    const { data: dbCategories } = await supabase.from("categories").select("id, name");
+    const categoryMap = new Map<string, string>();
+    if (dbCategories && Array.isArray(dbCategories)) {
+      for (const cat of dbCategories) {
+        if (cat.name && cat.id) {
+          categoryMap.set(cat.name.toLowerCase().trim(), cat.id);
+        }
+      }
+    }
+
+    // 2. Buat kategori baru jika ada kategori produk yang belum terdaftar di database
+    const uniqueMissingCategories = new Set<string>();
+    for (const item of selectedItems) {
+      const catName = (item.category || "Umum").trim();
+      if (!categoryMap.has(catName.toLowerCase())) {
+        uniqueMissingCategories.add(catName);
+      }
+    }
+
+    for (const missingCat of uniqueMissingCategories) {
+      try {
+        const { data: insertedCat } = await supabase
+          .from("categories")
+          .insert({ name: missingCat })
+          .select("id, name")
+          .single();
+        if (insertedCat?.id) {
+          categoryMap.set(missingCat.toLowerCase(), insertedCat.id);
+        }
+      } catch {
+        // Abaikan konflik/error jika kategori sudah ter-insert secara paralel
+      }
+    }
+
+    // 3. Susun insertPayload dengan schema yang benar: category_id (UUID), bukan category (text)
+    const insertPayload = selectedItems.map((item) => {
+      const catName = (item.category || "Umum").trim();
+      const categoryId = categoryMap.get(catName.toLowerCase()) || null;
+      return {
+        name: item.name.trim(),
+        price: Number(item.price || 0),
+        stock: item.stock !== undefined ? Number(item.stock) : 50,
+        category_id: categoryId,
+      };
+    });
 
     const { data, error } = await supabase.from("products").insert(insertPayload).select();
 
-    revalidatePath("/dashboard");
-
     if (error) {
       return {
-        success: true,
-        count: selectedItems.length,
-        message: `${selectedItems.length} produk berhasil ditambahkan ke Supabase!`,
+        success: false,
+        error: error.message || "Failed to insert products",
       };
     }
+
+    revalidatePath("/dashboard");
 
     return {
       success: true,
@@ -273,11 +318,9 @@ export async function batchAddProducts(items: ExtractedMenuItem[]) {
       message: `Berhasil menambahkan ${data?.length || selectedItems.length} produk baru ke Supabase!`,
     };
   } catch (err: any) {
-    revalidatePath("/dashboard");
     return {
-      success: true,
-      count: items.filter((i) => i.selected).length,
-      message: `Produk berhasil disimpan ke sistem!`,
+      success: false,
+      error: err?.message || "Failed to insert products",
     };
   }
 }

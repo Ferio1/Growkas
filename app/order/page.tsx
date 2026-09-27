@@ -157,9 +157,10 @@ function OrderPageContent() {
       table_number: `Meja ${tableNum}`,
       branch_name: branchName,
       payment_method: paymentMethod,
-      payment_status: paymentMethod === "qris" ? ("paid" as const) : ("unpaid" as const),
+      payment_status: "unpaid" as const,
       status: "pending" as const,
       total_amount: subtotal,
+      source: "customer_qr" as const,
       items: cart.map((c) => ({
         product_name: c.product.name,
         price: getItemPrice(c),
@@ -234,15 +235,17 @@ function OrderPageContent() {
         <h1 style={{ fontSize: "1.25rem", fontWeight: "900", margin: "2px 0 0" }}>{branchName}</h1>
       </div>
 
-      {/* SUCCESS SCREEN SETELAH ORDER */}
+      {/* SUCCESS / WAITING SCREEN SETELAH ORDER */}
       {isOrderComplete ? (
         <div style={{ padding: "40px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: "3.5rem", marginBottom: "12px" }}>🎉</div>
-          <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#4ADE80", marginBottom: "6px" }}>
-            Pesanan Berhasil Terkirim!
+          <div style={{ fontSize: "3.5rem", marginBottom: "12px" }}>⏳</div>
+          <h2 style={{ fontSize: "1.4rem", fontWeight: "900", color: "#F59E0B", marginBottom: "6px" }}>
+            {paymentMethod === "qris" ? "Menunggu Verifikasi Pembayaran QRIS" : "Menunggu Konfirmasi Kasir"}
           </h2>
           <p style={{ color: "rgba(245,240,232,0.7)", fontSize: "0.9rem", maxWidth: "340px", margin: "0 auto 20px" }}>
-            Pesanan Anda (#{completedInvoice}) untuk <strong>Meja {tableNum}</strong> telah masuk ke antrean dapur &amp; kasir. Silakan tunggu disajikan.
+            {paymentMethod === "qris"
+              ? `Pesanan Anda (#${completedInvoice}) untuk Meja ${tableNum} telah terkirim ke sistem. Silakan selesaikan scan QRIS dan tunjukkan bukti bayar ke kasir untuk verifikasi pesanan.`
+              : `Pesanan Anda (#${completedInvoice}) untuk Meja ${tableNum} telah masuk ke antrean kasir & dapur. Silakan lakukan pembayaran tunai di kasir.`}
           </p>
           <button
             onClick={() => setIsOrderComplete(false)}
@@ -509,7 +512,7 @@ function OrderPageContent() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
               <button onClick={() => setIsCheckoutOpen(false)} style={{ padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", color: "#FFF", border: "none" }}>Batal</button>
               <button onClick={handlePayOnline} disabled={isSubmitting} style={{ padding: "10px", borderRadius: "8px", background: "#D4651C", color: "#FFF", border: "none", fontWeight: "bold" }}>
-                {isSubmitting ? "Memproses..." : "Konfirmasi Pembayaran ➔"}
+                {isSubmitting ? "Memproses..." : paymentMethod === "qris" ? "Kirim Pesanan (Scan QRIS) ➔" : "Kirim Pesanan ke Kasir ➔"}
               </button>
             </div>
           </div>

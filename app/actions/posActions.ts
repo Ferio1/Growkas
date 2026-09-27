@@ -177,27 +177,36 @@ export async function saveTransaction(payload: TransactionPayload) {
       await supabase.from("transaction_items").insert(itemsToInsert);
     }
 
-    // Potong stok produk di database Supabase
+    // Potong stok produk di database Supabase secara atomic
     for (const item of payload.items) {
       try {
-        // Coba atomic RPC jika tersedia di Supabase
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.product_id);
+        const prodId = (item as any).id || item.product_id;
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(prodId);
         if (isUuid) {
           const { error: rpcErr } = await supabase.rpc("deduct_product_stock_atomic", {
-            p_id: item.product_id,
+            p_id: prodId,
             qty: item.quantity,
           });
           if (!rpcErr) continue;
         }
 
-        // Fallback row update
+        // Fallback: Cari product berdasarkan ID atau Nama di Supabase
         const { data: dbProduct } = await supabase
           .from("products")
           .select("id, stock")
-          .or(`id.eq.${item.product_id},name.eq.${item.product_name}`)
+          .or(`id.eq.${prodId},name.eq.${item.product_name}`)
           .single();
 
         if (dbProduct) {
+          const dbIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dbProduct.id);
+          if (dbIsUuid) {
+            const { error: rpcErr } = await supabase.rpc("deduct_product_stock_atomic", {
+              p_id: dbProduct.id,
+              qty: item.quantity,
+            });
+            if (!rpcErr) continue;
+          }
+
           const newStock = Math.max(0, Number(dbProduct.stock || 0) - item.quantity);
           await supabase
             .from("products")

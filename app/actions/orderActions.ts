@@ -78,9 +78,16 @@ export async function createTableOrder(
   orderData: Omit<TableOrder, "id" | "created_at">,
   options?: { skipShiftAndStockDeduction?: boolean }
 ): Promise<{ success: boolean; order: TableOrder }> {
+  // Keamanan Transaksi QR Self-Order:
+  // Pesanan mandiri dari pelanggan (/order) HARUS berstatus "unpaid" sampai diverifikasi kasir
+  // bahkan jika memilih metode bayar QRIS.
+  const isCustomerQr = orderData.source === "customer_qr" || !orderData.source;
+  const paymentStatus: "paid" | "unpaid" = isCustomerQr ? "unpaid" : orderData.payment_status;
+
   const store = loadMasterStore();
   const newOrder: TableOrder = {
     ...orderData,
+    payment_status: paymentStatus,
     id: "ord-" + Date.now(),
     created_at: new Date().toISOString(),
   };
@@ -92,7 +99,7 @@ export async function createTableOrder(
     // Potong stok bahan baku mentah otomatis
     await deductRawIngredientsForItems(newOrder.items, newOrder.invoice_number);
 
-    // Jika pembayaran QRIS lunas, otomatis masukkan ke pembukuan shift kasir
+    // Jika pembayaran lunas (misal transaksi kasir pos), otomatis masukkan ke pembukuan shift kasir
     if (newOrder.payment_status === "paid") {
       await recordSaleToActiveShift(newOrder.payment_method, newOrder.total_amount);
     }
@@ -130,16 +137,18 @@ export async function createTableOrder(
       await supabase.from("table_order_items").insert(orderItems);
     }
 
-    // 3. Simpan juga transaksi ke tabel transactions untuk rekap kasir POS
-    await supabase.from("transactions").insert({
-      invoice_number: newOrder.invoice_number,
-      total_amount: newOrder.total_amount,
-      payment_method: newOrder.payment_method,
-      paid_amount: newOrder.total_amount,
-      change_amount: 0,
-      cashier_name: newOrder.source === "kasir_pos" ? "Kasir POS (Counter)" : `Self-Order ${newOrder.table_number}`,
-      status: newOrder.status,
-    });
+    // 3. Simpan juga transaksi ke tabel transactions jika pembayaran sudah lunas
+    if (newOrder.payment_status === "paid") {
+      await supabase.from("transactions").insert({
+        invoice_number: newOrder.invoice_number,
+        total_amount: newOrder.total_amount,
+        payment_method: newOrder.payment_method,
+        paid_amount: newOrder.total_amount,
+        change_amount: 0,
+        cashier_name: newOrder.source === "kasir_pos" ? "Kasir POS (Counter)" : `Self-Order ${newOrder.table_number}`,
+        status: newOrder.status,
+      });
+    }
   } catch (e) {
     console.warn("Supabase createTableOrder notice (in-memory fallback active):", e);
   }
