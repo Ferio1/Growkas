@@ -148,8 +148,8 @@ describe("Database Schema & RLS Hardening — Relational Migration", () => {
   });
 
   describe("Stored Procedure: deduct_product_stock_atomic", () => {
-    it("should define deduct_product_stock_atomic with correct signature and security", () => {
-      const procRegex = /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.deduct_product_stock_atomic\s*\(\s*p_id\s+UUID,\s*qty\s+INTEGER\s*\)\s*RETURNS\s+JSONB\s+LANGUAGE\s+plpgsql\s+SECURITY\s+DEFINER/i;
+    it("should define deduct_product_stock_atomic with correct signature, security definer, and set search_path = public", () => {
+      const procRegex = /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.deduct_product_stock_atomic\s*\(\s*p_id\s+UUID,\s*qty\s+INTEGER\s*\)\s*RETURNS\s+JSONB\s+LANGUAGE\s+plpgsql\s+SECURITY\s+DEFINER\s+SET\s+search_path\s*=\s*public/i;
       expect(migrationSql).toMatch(procRegex);
       expect(schemaSql).toMatch(procRegex);
     });
@@ -222,6 +222,12 @@ describe("Database Schema & RLS Hardening — Relational Migration", () => {
       expect(schemaSql).toMatch(/CREATE\s+POLICY\s+"products_insert_admin"\s+ON\s+public\.products\s+FOR\s+INSERT\s+TO\s+authenticated\s+WITH\s+CHECK\s*\(public\.is_admin\(\)\)/i);
     });
 
+    it("should define is_order_pending_unpaid helper with SECURITY DEFINER and search_path = public", () => {
+      const helperRegex = /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.is_order_pending_unpaid\s*\(\s*p_order_id\s+TEXT\s*\)\s*RETURNS\s+BOOLEAN\s+LANGUAGE\s+plpgsql\s+SECURITY\s+DEFINER\s+SET\s+search_path\s*=\s*public/i;
+      expect(migrationSql).toMatch(helperRegex);
+      expect(schemaSql).toMatch(helperRegex);
+    });
+
     it("should restrict table_orders anon insert to pending & unpaid status only", () => {
       // Anon must NOT have open CHECK (true)
       expect(schemaSql).not.toMatch(/CREATE\s+POLICY\s+.*ON\s+public\.table_orders\s+FOR\s+INSERT\s+TO\s+anon\s+WITH\s+CHECK\s*\(\s*true\s*\)/i);
@@ -229,8 +235,9 @@ describe("Database Schema & RLS Hardening — Relational Migration", () => {
       // Anon policy must restrict to pending & unpaid
       expect(schemaSql).toMatch(/CREATE\s+POLICY\s+"table_orders_insert_anon_pending"\s+ON\s+public\.table_orders\s+FOR\s+INSERT\s+TO\s+anon\s+WITH\s+CHECK\s*\(status\s*=\s*'pending'\s+AND\s+payment_status\s*=\s*'unpaid'\)/i);
 
-      // Order items insertion for anon must check parent table_orders status
-      expect(schemaSql).toMatch(/CREATE\s+POLICY\s+"table_order_items_insert_anon_pending"\s+ON\s+public\.table_order_items\s+FOR\s+INSERT\s+TO\s+anon\s+WITH\s+CHECK\s*\([\s\S]*?EXISTS\s*\([\s\S]*?status\s*=\s*'pending'[\s\S]*?payment_status\s*=\s*'unpaid'[\s\S]*?\)\s*\)/i);
+      // Order items insertion for anon must use SECURITY DEFINER helper function to bypass RLS denial
+      expect(schemaSql).toMatch(/CREATE\s+POLICY\s+"table_order_items_insert_anon_pending"\s+ON\s+public\.table_order_items\s+FOR\s+INSERT\s+TO\s+anon\s+WITH\s+CHECK\s*\(public\.is_order_pending_unpaid\(order_id\)\)/i);
+      expect(migrationSql).toMatch(/CREATE\s+POLICY\s+"table_order_items_insert_anon_pending"\s+ON\s+public\.table_order_items\s+FOR\s+INSERT\s+TO\s+anon\s+WITH\s+CHECK\s*\(public\.is_order_pending_unpaid\(order_id\)\)/i);
     });
 
     it("should restrict cashier_shifts and transactions to authenticated staff with NO public access", () => {

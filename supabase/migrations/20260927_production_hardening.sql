@@ -27,6 +27,25 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, anon;
 
+-- Helper function to check if table order is pending & unpaid (bypasses RLS SELECT denial for anon)
+CREATE OR REPLACE FUNCTION public.is_order_pending_unpaid(p_order_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.table_orders
+        WHERE id = p_order_id
+          AND status = 'pending'
+          AND payment_status = 'unpaid'
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_order_pending_unpaid(TEXT) TO anon, authenticated;
+
 -- ------------------------------------------------------------
 -- 2. RELATIONAL TABLES CREATION
 -- ------------------------------------------------------------
@@ -124,6 +143,7 @@ CREATE OR REPLACE FUNCTION public.deduct_product_stock_atomic(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_current_stock INTEGER;
@@ -513,14 +533,7 @@ CREATE POLICY "table_orders_delete_staff" ON public.table_orders
 -- Public anon can ONLY insert items linked to an existing pending and unpaid order
 CREATE POLICY "table_order_items_insert_anon_pending" ON public.table_order_items
     FOR INSERT TO anon
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.table_orders
-            WHERE public.table_orders.id = table_order_items.order_id
-              AND public.table_orders.status = 'pending'
-              AND public.table_orders.payment_status = 'unpaid'
-        )
-    );
+    WITH CHECK (public.is_order_pending_unpaid(order_id));
 
 CREATE POLICY "table_order_items_insert_staff" ON public.table_order_items
     FOR INSERT TO authenticated

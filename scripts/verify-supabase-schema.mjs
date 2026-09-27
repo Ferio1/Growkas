@@ -84,12 +84,21 @@ async function checkTables() {
   return { allExist, results };
 }
 
+// Extract project ref dynamically from Supabase URL (e.g. https://<project-ref>.supabase.co)
+let projectRef = "pijpptetccvgmwyjvsse";
+try {
+  const urlObj = new URL(supabaseUrl);
+  projectRef = urlObj.hostname.split(".")[0] || projectRef;
+} catch {
+  // fallback if URL parse fails
+}
+
 checkTables()
   .then(({ allExist }) => {
     if (!allExist) {
       console.log("\n⚠️ Some tables or functions are not yet applied in the remote Supabase project.");
       console.log("💡 To apply them to Supabase, run the SQL script in the Supabase SQL editor:");
-      console.log("   https://supabase.com/dashboard/project/pijpptetccvgmwyjvsse/sql");
+      console.log(`   https://supabase.com/dashboard/project/${projectRef}/sql`);
       console.log("   Script file: supabase/migrations/20260927_production_hardening.sql\n");
     } else {
       console.log("\n🎉 All 12 tables and RPC functions verified successfully in remote Supabase!");
