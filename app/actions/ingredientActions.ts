@@ -10,6 +10,7 @@ import {
   saveMasterStore,
   resetMasterDatabaseToCleanState,
 } from "./storeManager";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { assertRole } from "@/lib/authGuard";
 
 export type { IngredientItem, RecipeRequirement, ProductRecipe, ModifierConfig, DeductionLog };
@@ -70,13 +71,14 @@ function resolveRecipe(productName: string, price: number, allRecipes: ProductRe
 }
 
 // 1. Helper: Menghitung Total HPP suatu resep
-export async function calculateRecipeCOGS(recipe: ProductRecipe) {
+export async function calculateRecipeCOGS(recipe: ProductRecipe, ingredientsList?: IngredientItem[]) {
   const store = loadMasterStore();
+  const allIngredients = ingredientsList || store.ingredients;
   let totalCost = 0;
   const detailedIngredients = [];
 
   for (const req of recipe.ingredients) {
-    const ing = store.ingredients.find((i) => i.id === req.ingredient_id);
+    const ing = allIngredients.find((i) => i.id === req.ingredient_id);
     if (ing) {
       const itemCost = ing.cost_per_unit * req.quantity;
       totalCost += itemCost;
@@ -112,19 +114,45 @@ export async function calculateRecipeCOGS(recipe: ProductRecipe) {
 // 2. Ambil seluruh data Bahan Baku, Analisis HPP Menu, & Log Pengurangan Real-time
 export async function getIngredientsAndCOGS() {
   const store = loadMasterStore();
-  const analysis = [];
+  let ingredients: IngredientItem[] = store.ingredients;
 
+  try {
+    const supabase = createAdminClient();
+    const { data: dbIngredients, error } = await supabase
+      .from("ingredients")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (!error && dbIngredients && dbIngredients.length > 0) {
+      ingredients = dbIngredients.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        unit: row.unit as any,
+        stock: Number(row.stock || 0),
+        min_stock: Number(row.min_stock || 0),
+        cost_per_unit: Number(row.cost_per_unit || 0),
+        category: row.category as any,
+      }));
+      // Sync with in-memory store
+      store.ingredients = ingredients;
+      saveMasterStore(store);
+    }
+  } catch (err) {
+    console.warn("Supabase ingredients read notice (using in-memory fallback):", err);
+  }
+
+  const analysis = [];
   for (const r of store.recipes) {
-    const cogs = await calculateRecipeCOGS(r);
+    const cogs = await calculateRecipeCOGS(r, ingredients);
     analysis.push(cogs);
   }
 
   // Cek bahan baku yang berada di bawah batas minimum (Stok Menipis)
-  const lowStockAlerts = store.ingredients.filter((i) => i.stock <= i.min_stock);
+  const lowStockAlerts = ingredients.filter((i) => i.stock <= i.min_stock);
 
   return {
     success: true,
-    ingredients: store.ingredients,
+    ingredients,
     recipesAnalysis: analysis,
     lowStockAlerts,
     recentDeductions: store.deductionLogs.slice(0, 15),
@@ -135,12 +163,60 @@ export async function getIngredientsAndCOGS() {
 export async function restockIngredient(ingredientId: string, additionalStock: number) {
   await assertRole(["admin", "kasir"]);
   const store = loadMasterStore();
+
+  let updatedIngredient: IngredientItem | null = null;
+
+  try {
+    const supabase = createAdminClient();
+    const { data: existing } = await supabase
+      .from("ingredients")
+      .select("*")
+      .eq("id", ingredientId)
+      .single();
+
+    if (existing) {
+      const newStock = Number(existing.stock || 0) + Number(additionalStock);
+      const { data: updated, error } = await supabase
+        .from("ingredients")
+        .update({ stock: newStock })
+        .eq("id", ingredientId)
+        .select()
+        .single();
+
+      if (!error && updated) {
+        updatedIngredient = {
+          id: updated.id,
+          name: updated.name,
+          unit: updated.unit,
+          stock: Number(updated.stock),
+          min_stock: Number(updated.min_stock),
+          cost_per_unit: Number(updated.cost_per_unit),
+          category: updated.category,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Supabase restock notice (using in-memory fallback):", err);
+  }
+
   const ing = store.ingredients.find((i) => i.id === ingredientId);
   if (ing) {
-    ing.stock += additionalStock;
+    if (updatedIngredient) {
+      Object.assign(ing, updatedIngredient);
+    } else {
+      ing.stock += additionalStock;
+      updatedIngredient = { ...ing };
+    }
     saveMasterStore(store);
     return { success: true, updatedIngredient: ing };
   }
+
+  if (updatedIngredient) {
+    store.ingredients.push(updatedIngredient);
+    saveMasterStore(store);
+    return { success: true, updatedIngredient };
+  }
+
   return { success: false, error: "Bahan baku tidak ditemukan" };
 }
 
@@ -165,6 +241,22 @@ export async function addNewIngredient(data: {
     cost_per_unit: Math.max(0, Number(data.cost_per_unit) || 0),
     category: data.category,
   };
+
+  try {
+    const supabase = createAdminClient();
+    await supabase.from("ingredients").insert({
+      id: newIng.id,
+      name: newIng.name,
+      unit: newIng.unit,
+      stock: newIng.stock,
+      min_stock: newIng.min_stock,
+      cost_per_unit: newIng.cost_per_unit,
+      category: newIng.category,
+    });
+  } catch (err) {
+    console.warn("Supabase addNewIngredient notice (in-memory fallback active):", err);
+  }
+
   store.ingredients.push(newIng);
   saveMasterStore(store);
   return { success: true, ingredient: newIng };
@@ -179,15 +271,62 @@ export async function updateIngredientStockManual(
 ) {
   await assertRole(["admin"]);
   const store = loadMasterStore();
+  let updatedIngredient: IngredientItem | null = null;
+
+  try {
+    const supabase = createAdminClient();
+    const updates: any = {
+      stock: Math.max(0, Number(newStock) || 0),
+    };
+    if (minStock !== undefined && !isNaN(Number(minStock))) updates.min_stock = Math.max(0, Number(minStock));
+    if (costPerUnit !== undefined && !isNaN(Number(costPerUnit))) updates.cost_per_unit = Math.max(0, Number(costPerUnit));
+
+    const { data: updated, error } = await supabase
+      .from("ingredients")
+      .update(updates)
+      .eq("id", ingredientId)
+      .select()
+      .single();
+
+    if (!error && updated) {
+      updatedIngredient = {
+        id: updated.id,
+        name: updated.name,
+        unit: updated.unit,
+        stock: Number(updated.stock),
+        min_stock: Number(updated.min_stock),
+        cost_per_unit: Number(updated.cost_per_unit),
+        category: updated.category,
+      };
+    }
+  } catch (err) {
+    console.warn("Supabase updateIngredientStockManual notice (in-memory fallback active):", err);
+  }
+
   const ing = store.ingredients.find((i) => i.id === ingredientId);
-  if (!ing) {
+  if (!ing && !updatedIngredient) {
     return { success: false, error: "Bahan baku tidak ditemukan" };
   }
-  ing.stock = Math.max(0, Number(newStock) || 0);
-  if (minStock !== undefined && !isNaN(Number(minStock))) ing.min_stock = Math.max(0, Number(minStock));
-  if (costPerUnit !== undefined && !isNaN(Number(costPerUnit))) ing.cost_per_unit = Math.max(0, Number(costPerUnit));
-  saveMasterStore(store);
-  return { success: true, updatedIngredient: ing };
+
+  if (ing) {
+    if (updatedIngredient) {
+      Object.assign(ing, updatedIngredient);
+    } else {
+      ing.stock = Math.max(0, Number(newStock) || 0);
+      if (minStock !== undefined && !isNaN(Number(minStock))) ing.min_stock = Math.max(0, Number(minStock));
+      if (costPerUnit !== undefined && !isNaN(Number(costPerUnit))) ing.cost_per_unit = Math.max(0, Number(costPerUnit));
+    }
+    saveMasterStore(store);
+    return { success: true, updatedIngredient: ing };
+  }
+
+  if (updatedIngredient) {
+    store.ingredients.push(updatedIngredient);
+    saveMasterStore(store);
+    return { success: true, updatedIngredient };
+  }
+
+  return { success: false, error: "Bahan baku tidak ditemukan" };
 }
 
 // 6. Simpan / Update Konfigurasi Resep Menu & Takaran Modifier (BOM Manager)
@@ -201,6 +340,20 @@ export async function saveRecipeConfiguration(recipeData: ProductRecipe) {
   } else {
     store.recipes.push(recipeData);
   }
+
+  try {
+    const supabase = createAdminClient();
+    const recipeId = "rec-" + recipeData.product_name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    await supabase.from("recipes").upsert({
+      id: recipeId,
+      product_name: recipeData.product_name,
+      selling_price: recipeData.selling_price,
+      modifier_config: recipeData.modifierConfig || {},
+    });
+  } catch (err) {
+    console.warn("Supabase saveRecipeConfiguration notice:", err);
+  }
+
   saveMasterStore(store);
   return { success: true, recipe: recipeData };
 }
@@ -209,6 +362,16 @@ export async function saveRecipeConfiguration(recipeData: ProductRecipe) {
 export async function resetDatabaseCleanAction(options?: { resetIngredientsToZero?: boolean }) {
   await assertRole(["admin"]);
   const cleanStore = resetMasterDatabaseToCleanState(options);
+
+  if (options?.resetIngredientsToZero) {
+    try {
+      const supabase = createAdminClient();
+      await supabase.from("ingredients").update({ stock: 0 }).neq("id", "");
+    } catch (err) {
+      console.warn("Supabase resetIngredients notice:", err);
+    }
+  }
+
   return { success: true, store: cleanStore };
 }
 
@@ -371,6 +534,15 @@ export async function deductRawIngredientsForItems(
             is_low_stock: ing.stock <= ing.min_stock,
             modifier_note: modifierNote,
           });
+
+          // Sync stock to Supabase
+          try {
+            const supabase = createAdminClient();
+            await supabase
+              .from("ingredients")
+              .update({ stock: ing.stock })
+              .eq("id", ing.id);
+          } catch {}
         }
       }
     }
@@ -393,6 +565,10 @@ export async function deductRawIngredientsForItems(
           is_low_stock: coffeeIng.stock <= coffeeIng.min_stock,
           modifier_note: "+18g Extra Shot Kopi",
         });
+        try {
+          const supabase = createAdminClient();
+          await supabase.from("ingredients").update({ stock: coffeeIng.stock }).eq("id", coffeeIng.id);
+        } catch {}
       }
     }
 
@@ -411,6 +587,10 @@ export async function deductRawIngredientsForItems(
           is_low_stock: eggIng.stock <= eggIng.min_stock,
           modifier_note: "+1 Telur Ceplok",
         });
+        try {
+          const supabase = createAdminClient();
+          await supabase.from("ingredients").update({ stock: eggIng.stock }).eq("id", eggIng.id);
+        } catch {}
       }
     }
 
@@ -429,6 +609,10 @@ export async function deductRawIngredientsForItems(
           is_low_stock: syrupIng.stock <= syrupIng.min_stock,
           modifier_note: "+20ml Extra Syrup",
         });
+        try {
+          const supabase = createAdminClient();
+          await supabase.from("ingredients").update({ stock: syrupIng.stock }).eq("id", syrupIng.id);
+        } catch {}
       }
     }
   }

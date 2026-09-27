@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { assertRole } from "@/lib/authGuard";
 import {
@@ -14,17 +14,11 @@ export type { BranchItem };
 
 export async function getBranches(): Promise<{ success: boolean; branches: BranchItem[] }> {
   try {
-    // 1. Coba baca dari master store persisten (filesystem + /tmp Vercel)
-    const storeBranches = getStoreBranches();
-    if (storeBranches && storeBranches.length > 0) {
-      return { success: true, branches: storeBranches };
-    }
-
-    // 2. Coba Supabase jika ada table branches
+    // 1. Coba Supabase table public.branches
     try {
-      const supabase = await createClient();
-      const { data: branchesData } = await supabase.from("branches").select("*");
-      if (branchesData && branchesData.length > 0) {
+      const supabase = createAdminClient();
+      const { data: branchesData, error } = await supabase.from("branches").select("*");
+      if (!error && branchesData && branchesData.length > 0) {
         const branches: BranchItem[] = branchesData.map((b: any) => ({
           id: b.id,
           name: b.name,
@@ -35,8 +29,12 @@ export async function getBranches(): Promise<{ success: boolean; branches: Branc
         }));
         return { success: true, branches };
       }
-    } catch {}
+    } catch (err) {
+      console.warn("Supabase getBranches notice (in-memory fallback active):", err);
+    }
 
+    // 2. Fallback ke in-memory master store
+    const storeBranches = getStoreBranches();
     return { success: true, branches: storeBranches };
   } catch (err) {
     return { success: false, branches: [] };
@@ -60,19 +58,21 @@ export async function addBranch(payload: {
       created_at: new Date().toISOString(),
     };
 
-    // Simpan ke Master Store persisten
+    // Simpan ke in-memory master store
     const saved = addStoreBranch(newBranch);
 
     // Coba simpan ke Supabase jika tabelnya ada
     try {
-      const supabase = await createClient();
+      const supabase = createAdminClient();
       await supabase.from("branches").insert({
         name: newBranch.name,
         city: newBranch.city,
         address: newBranch.address,
         target_revenue: newBranch.target_revenue,
       });
-    } catch {}
+    } catch (err) {
+      console.warn("Supabase addBranch notice (in-memory fallback active):", err);
+    }
 
     revalidatePath("/dashboard");
     return { success: true, branch: saved };
@@ -87,9 +87,11 @@ export async function deleteBranch(branchId: string): Promise<{ success: boolean
     deleteStoreBranch(branchId);
 
     try {
-      const supabase = await createClient();
+      const supabase = createAdminClient();
       await supabase.from("branches").delete().eq("id", branchId);
-    } catch {}
+    } catch (err) {
+      console.warn("Supabase deleteBranch notice (in-memory fallback active):", err);
+    }
 
     revalidatePath("/dashboard");
     return { success: true };

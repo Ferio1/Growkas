@@ -1,6 +1,7 @@
-import fs from "fs";
-import path from "path";
-import os from "os";
+// growkas/app/actions/storeManager.ts — Master Store Manager & In-Memory Fallback
+// REFACTORED: Eliminated ephemeral /tmp file persistence.
+// Primary persistence is handled by Supabase PostgreSQL relational tables.
+// In-memory cache is maintained as a fast, resilient fallback during offline tests or disconnections.
 
 export interface ProductItem {
   id: string;
@@ -299,30 +300,12 @@ export const INITIAL_RECIPES: ProductRecipe[] = [
   },
 ];
 
-// Helper menentukan lokasi file master data secara absolut & kebal direktori eksekusi (kompatibel Vercel Serverless)
-function getMasterStorePath(): string {
-  // Jika berjalan di lingkungan Vercel serverless / AWS Lambda (Read-Only root)
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    return path.join(os.tmpdir(), "growkas_master_store.json");
-  }
-
-  const current = process.cwd();
-  const baseDir = current.endsWith("growkas") ? current : path.join(current, "growkas");
-  const dataDir = path.join(baseDir, "data");
-  if (!fs.existsSync(dataDir)) {
-    try {
-      fs.mkdirSync(dataDir, { recursive: true });
-    } catch {}
-  }
-  return path.join(dataDir, "growkas_master_store.json");
-}
-
 export function ensureMultiBranchIntegrity(store: MasterStoreData): boolean {
   let changed = false;
 
   // 1. Pastikan cabang fokus murni ke 1 outlet utama: 7co (Yogyakarta)
   if (!store.branches || store.branches.length === 0) {
-    store.branches = [...INITIAL_BRANCHES];
+    store.branches = INITIAL_BRANCHES.map((b) => ({ ...b }));
     changed = true;
   } else {
     const only7co = store.branches.filter((b) => b.id === "br-5" || b.name.toLowerCase().includes("7co"));
@@ -332,7 +315,7 @@ export function ensureMultiBranchIntegrity(store: MasterStoreData): boolean {
         changed = true;
       }
     } else {
-      store.branches = [...INITIAL_BRANCHES];
+      store.branches = INITIAL_BRANCHES.map((b) => ({ ...b }));
       changed = true;
     }
   }
@@ -340,14 +323,14 @@ export function ensureMultiBranchIntegrity(store: MasterStoreData): boolean {
   // 2. Pastikan katalog produk fokus murni pada menu 7co
   const only7coProducts = (store.products || []).filter((p) => p.branch_id === "br-5" || p.name.toLowerCase().includes("7co"));
   if (only7coProducts.length !== store.products.length || only7coProducts.length === 0) {
-    store.products = [...INITIAL_PRODUCTS];
+    store.products = INITIAL_PRODUCTS.map((p) => ({ ...p }));
     changed = true;
   }
 
   // 3. Pastikan resep BOM fokus murni pada menu 7co
   const only7coRecipes = (store.recipes || []).filter((r) => r.branch_id === "br-5" || r.product_name.toLowerCase().includes("7co"));
   if (only7coRecipes.length !== store.recipes.length || only7coRecipes.length === 0) {
-    store.recipes = [...INITIAL_RECIPES];
+    store.recipes = INITIAL_RECIPES.map((r) => ({ ...r }));
     changed = true;
   }
 
@@ -361,85 +344,42 @@ export function ensureMultiBranchIntegrity(store: MasterStoreData): boolean {
   return changed;
 }
 
-let inMemoryCache: MasterStoreData | null = null;
-
-export function loadMasterStore(): MasterStoreData {
-  // 1. Coba baca dari storePath (bisa di data/ atau /tmp) agar data selalu mutakhir antar-request
-  const storePath = getMasterStorePath();
-  try {
-    if (fs.existsSync(storePath)) {
-      const raw = fs.readFileSync(storePath, "utf-8");
-      const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.ingredients)) {
-        const changed = ensureMultiBranchIntegrity(parsed);
-        if (changed) {
-          saveMasterStore(parsed);
-        }
-        inMemoryCache = parsed;
-        return parsed;
-      }
-    }
-  } catch (err) {
-    console.warn("Notice reading from storePath:", err);
-  }
-
-  if (inMemoryCache) {
-    ensureMultiBranchIntegrity(inMemoryCache);
-    return inMemoryCache;
-  }
-
-  // 2. Jika di Vercel dan file /tmp belum ada, coba baca seed data dari project bundle
-  const bundledPaths = [
-    path.join(process.cwd(), "growkas", "data", "growkas_master_store.json"),
-    path.join(process.cwd(), "data", "growkas_master_store.json"),
-  ];
-  for (const bPath of bundledPaths) {
-    try {
-      if (fs.existsSync(/*turbopackIgnore: true*/ bPath)) {
-        const raw = fs.readFileSync(/*turbopackIgnore: true*/ bPath, "utf-8");
-        const parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.ingredients)) {
-          ensureMultiBranchIntegrity(parsed);
-          inMemoryCache = parsed;
-          // Tulis salinan ke /tmp untuk mutasi berikutnya di Vercel
-          saveMasterStore(parsed);
-          return parsed;
-        }
-      }
-    } catch {}
-  }
-
-  // 3. Fallback default jika file belum pernah dibuat sama sekali
-  const initial: MasterStoreData = {
-    products: INITIAL_PRODUCTS,
-    categories: INITIAL_CATEGORIES,
-    ingredients: INITIAL_INGREDIENTS,
-    recipes: INITIAL_RECIPES,
+// In-memory store instance — holds state when offline or during test suites
+function createInitialStore(): MasterStoreData {
+  return {
+    products: INITIAL_PRODUCTS.map((p) => ({ ...p })),
+    categories: INITIAL_CATEGORIES.map((c) => ({ ...c })),
+    ingredients: INITIAL_INGREDIENTS.map((i) => ({ ...i })),
+    recipes: INITIAL_RECIPES.map((r) => ({ ...r })),
     deductionLogs: [],
     tableOrders: [],
     activeShift: null,
     shiftHistory: [],
     transactions: [],
-    branches: INITIAL_BRANCHES,
+    branches: INITIAL_BRANCHES.map((b) => ({ ...b })),
   };
-
-  saveMasterStore(initial);
-  inMemoryCache = initial;
-  return initial;
 }
 
+let inMemoryCache: MasterStoreData | null = null;
+
+/**
+ * Loads the in-memory master store fallback.
+ * Eliminates file system /tmp read operations for serverless resilience.
+ */
+export function loadMasterStore(): MasterStoreData {
+  if (!inMemoryCache) {
+    inMemoryCache = createInitialStore();
+  }
+  ensureMultiBranchIntegrity(inMemoryCache);
+  return inMemoryCache;
+}
+
+/**
+ * Saves changes to the in-memory master store.
+ * Eliminates file system /tmp write operations.
+ */
 export function saveMasterStore(store: MasterStoreData) {
   inMemoryCache = store;
-  try {
-    const storePath = getMasterStorePath();
-    const dir = path.dirname(storePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(storePath, JSON.stringify(store, null, 2), "utf-8");
-  } catch (err) {
-    console.warn("Storage write notice (in-memory active):", err);
-  }
 }
 
 /**
@@ -464,7 +404,7 @@ export function deduplicateBranches(branches: BranchItem[]): BranchItem[] {
 export function getStoreBranches(): BranchItem[] {
   const store = loadMasterStore();
   if (!store.branches || store.branches.length === 0) {
-    store.branches = [...INITIAL_BRANCHES];
+    store.branches = INITIAL_BRANCHES.map((b) => ({ ...b }));
     saveMasterStore(store);
   } else {
     const deduped = deduplicateBranches(store.branches);
@@ -482,7 +422,7 @@ export function getStoreBranches(): BranchItem[] {
 export function addStoreBranch(newBranch: BranchItem): BranchItem {
   const store = loadMasterStore();
   if (!store.branches || store.branches.length === 0) {
-    store.branches = [...INITIAL_BRANCHES];
+    store.branches = INITIAL_BRANCHES.map((b) => ({ ...b }));
   }
   const existingIdx = store.branches.findIndex(
     (b) =>
