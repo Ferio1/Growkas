@@ -170,9 +170,9 @@ describe("Database Schema & RLS Hardening — Relational Migration", () => {
 
     it("should perform atomic decrement and return JSON object with remaining stock", () => {
       expect(migrationSql).toMatch(/UPDATE\s+public\.products\s+SET\s+stock\s*=\s*stock\s*-\s*qty/i);
-      expect(migrationSql).toContain("jsonb_build_object(\n        'success', true,\n        'remaining_stock', v_new_stock\n    );");
+      expect(migrationSql).toMatch(/jsonb_build_object\(\s*'success',\s*true,\s*'remaining_stock',\s*v_new_stock\s*\);/);
       expect(schemaSql).toMatch(/UPDATE\s+public\.products\s+SET\s+stock\s*=\s*stock\s*-\s*qty/i);
-      expect(schemaSql).toContain("jsonb_build_object(\n        'success', true,\n        'remaining_stock', v_new_stock\n    );");
+      expect(schemaSql).toMatch(/jsonb_build_object\(\s*'success',\s*true,\s*'remaining_stock',\s*v_new_stock\s*\);/);
     });
   });
 
