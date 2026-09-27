@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import pkg from "@/package.json";
 
 export const dynamic = "force-dynamic";
+
+const APP_VERSION = process.env.npm_package_version || pkg.version || "0.1.0";
 
 export async function GET(_request?: Request) {
   let database: "connected" | "degraded" = "degraded";
@@ -27,7 +30,7 @@ export async function GET(_request?: Request) {
       status: "ok",
       timestamp: new Date().toISOString(),
       database,
-      version: "0.1.0",
+      version: APP_VERSION,
     },
     {
       status: 200,

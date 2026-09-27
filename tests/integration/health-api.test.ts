@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import pkg from "@/package.json";
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(),
@@ -31,7 +32,7 @@ describe("Health Check API (/api/health)", () => {
 
     expect(data.status).toBe("ok");
     expect(data.database).toBe("connected");
-    expect(data.version).toBe("0.1.0");
+    expect(data.version).toBe(pkg.version);
     expect(typeof data.timestamp).toBe("string");
     expect(new Date(data.timestamp).toISOString()).toBe(data.timestamp);
     expect(mockFrom).toHaveBeenCalledWith("categories");
@@ -56,7 +57,7 @@ describe("Health Check API (/api/health)", () => {
 
     expect(data.status).toBe("ok");
     expect(data.database).toBe("degraded");
-    expect(data.version).toBe("0.1.0");
+    expect(data.version).toBe(pkg.version);
     expect(typeof data.timestamp).toBe("string");
   });
 
@@ -73,7 +74,7 @@ describe("Health Check API (/api/health)", () => {
 
     expect(data.status).toBe("ok");
     expect(data.database).toBe("degraded");
-    expect(data.version).toBe("0.1.0");
+    expect(data.version).toBe(pkg.version);
     expect(typeof data.timestamp).toBe("string");
   });
 
