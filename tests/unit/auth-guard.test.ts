@@ -27,21 +27,33 @@ vi.mock("@/lib/supabase/server", () => ({
   })),
 }));
 
-// Mock Supabase Admin Client
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: vi.fn().mockReturnValue({
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: { id: "trx-test-id" }, error: null }),
-        }),
-      }),
+// Mock Supabase Admin Client with comprehensive method chaining
+vi.mock("@/lib/supabase/admin", () => {
+  const createChain = () => {
+    const chain: any = {
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      upsert: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      neq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { id: "test-id", stock: 100 }, error: null }),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      then: (resolve: any) => resolve({ data: [], error: null }),
+    };
+    return chain;
+  };
+  return {
+    createAdminClient: vi.fn().mockReturnValue({
+      from: vi.fn().mockImplementation(() => createChain()),
+      rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
     }),
-  }),
-}));
+  };
+});
 
 // Mock Next.js cache revalidation
 vi.mock("next/cache", () => ({
@@ -62,11 +74,16 @@ vi.mock("@/app/actions/storeManager", async (importOriginal) => {
 
 import { assertAuthenticated, assertRole } from "@/lib/authGuard";
 import { addBranch, deleteBranch } from "@/app/actions/branchActions";
-import { clearAllTableOrders, deleteTableOrder } from "@/app/actions/orderActions";
+import {
+  clearAllTableOrders,
+  deleteTableOrder,
+  updateTableOrderStatus,
+} from "@/app/actions/orderActions";
 import {
   updateIngredientStockManual,
   restockIngredient,
   addNewIngredient,
+  saveRecipeConfiguration,
   resetDatabaseCleanAction,
 } from "@/app/actions/ingredientActions";
 import { saveTransaction, addProduct } from "@/app/actions/posActions";
@@ -235,6 +252,32 @@ describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () =
       expect(res.success).toBe(true);
     });
 
+    it("updateTableOrderStatus rejects when user is unauthenticated or not admin/kasir", async () => {
+      mockAuth.mockResolvedValue(null);
+      await expect(updateTableOrderStatus("ord-1", "processing")).rejects.toThrow(
+        "Unauthorized: Authentication required"
+      );
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-guest", email: "guest@growkas.com", role: "customer" },
+      });
+      await expect(updateTableOrderStatus("ord-1", "processing")).rejects.toThrow(
+        "Forbidden: Insufficient permissions"
+      );
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-kasir", email: "kasir@growkas.com", role: "kasir" },
+      });
+      const resKasir = await updateTableOrderStatus("ord-1", "processing");
+      expect(resKasir).toBeDefined();
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-admin", email: "admin@growkas.com", role: "admin" },
+      });
+      const resAdmin = await updateTableOrderStatus("ord-1", "processing");
+      expect(resAdmin).toBeDefined();
+    });
+
     it("updateIngredientStockManual rejects when user is unauthenticated or not an admin", async () => {
       mockAuth.mockResolvedValue(null);
       await expect(updateIngredientStockManual("ing-1", 100)).rejects.toThrow(
@@ -291,6 +334,38 @@ describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () =
         min_stock: 100,
         cost_per_unit: 50,
         category: "sirup_gula",
+      });
+      expect(res.success).toBe(true);
+    });
+
+    it("saveRecipeConfiguration rejects non-admin users and allows admin", async () => {
+      mockAuth.mockResolvedValue(null);
+      await expect(
+        saveRecipeConfiguration({
+          product_name: "Kopi Gula Aren",
+          selling_price: 25000,
+          ingredients: [],
+        })
+      ).rejects.toThrow("Unauthorized: Authentication required");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-kasir", email: "kasir@growkas.com", role: "kasir" },
+      });
+      await expect(
+        saveRecipeConfiguration({
+          product_name: "Kopi Gula Aren",
+          selling_price: 25000,
+          ingredients: [],
+        })
+      ).rejects.toThrow("Forbidden: Insufficient permissions");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-admin", email: "admin@growkas.com", role: "admin" },
+      });
+      const res = await saveRecipeConfiguration({
+        product_name: "Kopi Gula Aren",
+        selling_price: 25000,
+        ingredients: [],
       });
       expect(res.success).toBe(true);
     });

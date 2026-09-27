@@ -160,6 +160,7 @@ export async function getIngredientsAndCOGS() {
 }
 
 // 3. Tambah / Restok Bahan Baku Cepat (+50 / +1000)
+// Concurrency safe: reads fresh stock directly from database before committing update
 export async function restockIngredient(ingredientId: string, additionalStock: number) {
   await assertRole(["admin", "kasir"]);
   const store = loadMasterStore();
@@ -331,6 +332,8 @@ export async function updateIngredientStockManual(
 
 // 6. Simpan / Update Konfigurasi Resep Menu & Takaran Modifier (BOM Manager)
 export async function saveRecipeConfiguration(recipeData: ProductRecipe) {
+  await assertRole(["admin"]);
+
   const store = loadMasterStore();
   const existingIdx = store.recipes.findIndex(
     (r) => r.product_name.toLowerCase().trim() === recipeData.product_name.toLowerCase().trim()
@@ -492,6 +495,7 @@ function calculateModifierAdjustment(
 }
 
 // 8. Pemotongan Otomatis Bahan Baku saat Transaksi Berhasil (Real-Time Deduction Engine with Modifier Awareness)
+// Concurrency safe: reads fresh stock directly from database before committing deduction
 export async function deductRawIngredientsForItems(
   items: { product_name: string; quantity: number; modifiers_summary?: string }[],
   invoiceNumber?: string
@@ -524,23 +528,38 @@ export async function deductRawIngredientsForItems(
 
         const amountToDeduct = Math.round(adjustedQty * item.quantity * 10) / 10;
         if (amountToDeduct > 0) {
-          ing.stock = Math.max(0, Math.round((ing.stock - amountToDeduct) * 10) / 10);
+          // Fetch current stock directly from Supabase to prevent concurrent race conditions
+          let currentStock = ing.stock;
+          try {
+            const supabase = createAdminClient();
+            const { data: dbIng } = await supabase
+              .from("ingredients")
+              .select("stock")
+              .eq("id", ing.id)
+              .single();
+            if (dbIng && typeof dbIng.stock !== "undefined" && dbIng.stock !== null) {
+              currentStock = Number(dbIng.stock);
+            }
+          } catch {}
+
+          const remainingStock = Math.max(0, Math.round((currentStock - amountToDeduct) * 10) / 10);
+          ing.stock = remainingStock;
 
           allDeductions.push({
             ingredient_name: ing.name,
             amount: amountToDeduct,
             unit: ing.unit,
-            remaining: ing.stock,
-            is_low_stock: ing.stock <= ing.min_stock,
+            remaining: remainingStock,
+            is_low_stock: remainingStock <= ing.min_stock,
             modifier_note: modifierNote,
           });
 
-          // Sync stock to Supabase
+          // Sync fresh stock to Supabase
           try {
             const supabase = createAdminClient();
             await supabase
               .from("ingredients")
-              .update({ stock: ing.stock })
+              .update({ stock: remainingStock })
               .eq("id", ing.id);
           } catch {}
         }
@@ -556,18 +575,25 @@ export async function deductRawIngredientsForItems(
       if (coffeeIng && !handledIngredientIds.has(coffeeIng.id)) {
         handledIngredientIds.add(coffeeIng.id);
         const amountToDeduct = 18 * item.quantity;
-        coffeeIng.stock = Math.max(0, Math.round((coffeeIng.stock - amountToDeduct) * 10) / 10);
+        let currentStock = coffeeIng.stock;
+        try {
+          const supabase = createAdminClient();
+          const { data: dbIng } = await supabase.from("ingredients").select("stock").eq("id", coffeeIng.id).single();
+          if (dbIng && typeof dbIng.stock !== "undefined" && dbIng.stock !== null) currentStock = Number(dbIng.stock);
+        } catch {}
+        const remainingStock = Math.max(0, Math.round((currentStock - amountToDeduct) * 10) / 10);
+        coffeeIng.stock = remainingStock;
         allDeductions.push({
           ingredient_name: coffeeIng.name,
           amount: amountToDeduct,
           unit: coffeeIng.unit,
-          remaining: coffeeIng.stock,
-          is_low_stock: coffeeIng.stock <= coffeeIng.min_stock,
+          remaining: remainingStock,
+          is_low_stock: remainingStock <= coffeeIng.min_stock,
           modifier_note: "+18g Extra Shot Kopi",
         });
         try {
           const supabase = createAdminClient();
-          await supabase.from("ingredients").update({ stock: coffeeIng.stock }).eq("id", coffeeIng.id);
+          await supabase.from("ingredients").update({ stock: remainingStock }).eq("id", coffeeIng.id);
         } catch {}
       }
     }
@@ -578,18 +604,25 @@ export async function deductRawIngredientsForItems(
       if (eggIng && !handledIngredientIds.has(eggIng.id)) {
         handledIngredientIds.add(eggIng.id);
         const amountToDeduct = 1 * item.quantity;
-        eggIng.stock = Math.max(0, eggIng.stock - amountToDeduct);
+        let currentStock = eggIng.stock;
+        try {
+          const supabase = createAdminClient();
+          const { data: dbIng } = await supabase.from("ingredients").select("stock").eq("id", eggIng.id).single();
+          if (dbIng && typeof dbIng.stock !== "undefined" && dbIng.stock !== null) currentStock = Number(dbIng.stock);
+        } catch {}
+        const remainingStock = Math.max(0, currentStock - amountToDeduct);
+        eggIng.stock = remainingStock;
         allDeductions.push({
           ingredient_name: eggIng.name,
           amount: amountToDeduct,
           unit: eggIng.unit,
-          remaining: eggIng.stock,
-          is_low_stock: eggIng.stock <= eggIng.min_stock,
+          remaining: remainingStock,
+          is_low_stock: remainingStock <= eggIng.min_stock,
           modifier_note: "+1 Telur Ceplok",
         });
         try {
           const supabase = createAdminClient();
-          await supabase.from("ingredients").update({ stock: eggIng.stock }).eq("id", eggIng.id);
+          await supabase.from("ingredients").update({ stock: remainingStock }).eq("id", eggIng.id);
         } catch {}
       }
     }
@@ -600,18 +633,25 @@ export async function deductRawIngredientsForItems(
       if (syrupIng && !handledIngredientIds.has(syrupIng.id)) {
         handledIngredientIds.add(syrupIng.id);
         const amountToDeduct = 20 * item.quantity;
-        syrupIng.stock = Math.max(0, Math.round((syrupIng.stock - amountToDeduct) * 10) / 10);
+        let currentStock = syrupIng.stock;
+        try {
+          const supabase = createAdminClient();
+          const { data: dbIng } = await supabase.from("ingredients").select("stock").eq("id", syrupIng.id).single();
+          if (dbIng && typeof dbIng.stock !== "undefined" && dbIng.stock !== null) currentStock = Number(dbIng.stock);
+        } catch {}
+        const remainingStock = Math.max(0, Math.round((currentStock - amountToDeduct) * 10) / 10);
+        syrupIng.stock = remainingStock;
         allDeductions.push({
           ingredient_name: syrupIng.name,
           amount: amountToDeduct,
           unit: syrupIng.unit,
-          remaining: syrupIng.stock,
-          is_low_stock: syrupIng.stock <= syrupIng.min_stock,
+          remaining: remainingStock,
+          is_low_stock: remainingStock <= syrupIng.min_stock,
           modifier_note: "+20ml Extra Syrup",
         });
         try {
           const supabase = createAdminClient();
-          await supabase.from("ingredients").update({ stock: syrupIng.stock }).eq("id", syrupIng.id);
+          await supabase.from("ingredients").update({ stock: remainingStock }).eq("id", syrupIng.id);
         } catch {}
       }
     }

@@ -11,6 +11,7 @@ import { assertRole } from "@/lib/authGuard";
 export type { CashierShift };
 
 // 1. Dapatkan Status Shift Aktif (Persisten dari Supabase / In-Memory Fallback)
+// Resilient against container recycling: recalculates sales counters from public.transactions
 export async function getActiveShift(): Promise<{ success: boolean; shift: CashierShift | null }> {
   try {
     const supabase = createAdminClient();
@@ -23,33 +24,67 @@ export async function getActiveShift(): Promise<{ success: boolean; shift: Cashi
       .maybeSingle();
 
     if (!error && data) {
+      let cashSales = 0;
+      let qrisSales = 0;
+      let debitSales = 0;
+      let totalSales = 0;
+      let txCount = 0;
+
+      // Maintain sales counters by querying completed transactions since shift start
+      try {
+        const { data: trxs } = await supabase
+          .from("transactions")
+          .select("total_amount, payment_method")
+          .gte("created_at", data.start_time);
+
+        if (trxs && trxs.length > 0) {
+          txCount = trxs.length;
+          for (const tx of trxs) {
+            const amt = Number(tx.total_amount || 0);
+            totalSales += amt;
+            const pm = (tx.payment_method || "").toLowerCase();
+            if (pm === "cash") cashSales += amt;
+            else if (pm === "qris") qrisSales += amt;
+            else if (pm === "debit") debitSales += amt;
+          }
+        }
+      } catch (txErr) {
+        console.warn("Notice calculating sales from transactions:", txErr);
+      }
+
+      const initialCash = Number(data.initial_cash || 0);
+      const expectedCash = Math.max(
+        Number(data.expected_cash || 0),
+        initialCash + cashSales
+      );
+
       const shift: CashierShift = {
         id: data.id,
         cashier_name: data.cashier_name,
         branch_name: data.branch_name,
         start_time: data.start_time,
         end_time: data.end_time || undefined,
-        initial_cash: Number(data.initial_cash || 0),
-        cash_sales: 0,
-        qris_sales: 0,
-        debit_sales: 0,
-        total_sales: 0,
-        transaction_count: 0,
-        expected_cash: Number(data.expected_cash ?? data.initial_cash ?? 0),
+        initial_cash: initialCash,
+        cash_sales: cashSales,
+        qris_sales: qrisSales,
+        debit_sales: debitSales,
+        total_sales: totalSales,
+        transaction_count: txCount,
+        expected_cash: expectedCash,
         actual_cash: data.actual_cash !== null && data.actual_cash !== undefined ? Number(data.actual_cash) : undefined,
         discrepancy: data.discrepancy !== null && data.discrepancy !== undefined ? Number(data.discrepancy) : undefined,
         status: data.status,
       };
 
-      // Sync with in-memory store
+      // Sync with in-memory store and preserve any active tallies
       const store = loadMasterStore();
       if (store.activeShift && store.activeShift.id === shift.id) {
-        // preserve running in-memory tallies if same shift
-        shift.cash_sales = store.activeShift.cash_sales;
-        shift.qris_sales = store.activeShift.qris_sales;
-        shift.debit_sales = store.activeShift.debit_sales;
-        shift.total_sales = store.activeShift.total_sales;
-        shift.transaction_count = store.activeShift.transaction_count;
+        shift.cash_sales = Math.max(shift.cash_sales, store.activeShift.cash_sales || 0);
+        shift.qris_sales = Math.max(shift.qris_sales, store.activeShift.qris_sales || 0);
+        shift.debit_sales = Math.max(shift.debit_sales, store.activeShift.debit_sales || 0);
+        shift.total_sales = Math.max(shift.total_sales, store.activeShift.total_sales || 0);
+        shift.transaction_count = Math.max(shift.transaction_count, store.activeShift.transaction_count || 0);
+        shift.expected_cash = Math.max(shift.expected_cash, store.activeShift.expected_cash || 0);
         shift.notes = store.activeShift.notes;
       }
       store.activeShift = shift;

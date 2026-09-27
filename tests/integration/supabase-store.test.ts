@@ -5,6 +5,12 @@ let mockDbIngredients: any[] = [];
 let mockDbCashierShifts: any[] = [];
 let mockDbTableOrders: any[] = [];
 let mockDbTableOrderItems: any[] = [];
+let mockDbTransactions: any[] = [];
+let mockDbTransactionItems: any[] = [];
+let mockDbProducts: any[] = [
+  { id: "p-701", name: "7co Caramel Macchiato", price: 28000, stock: 50 },
+  { id: "p-702", name: "7co Kopi Susu Creamy", price: 23000, stock: 40 },
+];
 
 // Helper to reset mock db
 function resetMockDb() {
@@ -12,6 +18,12 @@ function resetMockDb() {
   mockDbCashierShifts = [];
   mockDbTableOrders = [];
   mockDbTableOrderItems = [];
+  mockDbTransactions = [];
+  mockDbTransactionItems = [];
+  mockDbProducts = [
+    { id: "p-701", name: "7co Caramel Macchiato", price: 28000, stock: 50 },
+    { id: "p-702", name: "7co Kopi Susu Creamy", price: 23000, stock: 40 },
+  ];
 }
 
 // Mock auth to allow admin actions by default
@@ -39,11 +51,18 @@ vi.mock("@/lib/supabase/server", () => ({
 // Mock createAdminClient from lib/supabase/admin
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn().mockImplementation(() => ({
+    rpc: vi.fn().mockImplementation((fn: string, params: any) => {
+      if (fn === "deduct_product_stock_atomic") {
+        const prod = mockDbProducts.find((p) => p.id === params.p_id);
+        if (prod && prod.stock >= params.qty) {
+          prod.stock -= params.qty;
+          return Promise.resolve({ data: { success: true, remaining_stock: prod.stock }, error: null });
+        }
+        return Promise.resolve({ data: null, error: { message: "insufficient_stock" } });
+      }
+      return Promise.resolve({ data: null, error: { message: "rpc_not_found" } });
+    }),
     from: (table: string) => {
-      let selectedData: any = null;
-      let filterCol: string | null = null;
-      let filterVal: any = null;
-
       const chain: any = {
         select: vi.fn().mockImplementation((columns = "*") => {
           if (table === "ingredients") {
@@ -51,13 +70,18 @@ vi.mock("@/lib/supabase/admin", () => ({
           } else if (table === "cashier_shifts") {
             chain._data = [...mockDbCashierShifts];
           } else if (table === "table_orders") {
-            // Join table_order_items if requested
             chain._data = mockDbTableOrders.map((o) => ({
               ...o,
               table_order_items: mockDbTableOrderItems.filter((it) => it.order_id === o.id),
             }));
           } else if (table === "table_order_items") {
             chain._data = [...mockDbTableOrderItems];
+          } else if (table === "transactions") {
+            chain._data = [...mockDbTransactions];
+          } else if (table === "transaction_items") {
+            chain._data = [...mockDbTransactionItems];
+          } else if (table === "products") {
+            chain._data = [...mockDbProducts];
           } else {
             chain._data = [];
           }
@@ -73,7 +97,21 @@ vi.mock("@/lib/supabase/admin", () => ({
             mockDbTableOrders.push(...items);
           } else if (table === "table_order_items") {
             mockDbTableOrderItems.push(...items);
+          } else if (table === "transactions") {
+            const trxsWithId = items.map((t) => ({ ...t, id: t.id || "trx-" + Date.now() }));
+            mockDbTransactions.push(...trxsWithId);
+            chain._lastInserted = Array.isArray(payload) ? trxsWithId : trxsWithId[0];
+            return chain;
+          } else if (table === "transaction_items") {
+            mockDbTransactionItems.push(...items);
+          } else if (table === "products") {
+            mockDbProducts.push(...items);
           }
+          chain._lastInserted = Array.isArray(payload) ? payload : payload;
+          return chain;
+        }),
+        upsert: vi.fn().mockImplementation((payload: any) => {
+          const items = Array.isArray(payload) ? payload : [payload];
           chain._lastInserted = Array.isArray(payload) ? payload : payload;
           return chain;
         }),
@@ -99,6 +137,10 @@ vi.mock("@/lib/supabase/admin", () => ({
               const order = mockDbTableOrders.find((o) => o[col] === val);
               if (order) Object.assign(order, chain._updates);
               chain._lastUpdated = order;
+            } else if (table === "products") {
+              const prod = mockDbProducts.find((p) => p[col] === val);
+              if (prod) Object.assign(prod, chain._updates);
+              chain._lastUpdated = prod;
             }
           }
           if (chain._isDelete) {
@@ -124,6 +166,13 @@ vi.mock("@/lib/supabase/admin", () => ({
           }
           return chain;
         }),
+        gte: vi.fn().mockImplementation((col: string, val: any) => {
+          if (chain._data) {
+            chain._data = chain._data.filter((d: any) => (d[col] || "") >= val);
+          }
+          return chain;
+        }),
+        or: vi.fn().mockImplementation(() => chain),
         order: vi.fn().mockImplementation(() => chain),
         limit: vi.fn().mockImplementation((n: number) => {
           if (chain._data) chain._data = chain._data.slice(0, n);
@@ -158,6 +207,7 @@ import {
   getIngredientsAndCOGS,
   restockIngredient,
   updateIngredientStockManual,
+  saveRecipeConfiguration,
 } from "@/app/actions/ingredientActions";
 import {
   openShift,
@@ -173,6 +223,7 @@ import {
   deleteTableOrder,
   clearAllTableOrders,
 } from "@/app/actions/orderActions";
+import { saveTransaction } from "@/app/actions/posActions";
 import { loadMasterStore, saveMasterStore } from "@/app/actions/storeManager";
 
 describe("Integration: Supabase Relational Store Migration (Task 4)", () => {
@@ -209,7 +260,6 @@ describe("Integration: Supabase Relational Store Migration (Task 4)", () => {
     });
 
     it("should update stock in public.ingredients via restockIngredient", async () => {
-      // First insert an ingredient
       const addRes = await addNewIngredient({
         name: "Sirup Pandan Wangi",
         unit: "ml",
@@ -251,9 +301,22 @@ describe("Integration: Supabase Relational Store Migration (Task 4)", () => {
       expect(dbIng?.stock).toBe(2500);
       expect(dbIng?.cost_per_unit).toBe(180);
     });
+
+    it("should save recipe configuration with admin guard", async () => {
+      const res = await saveRecipeConfiguration({
+        product_name: "7co Iced Caramel Macchiato V2",
+        selling_price: 30000,
+        ingredients: [
+          { ingredient_id: "ing-1", ingredient_name: "Biji Kopi Arabica", quantity: 18, unit: "gram" },
+          { ingredient_id: "ing-2", ingredient_name: "Fresh Milk UHT", quantity: 120, unit: "ml" },
+        ],
+      });
+      expect(res.success).toBe(true);
+      expect(res.recipe.selling_price).toBe(30000);
+    });
   });
 
-  describe("2. Cashier Shift Management Supabase Integration", () => {
+  describe("2. Cashier Shift Management & Serverless Recovery Integration", () => {
     it("should open shift in public.cashier_shifts and retrieve it as active shift", async () => {
       const openRes = await openShift("Budi Kasir", 150000, "7co (Yogyakarta)");
       expect(openRes.success).toBe(true);
@@ -284,6 +347,43 @@ describe("Integration: Supabase Relational Store Migration (Task 4)", () => {
       // Verify in Supabase table
       const activeDb = mockDbCashierShifts.find((s) => s.status === "open");
       expect(Number(activeDb?.expected_cash)).toBe(150000);
+    });
+
+    it("should recalculate sales counters from transactions when serverless container restarts", async () => {
+      const openRes = await openShift("Kasir Serverless", 200000);
+      const shiftStartTime = openRes.shift.start_time;
+
+      // Simulate transactions inserted into Supabase
+      mockDbTransactions.push(
+        {
+          id: "trx-1",
+          invoice_number: "INV-001",
+          total_amount: 50000,
+          payment_method: "cash",
+          created_at: shiftStartTime,
+        },
+        {
+          id: "trx-2",
+          invoice_number: "INV-002",
+          total_amount: 30000,
+          payment_method: "qris",
+          created_at: shiftStartTime,
+        }
+      );
+
+      // Simulate cold container restart: clear in-memory activeShift
+      const store = loadMasterStore();
+      store.activeShift = null;
+
+      // Calling getActiveShift on fresh container should recalculate from transactions
+      const recovered = await getActiveShift();
+      expect(recovered.success).toBe(true);
+      expect(recovered.shift).not.toBeNull();
+      expect(recovered.shift?.cash_sales).toBe(50000);
+      expect(recovered.shift?.qris_sales).toBe(30000);
+      expect(recovered.shift?.total_sales).toBe(80000);
+      expect(recovered.shift?.transaction_count).toBe(2);
+      expect(recovered.shift?.expected_cash).toBe(250000); // 200000 + 50000
     });
 
     it("should close shift, record discrepancy, and mark status as closed", async () => {
@@ -404,7 +504,45 @@ describe("Integration: Supabase Relational Store Migration (Task 4)", () => {
     });
   });
 
-  describe("4. Safe In-Memory Fallback & No /tmp Deprecation", () => {
+  describe("4. POS Transactions Integration with Shift & Stock", () => {
+    it("should save transaction, integrate with active shift, and record to Supabase", async () => {
+      // Open active shift
+      await openShift("Kasir POS 1", 100000);
+
+      const txResult = await saveTransaction({
+        invoice_number: "INV-POS-99",
+        cashier_name: "Kasir POS 1",
+        branch_name: "7co (Yogyakarta)",
+        payment_method: "cash",
+        total_amount: 28000,
+        paid_amount: 50000,
+        change_amount: 22000,
+        items: [
+          {
+            product_id: "p-701",
+            product_name: "7co Caramel Macchiato",
+            price: 28000,
+            quantity: 1,
+            subtotal: 28000,
+          },
+        ],
+      });
+
+      expect(txResult.success).toBe(true);
+      expect(txResult.transactionId).toBe("INV-POS-99");
+
+      // Verify transaction committed to Supabase mock
+      const dbTx = mockDbTransactions.find((t) => t.invoice_number === "INV-POS-99");
+      expect(dbTx).toBeDefined();
+      expect(Number(dbTx.total_amount)).toBe(28000);
+
+      // Verify active shift expected_cash incremented
+      const activeShift = await getActiveShift();
+      expect(activeShift.shift?.expected_cash).toBe(128000); // 100000 + 28000
+    });
+  });
+
+  describe("5. Safe In-Memory Fallback & No /tmp Deprecation", () => {
     it("should maintain safe in-memory data integrity without crashing when Supabase is offline", async () => {
       const store = loadMasterStore();
       expect(store).toBeDefined();

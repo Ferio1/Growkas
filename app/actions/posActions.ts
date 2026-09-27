@@ -11,6 +11,8 @@ import {
   getStoreBranches,
 } from "./storeManager";
 import { assertAuthenticated, assertRole } from "@/lib/authGuard";
+import { recordSaleToActiveShift } from "./shiftActions";
+import { deductRawIngredientsForItems } from "./ingredientActions";
 
 export type { ProductItem, CategoryItem };
 
@@ -51,23 +53,34 @@ export interface TransactionPayload {
   }[];
 }
 
-// 1. Ambil Produk & Kategori (Persisten & Real-Time)
+// 1. Ambil Produk & Kategori (Persisten Supabase & In-Memory Fallback)
 export async function getProductsAndCategories() {
   const store = loadMasterStore();
-  const categories: CategoryItem[] = store.categories || INITIAL_CATEGORIES;
+  let categories: CategoryItem[] = store.categories || INITIAL_CATEGORIES;
+  let products: ProductItem[] = store.products;
 
   try {
     const supabase = createAdminClient();
-    const { data: dbProducts } = await supabase.from("products").select("*");
 
+    // Query categories dari Supabase
+    const { data: dbCategories } = await supabase.from("categories").select("*");
+    if (dbCategories && dbCategories.length > 0) {
+      categories = dbCategories.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+      }));
+      store.categories = categories;
+    }
+
+    // Query products dari Supabase
+    const { data: dbProducts } = await supabase.from("products").select("*");
     if (dbProducts && dbProducts.length > 0) {
-      // Map produk dari database Supabase
       const dbMap = new Map<string, any>();
       dbProducts.forEach((p: any) => {
         dbMap.set(p.name.toLowerCase(), p);
       });
 
-      // Update stok lokal berdasarkan database Supabase agar sinkron
+      // Sinkronkan stok lokal dengan Supabase
       for (const sp of store.products) {
         const fromDb = dbMap.get(sp.name.toLowerCase());
         if (fromDb && typeof fromDb.stock === "number") {
@@ -77,24 +90,25 @@ export async function getProductsAndCategories() {
         }
       }
       saveMasterStore(store);
+      products = store.products;
     }
   } catch (err) {
-    console.warn("Notice: reading products from local master store:", err);
+    console.warn("Supabase products read notice (in-memory fallback active):", err);
   }
 
   return {
     success: true,
     categories,
-    products: store.products,
+    products,
   };
 }
 
-// 2. Simpan Transaksi Kasir POS (Potong Stok Persisten di Supabase & Local Store)
+// 2. Simpan Transaksi Kasir POS (Potong Stok di Supabase, Integrasi Shift Kasir, & In-Memory Store)
 export async function saveTransaction(payload: TransactionPayload) {
   await assertAuthenticated();
   const store = loadMasterStore();
 
-  // 1. Potong stok pada store lokal persisten
+  // 1. Potong stok pada store lokal in-memory
   for (const item of payload.items) {
     const p = store.products.find(
       (sp) => sp.id === item.product_id || sp.name.toLowerCase() === item.product_name.toLowerCase()
@@ -104,17 +118,34 @@ export async function saveTransaction(payload: TransactionPayload) {
     }
   }
 
-  // Simpan record transaksi ke store
+  // Simpan record transaksi ke in-memory store
   store.transactions.unshift({
     ...payload,
     id: "trx-" + Date.now(),
     created_at: new Date().toISOString(),
   });
-
-  // Simpan perubahan ke file disk persisten
   saveMasterStore(store);
 
-  // 2. Sinkronisasi ke database Supabase via Admin Client (Bypass RLS)
+  // 2. Integrasikan penjualan ke shift kasir aktif di Supabase
+  try {
+    await recordSaleToActiveShift(payload.payment_method, payload.total_amount);
+  } catch (shiftErr) {
+    console.warn("Notice updating active shift from POS transaction:", shiftErr);
+  }
+
+  // 3. Potong stok bahan baku mentah (BOM HPP)
+  try {
+    const deductionItems = payload.items.map((it) => ({
+      product_name: it.product_name,
+      quantity: it.quantity,
+      modifiers_summary: it.modifiers_summary,
+    }));
+    await deductRawIngredientsForItems(deductionItems, payload.invoice_number);
+  } catch (deductErr) {
+    console.warn("Notice deducting raw ingredients from POS transaction:", deductErr);
+  }
+
+  // 4. Sinkronisasi ke database Supabase via Admin Client
   try {
     const supabase = createAdminClient();
 
@@ -149,6 +180,17 @@ export async function saveTransaction(payload: TransactionPayload) {
     // Potong stok produk di database Supabase
     for (const item of payload.items) {
       try {
+        // Coba atomic RPC jika tersedia di Supabase
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.product_id);
+        if (isUuid) {
+          const { error: rpcErr } = await supabase.rpc("deduct_product_stock_atomic", {
+            p_id: item.product_id,
+            qty: item.quantity,
+          });
+          if (!rpcErr) continue;
+        }
+
+        // Fallback row update
         const { data: dbProduct } = await supabase
           .from("products")
           .select("id, stock")
@@ -167,7 +209,7 @@ export async function saveTransaction(payload: TransactionPayload) {
       }
     }
   } catch (dbErr) {
-    console.warn("Supabase transaction sync notice:", dbErr);
+    console.warn("Supabase transaction sync notice (in-memory fallback active):", dbErr);
   }
 
   revalidatePath("/dashboard");
@@ -203,7 +245,7 @@ export async function addProduct(product: { name: string; price: number; stock: 
       barcode: newProduct.barcode,
     });
   } catch (e) {
-    console.warn("Insert new product to Supabase notice:", e);
+    console.warn("Insert new product to Supabase notice (in-memory fallback active):", e);
   }
 
   revalidatePath("/dashboard");

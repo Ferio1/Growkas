@@ -152,6 +152,7 @@ export async function updateTableOrderStatus(
   orderId: string,
   newStatus: "pending" | "processing" | "ready" | "completed" | "cancelled"
 ): Promise<{ success: boolean; order?: TableOrder }> {
+  await assertRole(["admin", "kasir"]);
   let wasUnpaid = false;
   let orderTotal = 0;
 
