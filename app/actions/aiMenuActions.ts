@@ -4,6 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { assertRole } from "@/lib/authGuard";
 
 export interface ExtractedMenuItem {
   id: string;
@@ -241,6 +242,7 @@ export async function extractMenuFromImage(imageDataBase64?: string, presetKey?:
  * Server Action: Melakukan Batch Insert produk hasil scan AI ke Database Supabase
  */
 export async function batchAddProducts(items: ExtractedMenuItem[]) {
+  await assertRole(["admin"]);
   try {
     const selectedItems = items.filter((i) => i.selected && i.name.trim() !== "");
     if (selectedItems.length === 0) {

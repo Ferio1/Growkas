@@ -9,7 +9,7 @@ import {
   loadMasterStore,
   saveMasterStore,
 } from "./storeManager";
-import { assertRole } from "@/lib/authGuard";
+import { assertAuthenticated, assertRole } from "@/lib/authGuard";
 
 export type { TableOrder, TableOrderItem };
 
@@ -78,15 +78,32 @@ export async function createTableOrder(
   orderData: Omit<TableOrder, "id" | "created_at">,
   options?: { skipShiftAndStockDeduction?: boolean }
 ): Promise<{ success: boolean; order: TableOrder }> {
-  // Keamanan Transaksi QR Self-Order:
-  // Pesanan mandiri dari pelanggan (/order) HARUS berstatus "unpaid" sampai diverifikasi kasir
-  // bahkan jika memilih metode bayar QRIS.
-  const isCustomerQr = orderData.source === "customer_qr" || !orderData.source;
-  const paymentStatus: "paid" | "unpaid" = isCustomerQr ? "unpaid" : orderData.payment_status;
+  // Keamanan Transaksi QR Self-Order & POS:
+  // Jika pemanggil mengklaim source: "kasir_pos" atau mencoba payment_status: "paid",
+  // verifikasi bahwa pemanggil memiliki sesi autentikasi yang sah (kasir/admin).
+  // Jika tidak terautentikasi (pengguna anonim / QR mobile), paksa payment_status = "unpaid" dan source = "customer_qr".
+  let isCustomerQr = orderData.source === "customer_qr" || !orderData.source;
+  let source = orderData.source || "customer_qr";
+  let paymentStatus: "paid" | "unpaid" = orderData.payment_status || "unpaid";
+
+  if (orderData.source === "kasir_pos" || orderData.payment_status === "paid") {
+    try {
+      await assertAuthenticated();
+    } catch {
+      isCustomerQr = true;
+      source = "customer_qr";
+      paymentStatus = "unpaid";
+    }
+  }
+
+  if (isCustomerQr) {
+    paymentStatus = "unpaid";
+  }
 
   const store = loadMasterStore();
   const newOrder: TableOrder = {
     ...orderData,
+    source,
     payment_status: paymentStatus,
     id: "ord-" + Date.now(),
     created_at: new Date().toISOString(),
@@ -137,8 +154,8 @@ export async function createTableOrder(
       await supabase.from("table_order_items").insert(orderItems);
     }
 
-    // 3. Simpan juga transaksi ke tabel transactions jika pembayaran sudah lunas
-    if (newOrder.payment_status === "paid") {
+    // 3. Simpan juga transaksi ke tabel transactions jika pembayaran sudah lunas dan belum disimpan oleh kasir POS
+    if (newOrder.payment_status === "paid" && !options?.skipShiftAndStockDeduction) {
       await supabase.from("transactions").insert({
         invoice_number: newOrder.invoice_number,
         total_amount: newOrder.total_amount,

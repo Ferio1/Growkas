@@ -87,6 +87,7 @@ import {
   resetDatabaseCleanAction,
 } from "@/app/actions/ingredientActions";
 import { saveTransaction, addProduct } from "@/app/actions/posActions";
+import { batchAddProducts } from "@/app/actions/aiMenuActions";
 import { config as proxyConfig } from "@/proxy";
 
 describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () => {
@@ -429,6 +430,32 @@ describe("Task 2: Authentication & Route Protection — Auth Guard & RBAC", () =
         items: [],
       });
       expect(result.success).toBe(true);
+    });
+
+    it("batchAddProducts rejects unauthenticated callers and non-admin users", async () => {
+      mockAuth.mockResolvedValue(null);
+      await expect(
+        batchAddProducts([
+          { id: "1", name: "Kopi", price: 10000, category: "Espresso", stock: 10, selected: true },
+        ])
+      ).rejects.toThrow("Unauthorized: Authentication required");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-kasir", email: "kasir@growkas.com", role: "kasir" },
+      });
+      await expect(
+        batchAddProducts([
+          { id: "1", name: "Kopi", price: 10000, category: "Espresso", stock: 10, selected: true },
+        ])
+      ).rejects.toThrow("Forbidden: Insufficient permissions");
+
+      mockAuth.mockResolvedValue({
+        user: { id: "u-admin", email: "admin@growkas.com", role: "admin" },
+      });
+      const res = await batchAddProducts([
+        { id: "1", name: "Kopi", price: 10000, category: "Espresso", stock: 10, selected: true },
+      ]);
+      expect(res.success).toBe(true);
     });
   });
 

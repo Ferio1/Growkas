@@ -4,7 +4,10 @@ import path from "path";
 
 // Track Supabase RPC calls and DB operations
 let mockRpcCalls: { fn: string; params: any }[] = [];
+let mockRpcImplementation: ((fn: string, params: any) => Promise<any>) | null = null;
 let mockProductInserts: any[] = [];
+let mockProductUpdates: any[] = [];
+let mockTransactionsInserts: any[] = [];
 let mockCategoryQueries: any[] = [];
 let mockCategoryInserts: any[] = [];
 let mockTableOrderInserts: any[] = [];
@@ -19,14 +22,16 @@ const mockCategories = [
   { id: "cat-uuid-umum-5555", name: "Umum" },
 ];
 
-// Mock Auth
+// Mock Auth dynamically
+let currentMockUser: any = {
+  id: "admin-uuid-0001",
+  email: "admin@growkas.com",
+  role: "admin",
+};
+
 vi.mock("@/auth", () => ({
-  auth: vi.fn().mockResolvedValue({
-    user: {
-      id: "admin-uuid-0001",
-      email: "admin@growkas.com",
-      role: "admin",
-    },
+  auth: vi.fn().mockImplementation(() => {
+    return Promise.resolve(currentMockUser ? { user: currentMockUser } : null);
   }),
 }));
 
@@ -50,6 +55,9 @@ function createMockSupabase() {
   return {
     rpc: vi.fn().mockImplementation((fn: string, params: any) => {
       mockRpcCalls.push({ fn, params });
+      if (mockRpcImplementation) {
+        return mockRpcImplementation(fn, params);
+      }
       return Promise.resolve({ data: { success: true, remaining_stock: 10 }, error: null });
     }),
     from: vi.fn().mockImplementation((table: string) => {
@@ -111,6 +119,8 @@ function createMockSupabase() {
             return Promise.resolve({ data: payload, error: null });
           }
           if (table === "transactions") {
+            const items = Array.isArray(payload) ? payload : [payload];
+            mockTransactionsInserts.push(...items);
             return {
               select: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({
@@ -126,6 +136,9 @@ function createMockSupabase() {
           return chain;
         }),
         update: vi.fn().mockImplementation((payload: any) => {
+          if (table === "products") {
+            mockProductUpdates.push(payload);
+          }
           return {
             eq: vi.fn().mockResolvedValue({ data: payload, error: null }),
           };
@@ -158,11 +171,19 @@ import { recordSaleToActiveShift } from "@/app/actions/shiftActions";
 describe("Task 5: Concurrency, Inventory Atomic Decrement & Secure Orders", () => {
   beforeEach(() => {
     mockRpcCalls = [];
+    mockRpcImplementation = null;
     mockProductInserts = [];
+    mockProductUpdates = [];
+    mockTransactionsInserts = [];
     mockCategoryQueries = [];
     mockCategoryInserts = [];
     mockTableOrderInserts = [];
     shouldFailProductInsert = false;
+    currentMockUser = {
+      id: "admin-uuid-0001",
+      email: "admin@growkas.com",
+      role: "admin",
+    };
     vi.clearAllMocks();
   });
 
@@ -270,9 +291,67 @@ describe("Task 5: Concurrency, Inventory Atomic Decrement & Secure Orders", () =
         qty: 3,
       });
     });
+
+    it("should proceed to fallback lookup and update when RPC returns success: false (e.g. product_not_found)", async () => {
+      const missingUuid = "00000000-0000-0000-0000-000000000099";
+
+      mockRpcImplementation = vi.fn().mockResolvedValue({
+        data: { success: false, error: "product_not_found" },
+        error: null,
+      });
+
+      const result = await saveTransaction({
+        invoice_number: "INV-ATOMIC-FALLBACK",
+        cashier_name: "Kasir Test",
+        branch_name: "7co (Yogyakarta)",
+        payment_method: "cash",
+        total_amount: 30000,
+        paid_amount: 50000,
+        change_amount: 20000,
+        items: [
+          {
+            product_id: missingUuid,
+            product_name: "Fallback Found By Name",
+            price: 30000,
+            quantity: 2,
+            subtotal: 60000,
+          },
+        ],
+      });
+
+      expect(result.success).toBe(true);
+
+      // Verify RPC was attempted
+      expect(mockRpcCalls.some((c) => c.fn === "deduct_product_stock_atomic")).toBe(true);
+
+      // And because rpcData.success was false, it proceeded to fallback row update
+      expect(mockProductUpdates.length).toBeGreaterThan(0);
+      expect(mockProductUpdates[0].stock).toBe(48); // 50 - 2
+    });
   });
 
   describe("2. aiMenuActions:batchAddProducts Schema Alignment & Error Propagation", () => {
+    it("should reject non-admin callers attempting batchAddProducts", async () => {
+      currentMockUser = {
+        id: "kasir-uuid-0002",
+        email: "kasir@growkas.com",
+        role: "kasir",
+      };
+
+      await expect(
+        batchAddProducts([
+          {
+            id: "item-1",
+            name: "Latte Larana",
+            price: 42000,
+            category: "Espresso",
+            stock: 50,
+            selected: true,
+          },
+        ])
+      ).rejects.toThrow("Forbidden: Insufficient permissions");
+    });
+
     it("should map text category to category_id UUID and NOT send invalid 'category' column", async () => {
       const itemsToInsert: ExtractedMenuItem[] = [
         {
@@ -406,6 +485,73 @@ describe("Task 5: Concurrency, Inventory Atomic Decrement & Secure Orders", () =
       expect(qrCashResult.success).toBe(true);
       expect(qrCashResult.order.payment_status).toBe("unpaid");
       expect(recordSaleToActiveShift).not.toHaveBeenCalled();
+    });
+
+    it("should force unauthenticated caller to unpaid and customer_qr even if attempting kasir_pos or paid", async () => {
+      // Simulate unauthenticated / public caller
+      currentMockUser = null;
+
+      const orderResult = await createTableOrder({
+        invoice_number: "ORD-FORGED-001",
+        table_number: "Meja 10",
+        branch_name: "7co (Yogyakarta)",
+        payment_method: "cash",
+        payment_status: "paid",
+        status: "pending",
+        total_amount: 50000,
+        source: "kasir_pos",
+        items: [
+          {
+            product_name: "Espresso",
+            price: 50000,
+            quantity: 1,
+            subtotal: 50000,
+          },
+        ],
+      });
+
+      expect(orderResult.success).toBe(true);
+      expect(orderResult.order.payment_status).toBe("unpaid");
+      expect(orderResult.order.source).toBe("customer_qr");
+      expect(recordSaleToActiveShift).not.toHaveBeenCalled();
+    });
+
+    it("should guard duplicate transaction insertion when skipShiftAndStockDeduction is true", async () => {
+      // Authenticated cashier order from KasirView counter
+      currentMockUser = {
+        id: "kasir-uuid-0001",
+        email: "kasir@growkas.com",
+        role: "kasir",
+      };
+
+      mockTransactionsInserts = [];
+
+      const counterOrder = await createTableOrder(
+        {
+          invoice_number: "INV-POS-ALREADY-SAVED",
+          table_number: "Meja Counter",
+          branch_name: "7co (Yogyakarta)",
+          payment_method: "cash",
+          payment_status: "paid",
+          status: "pending",
+          total_amount: 45000,
+          source: "kasir_pos",
+          items: [
+            {
+              product_name: "Cappuccino",
+              price: 45000,
+              quantity: 1,
+              subtotal: 45000,
+            },
+          ],
+        },
+        { skipShiftAndStockDeduction: true }
+      );
+
+      expect(counterOrder.success).toBe(true);
+      expect(counterOrder.order.payment_status).toBe("paid");
+      // Must NOT duplicate transaction insertion into Supabase transactions table
+      expect(mockTransactionsInserts.length).toBe(0);
     });
 
     it("verifies order/page.tsx source code does not grant instant 'paid' status for QRIS orders", () => {

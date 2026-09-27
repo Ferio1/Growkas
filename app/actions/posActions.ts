@@ -183,11 +183,11 @@ export async function saveTransaction(payload: TransactionPayload) {
         const prodId = (item as any).id || item.product_id;
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(prodId);
         if (isUuid) {
-          const { error: rpcErr } = await supabase.rpc("deduct_product_stock_atomic", {
+          const { data: rpcData, error: rpcErr } = await supabase.rpc("deduct_product_stock_atomic", {
             p_id: prodId,
             qty: item.quantity,
           });
-          if (!rpcErr) continue;
+          if (!rpcErr && rpcData?.success) continue;
         }
 
         // Fallback: Cari product berdasarkan ID atau Nama di Supabase
@@ -200,11 +200,11 @@ export async function saveTransaction(payload: TransactionPayload) {
         if (dbProduct) {
           const dbIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dbProduct.id);
           if (dbIsUuid) {
-            const { error: rpcErr } = await supabase.rpc("deduct_product_stock_atomic", {
+            const { data: rpcData, error: rpcErr } = await supabase.rpc("deduct_product_stock_atomic", {
               p_id: dbProduct.id,
               qty: item.quantity,
             });
-            if (!rpcErr) continue;
+            if (!rpcErr && rpcData?.success) continue;
           }
 
           const newStock = Math.max(0, Number(dbProduct.stock || 0) - item.quantity);
