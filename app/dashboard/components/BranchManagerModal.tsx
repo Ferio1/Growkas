@@ -47,8 +47,8 @@ export default function BranchManagerModal({
   };
 
   const handleDelete = async (b: BranchItem) => {
-    if (b.id === "br-1") {
-      alert("Outlet utama pusat (Saray Coffee & Space) tidak dapat dihapus.");
+    if (branches.length <= 1) {
+      alert(`Outlet "${b.name}" adalah satu-satunya outlet yang tersisa dan tidak dapat dihapus.`);
       return;
     }
     if (confirm(`Yakin ingin menghapus outlet "${b.name} (${b.city})"?`)) {

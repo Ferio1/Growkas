@@ -1,14 +1,17 @@
 "use client";
 // app/kitchen/page.tsx — Layar Khusus Dapur / Barista Kitchen Display System (Tablet/Monitor Mode)
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import GrowkasLogo from "@/app/components/GrowkasLogo";
 import Link from "next/link";
 import { TableOrder, getTableOrders, updateTableOrderStatus, deleteTableOrder, clearAllTableOrders } from "@/app/actions/orderActions";
 import KitchenTicketModal from "@/app/dashboard/components/KitchenTicketModal";
 import { playKitchenChime } from "@/app/dashboard/components/KitchenDisplayModal";
 
-export default function KitchenPage() {
+function KitchenContent() {
+  const searchParams = useSearchParams();
+  const branchName = searchParams.get("branch") || "7co (Yogyakarta)";
   const [orders, setOrders] = useState<TableOrder[]>([]);
   const [activeFilter, setActiveFilter] = useState<"all" | "pending" | "processing" | "ready">("all");
   const [selectedTicketOrder, setSelectedTicketOrder] = useState<TableOrder | null>(null);
@@ -102,7 +105,7 @@ export default function KitchenPage() {
               </span>
             </div>
             <div style={{ fontSize: "0.75rem", color: "#888" }}>
-              Saray Coffee &amp; Space • Auto-Refresh (4s)
+              {branchName} • Auto-Refresh (4s)
             </div>
           </div>
         </div>
@@ -420,5 +423,13 @@ export default function KitchenPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function KitchenPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "40px", color: "#888", textAlign: "center" }}>Memuat Layar Dapur...</div>}>
+      <KitchenContent />
+    </Suspense>
   );
 }

@@ -10,13 +10,13 @@ interface QRCodeGeneratorProps {
 }
 
 export default function QRCodeGenerator({ branches }: QRCodeGeneratorProps) {
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || "br-1");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || "br-5");
   const [tableCount, setTableCount] = useState<number>(10);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [singlePrintTable, setSinglePrintTable] = useState<number | null>(null);
 
   const activeBranch = branches.find((b) => b.id === selectedBranchId) || branches[0] || {
-    name: "Saray Coffee & Space",
+    name: "7co",
     city: "Yogyakarta",
   };
 

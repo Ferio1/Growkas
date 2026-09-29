@@ -11,7 +11,7 @@ import { getProductType, formatItemModifiersSummary, ProductType } from "@/app/u
 function OrderPageContent() {
   const searchParams = useSearchParams();
   const tableNum = searchParams.get("table") || "01";
-  const branchName = searchParams.get("branch") || "Saray Coffee & Space (Yogyakarta)";
+  const branchName = searchParams.get("branch") || "7co (Yogyakarta)";
 
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -190,6 +190,15 @@ function OrderPageContent() {
 
   // Smart F&B Filter (Minyak Goreng/Sembako hanya masuk kategori 'Lainnya' atau saat dicari)
   const filteredProducts = products.filter((p) => {
+    // 0. Filter Cabang & Brand (7co vs Saray)
+    const is7coOutlet = branchName.toLowerCase().includes("7co");
+    const isProduct7co = p.branch_id === "br-5" || (p.name && p.name.toLowerCase().includes("7co"));
+    if (is7coOutlet) {
+      if (!isProduct7co) return false;
+    } else if (branchName.toLowerCase().includes("saray")) {
+      if (isProduct7co) return false;
+    }
+
     const q = searchQuery.toLowerCase();
     const matchSearch = q === "" || p.name.toLowerCase().includes(q);
     if (!matchSearch) return false;

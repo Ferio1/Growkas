@@ -184,8 +184,8 @@ export default function AdminView({
 
   const confirmDeleteBranch = async () => {
     if (!branchToDelete) return;
-    if (branchToDelete.id === "br-1") {
-      alert("Outlet utama pusat (Saray Coffee & Space) tidak dapat dihapus.");
+    if (branches.length <= 1) {
+      alert(`Outlet "${branchToDelete.name}" adalah satu-satunya outlet yang tersisa dan tidak dapat dihapus.`);
       setBranchToDelete(null);
       return;
     }
