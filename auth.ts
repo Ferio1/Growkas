@@ -6,6 +6,19 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
+// Ensure production Vercel deployment does not inadvertently inherit localhost from dev configs
+if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+  const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "growkas.vercel.app";
+  const vercelOrigin = `https://${vercelHost.replace(/^https?:\/\//, "")}`;
+
+  if (!process.env.AUTH_URL || process.env.AUTH_URL.includes("localhost")) {
+    process.env.AUTH_URL = vercelOrigin;
+  }
+  if (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.includes("localhost")) {
+    process.env.NEXTAUTH_URL = vercelOrigin;
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true, // Otomatis kenali domain Vercel / proxy host
   // ----------------------------------------------------------------
@@ -68,14 +81,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
 
-    authorized({ auth, request: { nextUrl } }) {
+    authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
-      const pathname = nextUrl.pathname;
+      const pathname = request.nextUrl.pathname;
 
       // Proteksi rute internal (dashboard, kitchen) — redirect ke /login jika belum auth
       if (pathname.startsWith("/dashboard") || pathname.startsWith("/kitchen")) {
         if (!isLoggedIn) {
-          return Response.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(nextUrl.pathname)}`, nextUrl));
+          const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+          const proto = request.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+          const baseUrl = `${proto}://${host}`;
+          return Response.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, baseUrl));
         }
         return true;
       }
