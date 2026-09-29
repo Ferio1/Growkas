@@ -74,7 +74,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // Proteksi rute internal (dashboard, kitchen) — redirect ke /login jika belum auth
       if (pathname.startsWith("/dashboard") || pathname.startsWith("/kitchen")) {
-        return isLoggedIn;
+        if (!isLoggedIn) {
+          return Response.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(nextUrl.pathname)}`, nextUrl));
+        }
+        return true;
       }
 
       // Rute publik diizinkan tanpa login (/, /login, /order, /reset-password, /api/auth, dll)
